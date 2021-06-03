@@ -1,0 +1,170 @@
+#!/usr/bin/env stack
+{- stack
+   runghc
+   --package attoparsec
+   --package bytestring
+   --package comonad
+   --package elynx-tree
+   --package filepath
+   --package matrices
+   --package statistics
+   --package vector
+-}
+
+{-# LANGUAGE OverloadedStrings #-}
+
+import Control.Comonad
+import Data.Attoparsec.ByteString
+import Data.Bifunctor
+import qualified Data.ByteString.Builder as BB
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.Foldable
+import Data.List
+import qualified Data.Map as M
+import qualified Data.Matrix.Unboxed as MU
+import Data.Maybe
+import qualified Data.Vector.Unboxed as VU
+import qualified ELynx.Topology as T
+import ELynx.Tree
+import Statistics.Sample
+import System.Environment
+import System.FilePath
+
+getTree :: BS.ByteString -> Tree Length Name
+getTree l =
+  either error id $
+    phyloToLengthTree $
+      either error id $
+        parseOnly (oneNewick Standard) $ BS.split '\t' l !! 4
+
+toNewickTopology :: T.Topology Name -> BL.ByteString
+toNewickTopology = toNewick . first (const $ Phylo Nothing Nothing) . T.toLabeledTreeWith ""
+
+checkTopologies :: [Tree e Name] -> IO ()
+checkTopologies ts = do
+  putStrLn "Check if topologies of the trees in the tree list are equal."
+  putStrLn "Topology AND sub tree orders need to match."
+  let differentTopologies = nub $ map T.fromLabeledTree ts
+  if length differentTopologies == 1
+    then putStrLn "OK."
+    else do
+      putStrLn "Trees have different topologies:"
+      BL.putStrLn $ BL.unlines $ map toNewickTopology differentTopologies
+      error "A single topology is required."
+
+type Mean = Double
+
+type Variance = Double
+
+getMeanVarianceTrees :: [Tree Length Name] -> (Tree Length Name, Tree Length Name)
+getMeanVarianceTrees ts = (meanTree, varianceTree)
+  where
+    -- The data types are similar to the ones in 'getHeights'.
+    lss :: [VU.Vector Double]
+    lss = map (VU.fromList . branches . first fromLength) ts
+    lss' = MU.toRows $ MU.fromColumns lss
+    msvs :: [(Mean, Variance)]
+    msvs = map meanVariance lss'
+    toLength' = either (error . (<>) "getMeanVarianceTrees: ") id . toLength
+    meanTree =
+      fromMaybe (error "getMeanVarianceTrees: Could not label tree with means lengths.") $
+        setBranches (map (toLength' . fst) msvs) $ head ts
+    varianceTree =
+      fromMaybe (error "getMeanVarianceTrees: Could not label tree with variance lengths.") $
+        setBranches (map (toLength' . snd) msvs) $ head ts
+
+-- Returns [(NodeIndex, NodeName, Heights)].
+getHeights :: [Tree Length Name] -> [(Int, Name, VU.Vector Double)]
+getHeights ts = [(i, n, hs) | (i, n, hs) <- zip3 is ns hss']
+  where
+    -- The list contains vectors. A vector contains the heights of each node for
+    -- one tree.
+    hss :: [VU.Vector Double]
+    hss = map (VU.fromList . toList . extend (fromLength . rootHeight)) ts
+    -- Convert to a matrix and transpose. Again we get a list of vectors.
+    -- However, now a vector contains the heights of the same node for each
+    -- tree.
+    hss' :: [VU.Vector Double]
+    hss' = MU.toRows $ MU.fromColumns hss
+    -- Means and variances.
+    msvs :: [(Mean, Variance)]
+    msvs = map meanVariance hss'
+    -- Node indices.
+    is = toList $ identify $ head ts
+    -- Node names.
+    ns = toList $ head ts
+
+summarizeHeights :: [(Int, Name, VU.Vector Double)] -> [(Int, Name, Mean, Variance)]
+summarizeHeights [] = []
+summarizeHeights ((i, n, hs) : xs) = (i, n, m, v) : summarizeHeights xs
+  where
+    (m, v) = meanVariance hs
+
+headerSummary :: BL.ByteString
+headerSummary = "Index\tName\tMean\tVariance"
+
+renderRowSummary :: (Int, Name, Mean, Variance) -> BL.ByteString
+renderRowSummary (i, Name n, m, v) =
+  BB.toLazyByteString $
+    BB.intDec i
+      <> t
+      <> BB.lazyByteString n
+      <> t
+      <> BB.doubleDec m
+      <> t
+      <> BB.doubleDec v
+  where
+    t = BB.char8 '\t'
+
+renderTableSummary :: [(Int, Name, Mean, Variance)] -> BL.ByteString
+renderTableSummary xs = BL.unlines $ headerSummary : map renderRowSummary xs
+
+header :: BL.ByteString
+header = "Index\tName\tAges"
+
+renderRow :: (Int, Name, VU.Vector Double) -> BL.ByteString
+renderRow (i, Name n, hs) =
+  BB.toLazyByteString $
+    BB.intDec i
+      <> t
+      <> BB.lazyByteString n
+      <> hsb
+  where
+    t = BB.char8 '\t'
+    hsb = VU.foldl' (\acc x -> acc <> t <> BB.doubleDec x) mempty hs
+
+renderTable :: [(Int, Name, VU.Vector Double)] -> BL.ByteString
+renderTable xs = BL.unlines $ header : map renderRow xs
+
+main :: IO ()
+main = do
+  as <- getArgs
+  pn <- getProgName
+  let (fn, bi) = case as of
+        [x, b] -> (x, read b) :: (String, Double)
+        _ ->
+          let msg =
+                unlines
+                  [ "Usage: " <> pn <> " MONITORFILE BURNIN",
+                    "For example: " <> pn <> " trees.monitor 0.2"
+                  ]
+           in error msg
+  c <- BS.readFile fn
+  let lns = BS.lines c
+      trs' = map getTree $ tail lns
+      -- Remove burn in.
+      l = length trs'
+      toDrop = round (fromIntegral l * bi) :: Int
+      trs = drop toDrop trs'
+  checkTopologies trs
+  let (meanTree, varianceTree) = getMeanVarianceTrees trs
+      hss = getHeights trs
+      fnMeanTree = dropExtension fn ++ ".tree.mean"
+      fnVarianceTree = dropExtension fn ++ ".tree.variance"
+      fnSummary = dropExtension fn ++ ".ages.summary"
+      fnFull = dropExtension fn ++ ".ages.full"
+  BL.writeFile fnMeanTree $ toNewick $ measurableToPhyloTree meanTree
+  BL.writeFile fnVarianceTree $ toNewick $ measurableToPhyloTree varianceTree
+  BL.writeFile fnSummary $ renderTableSummary $ summarizeHeights hss
+  BL.writeFile fnFull $ renderTable hss

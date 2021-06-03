@@ -1,0 +1,21 @@
+Estimate node ages of a phylogeny by approximating the phylogenetic likelihood
+with a multivariate normal distribution.
+
+Modules containing definitions specific to the analysis:
+
+- [[file:src/Definitions.hs][Definitions]] :: File names, state space, prior distribution, and the
+  likelihood function of the MCMC sampler, as well as the proposals and the
+  monitors.
+
+- [[file:src/Calibrations.hs][Calibrations]] and [[file:src/Constraints.hs][Constraints]] :: Calibrations of node ages and node order
+  constraints.
+
+Other modules:
+
+- [[file:src/Tools.hs][Tools]] :: Miscellaneous tools to prepare the data.
+
+- [[file:src/Main.hs][Main]] :: Functions to prepare the data, run and continue the
+  Metropolis-Hasting-Green algorithm.
+
+If you try to understand what is going on, or if you want to change analysis
+settings, your starting point should be 'Definitions'.

@@ -1,0 +1,5 @@
+cradle:
+  stack:
+    - path: "."
+      component: "mcmc-dating:exe:mcmc-date"
+

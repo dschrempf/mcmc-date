@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+SERVER="meganeura"
+PATH_SERVER="/scratch/dominik/projects/mcmc-dating"
+EXCLUDE=$(cat <<EOF
+- .stack-work*/
+- .git/
+- dist-newstyle/
+EOF
+)
