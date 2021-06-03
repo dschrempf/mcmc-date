@@ -370,20 +370,20 @@ monitor cb cs = Monitor monStdOut [monFileParams cb cs, monFileTimeTree, monFile
 
 -- | Number of burn in iterations and auto tuning period.
 burnIn :: BurnInSpecification
-burnIn = BurnInWithCustomAutoTuning [10, 20 .. 300]
+burnIn = BurnInWithAutoTuning 300 100
 
 -- | Number of iterations after burn in.
 iterations :: Iterations
-iterations = Iterations 15000
+iterations = Iterations 500
 
 -- | Number of points of the stepping stone sampler.
 nPoints :: NPoints
-nPoints = NPoints 128
+nPoints = NPoints 10
 
 -- | Initial burn in iterations and auto tuning period.
 initialBurnIn :: BurnInSpecification
-initialBurnIn = BurnInWithCustomAutoTuning [10, 20 .. 300]
+initialBurnIn = BurnInWithAutoTuning 300 100
 
 -- | Repetitive burn in at each point on the path.
 repetitiveBurnIn :: BurnInSpecification
-repetitiveBurnIn = BurnInWithCustomAutoTuning $ [20, 40, 60, 80] <> replicate 9 100
+repetitiveBurnIn = BurnInWithAutoTuning 100 50
