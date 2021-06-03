@@ -27,6 +27,23 @@ module Definitions
   )
 where
 
+-- NOTE: For large trees, mixing is an issue. I tried:
+--
+-- - Using per-branch normal distributions in the likelihood function instead of
+-- - a multivariate normal distribution.
+--
+-- - Re-parametrization of the branches leading to the root: Using a single rate
+--   for both branches.
+--
+-- - Re-parametrization of the time and rate trees: Use time and rate trees with
+--   absolute branch lengths (and not branch lengths in relative time and rate).
+--
+-- - Using the diversification rate (diversification rate = birth rate - death
+-- - rate) and a fixed death rate.
+--
+-- I also observe that the chain mixes for small trees, so the model per se is
+-- fine.
+
 import Control.Lens
 import Data.Aeson
 import Data.Bifunctor
