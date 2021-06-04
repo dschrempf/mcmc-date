@@ -232,7 +232,6 @@ proposalsTimeTree t =
   map (liftProposalWith jacobianRootBranch timeTree) psAtRoot
     ++ map (liftProposal timeTree) psOthers
   where
-    w = PWeight 3
     nR = PName "Time tree [R]"
     nO = PName "Time tree [O]"
     -- Pulley on the root node (no Jacobian required because rate is shared).
@@ -240,9 +239,11 @@ proposalsTimeTree t =
       Node _ _ [l, r]
         | null (forest l) -> []
         | null (forest r) -> []
-        | otherwise -> [pulleyUltrametric t 0.01 nR w Tune]
+        | otherwise -> [pulleyUltrametric t 0.01 nR (PWeight 6) Tune]
       _ -> error "maybePulley: Tree is not bifurcating."
-    ps hd n = slideNodesUltrametric t hd 0.01 n w Tune ++ scaleSubTreesUltrametric t hd 0.01 n w Tune
+    ps hd n =
+      slideNodesUltrametric t hd 0.01 n (PWeight 3) Tune
+        ++ scaleSubTreesUltrametric t hd 0.01 n 1 Tune
     psAtRoot = maybePulley ++ ps (== 1) nR
     psOthers = ps (> 1) nO
 
@@ -252,10 +253,11 @@ proposalsRateTree t =
   map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
     ++ map (liftProposal rateTree) psOthers
   where
-    w = PWeight 3
     nR = PName "Rate tree [R]"
     nO = PName "Rate tree [O]"
-    ps hd n = scaleBranches t hd 100 n w Tune ++ scaleSubTrees t hd 100 n w Tune
+    ps hd n =
+      scaleBranches t hd 100 n (PWeight 3) Tune
+        ++ scaleSubTrees t hd 100 n 1 Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
 
@@ -263,7 +265,7 @@ proposalsRateTree t =
 proposalsTimeRateTreeContra :: Show a => Tree e a -> [Proposal I]
 proposalsTimeRateTreeContra t =
   map (liftProposalWith jacobianRootBranch timeRateTreesL) psAtRoot
-  ++ map (liftProposal timeRateTreesL) psOthers
+    ++ map (liftProposal timeRateTreesL) psOthers
   where
     -- Lens for a contrary proposal on the trees.
     timeRateTreesL :: Lens' I (HeightTree Name, Tree Length Name)
@@ -275,8 +277,8 @@ proposalsTimeRateTreeContra t =
     nR = PName "Trees contra [R]"
     nO = PName "Trees contra [O]"
     ps hd n = scaleSubTreesContrarily t hd 0.01 n w Tune
-    psAtRoot = ps (==1) nR
-    psOthers = ps (>1) nO
+    psAtRoot = ps (== 1) nR
+    psOthers = ps (> 1) nO
 
 -- Lens for a contrary proposal on the time height and rate mean.
 timeHeightRateMeanL :: Lens' I (Double, Double)
