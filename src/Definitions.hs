@@ -356,12 +356,25 @@ monConstrainedNodes cs =
   where
     name s = "Constraint " ++ s
 
+-- -- Monitor the separate parts of the prior function.
+-- monPrior :: [MonitorParameter I]
+-- monPrior =
+--   [ (ln . exponential 1 . _timeBirthRate) >$< monitorDouble "TimeBirthRatePrior",
+--     (ln . exponential 1 . _timeDeathRate) >$< monitorDouble "TimeDeathRatePrior",
+--     (\x -> ln $ birthDeath ConditionOnTimeOfMrca (x ^. timeBirthRate) (x ^. timeDeathRate) 1.0 (fromHeightTree (x ^. timeTree))) >$< monitorDouble "TimeTreePrior",
+--     (ln . exponential 1 . _rateMean) >$< monitorDouble "RateMeanPrior",
+--     -- -- Variance of the relative rates.
+--     (ln . exponential 1 . _rateVariance) >$< monitorDouble "RateVariancePrior",
+--     (\x -> ln $ uncorrelatedGamma withoutStem 1 (x ^. rateVariance) (x ^. rateTree)) >$< monitorDouble "RateTreePrior"
+--   ]
+
 -- The file monitor is more verbose.
 monFileParams :: [Calibration] -> [Constraint] -> MonitorFile I
 monFileParams cb cs =
   monitorFile
     "params"
     ( monParams
+        -- ++ monPrior
         ++ monCalibratedNodes cb
         ++ monConstrainedNodes cs
     )
