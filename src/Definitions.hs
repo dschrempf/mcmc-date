@@ -39,7 +39,10 @@ where
 --   absolute branch lengths (and not branch lengths in relative time and rate).
 --
 -- - Using the diversification rate (diversification rate = birth rate - death
--- - rate) and a fixed death rate.
+--   rate) and a fixed death rate.
+--
+-- - Non-uniform proposal weights for sub-tree proposals on the time and rate
+--   trees.
 --
 -- I also observe that the chain mixes for small trees, so the model per se is
 -- fine.
@@ -243,7 +246,7 @@ proposalsTimeTree t =
       _ -> error "maybePulley: Tree is not bifurcating."
     ps hd n =
       slideNodesUltrametric t hd 0.01 n (PWeight 3) Tune
-        ++ scaleSubTreesUltrametric t hd 0.01 n 1 Tune
+        ++ scaleSubTreesUltrametric t hd 0.01 n (PWeight 3) Tune
     psAtRoot = maybePulley ++ ps (== 1) nR
     psOthers = ps (> 1) nO
 
@@ -257,7 +260,7 @@ proposalsRateTree t =
     nO = PName "Rate tree [O]"
     ps hd n =
       scaleBranches t hd 100 n (PWeight 3) Tune
-        ++ scaleSubTrees t hd 100 n 1 Tune
+        ++ scaleSubTrees t hd 100 n (PWeight 3) Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
 
