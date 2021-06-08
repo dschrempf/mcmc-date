@@ -246,7 +246,7 @@ proposalsTimeTree t =
       _ -> error "maybePulley: Tree is not bifurcating."
     ps hd n =
       slideNodesUltrametric t hd 0.01 n (pWeight 3) Tune
-        ++ scaleSubTreesUltrametric t hd 0.01 n (pWeight 7) (pWeight 3) Tune
+        ++ scaleSubTreesUltrametric t hd 0.01 n (pWeight 3) (pWeight 8) Tune
     psAtRoot = maybePulley ++ ps (== 1) nR
     psOthers = ps (> 1) nO
 
@@ -260,7 +260,7 @@ proposalsRateTree t =
     nO = PName "Rate tree [O]"
     ps hd n =
       scaleBranches t hd 100 n (pWeight 3) Tune
-        ++ scaleSubTrees t hd 100 n (pWeight 7) (pWeight 3) Tune
+        ++ scaleSubTrees t hd 100 n (pWeight 3) (pWeight 8) Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
 
@@ -278,7 +278,7 @@ proposalsTimeRateTreeContra t =
         (\x (tTr, rTr) -> x {_timeTree = tTr, _rateTree = rTr})
     nR = PName "Trees contra [R]"
     nO = PName "Trees contra [O]"
-    ps hd n = scaleSubTreesContrarily t hd 0.01 n (pWeight 7) (pWeight 3) Tune
+    ps hd n = scaleSubTreesContrarily t hd 0.01 n (pWeight 3) (pWeight 8) Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
 
