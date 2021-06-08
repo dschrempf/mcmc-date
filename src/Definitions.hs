@@ -41,8 +41,10 @@ where
 -- - Using the diversification rate (diversification rate = birth rate - death
 --   rate) and a fixed death rate.
 --
--- - Non-uniform proposal weights for sub-tree proposals on the time and rate
---   trees.
+-- - Fix rate mean (remove hyper-prior on mean).
+--
+-- I managed to improve converge aslightly by using non-uniform proposal weights
+-- for sub-tree proposals on the time and rate trees.
 --
 -- I also observe that the chain mixes for small trees, so the model per se is
 -- fine.
