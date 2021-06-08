@@ -242,11 +242,11 @@ proposalsTimeTree t =
       Node _ _ [l, r]
         | null (forest l) -> []
         | null (forest r) -> []
-        | otherwise -> [pulleyUltrametric t 0.01 nR (PWeight 6) Tune]
+        | otherwise -> [pulleyUltrametric t 0.01 nR (pWeight 6) Tune]
       _ -> error "maybePulley: Tree is not bifurcating."
     ps hd n =
-      slideNodesUltrametric t hd 0.01 n (PWeight 3) Tune
-        ++ scaleSubTreesUltrametric t hd 0.01 n (PWeight 3) Tune
+      slideNodesUltrametric t hd 0.01 n (pWeight 3) Tune
+        ++ scaleSubTreesUltrametric t hd 0.01 n (pWeight 7) (pWeight 3) Tune
     psAtRoot = maybePulley ++ ps (== 1) nR
     psOthers = ps (> 1) nO
 
@@ -259,8 +259,8 @@ proposalsRateTree t =
     nR = PName "Rate tree [R]"
     nO = PName "Rate tree [O]"
     ps hd n =
-      scaleBranches t hd 100 n (PWeight 3) Tune
-        ++ scaleSubTrees t hd 100 n (PWeight 3) Tune
+      scaleBranches t hd 100 n (pWeight 3) Tune
+        ++ scaleSubTrees t hd 100 n (pWeight 7) (pWeight 3) Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
 
@@ -276,10 +276,9 @@ proposalsTimeRateTreeContra t =
       lens
         (\x -> (x ^. timeTree, x ^. rateTree))
         (\x (tTr, rTr) -> x {_timeTree = tTr, _rateTree = rTr})
-    w = PWeight 3
     nR = PName "Trees contra [R]"
     nO = PName "Trees contra [O]"
-    ps hd n = scaleSubTreesContrarily t hd 0.01 n w Tune
+    ps hd n = scaleSubTreesContrarily t hd 0.01 n (pWeight 7) (pWeight 3) Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
 
@@ -294,10 +293,10 @@ timeHeightRateMeanL =
 proposals :: Show a => Bool -> Tree e a -> Cycle I
 proposals calibrationsAvailable t =
   cycleFromList $
-    [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") (PWeight 20) Tune,
-      timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") (PWeight 20) Tune,
-      rateMean @~ scaleUnbiased 10 (PName "Rate mean") (PWeight 20) Tune,
-      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") (PWeight 20) Tune
+    [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") (pWeight 20) Tune,
+      timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") (pWeight 20) Tune,
+      rateMean @~ scaleUnbiased 10 (PName "Rate mean") (pWeight 20) Tune,
+      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") (pWeight 20) Tune
     ]
       ++ proposalsTimeTree t
       ++ proposalsRateTree t
@@ -308,9 +307,9 @@ proposals calibrationsAvailable t =
     heightProposals =
       if calibrationsAvailable
         then
-          [ timeHeight @~ scaleUnbiased 3000 (PName "Time height") (PWeight 20) Tune,
+          [ timeHeight @~ scaleUnbiased 3000 (PName "Time height") (pWeight 20) Tune,
             timeHeightRateMeanL
-              @~ scaleContrarily 10 0.1 (PName "Time height, rate mean") (PWeight 20) Tune
+              @~ scaleContrarily 10 0.1 (PName "Time height, rate mean") (pWeight 20) Tune
           ]
         else []
 
