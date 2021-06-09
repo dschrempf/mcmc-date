@@ -96,7 +96,17 @@ prepare (PrepSpec an rt ts) = do
 
   putStrLn "Root the trees at the same point as the given rooted tree."
   let og = fst $ fromBipartition $ either error id $ bipartition treeRooted
-      !treesRooted = force $ map (either error id . outgroup og) trs
+      !treesRooted =
+        force $
+          map
+            ( either error id
+                . outgroup og
+                . either error id
+                -- First root at midpoint. This treats a pathological case when
+                -- one branch length is zero, in which case the MCMC fails.
+                . midpoint
+            )
+            trs
 
   putStrLn "Check if topologies of the trees in the tree list are equal."
   putStrLn "Topology AND sub tree orders need to match."
@@ -151,9 +161,8 @@ prepare (PrepSpec an rt ts) = do
       pm = getPosteriorMatrix treesRooted
       -- Mean Vector including both branches to the root.
       (means, _) = L.meanCov pm
-  let
-    toLength' = either (error . (<>) "prepare: ") id . toLength
-    meanTreeRooted =
+  let toLength' = either (error . (<>) "prepare: ") id . toLength
+      meanTreeRooted =
         fromMaybe (error "prepare: Could not label tree with mean branch lengths") $
           setBranches (map toLength' $ VS.toList means) treeR
   putStrLn "The rooted tree with mean branch lengths is:"
