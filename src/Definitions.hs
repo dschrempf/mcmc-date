@@ -283,11 +283,11 @@ proposalsTimeTree t =
     psAtRoot = maybePulley ++ ps (== 1) nR
     psOthers = ps (> 1) nO
 
--- Lens for a contrary proposal on the rate mean and rate tree.
+-- Lens for proposals on the rate mean and rate tree.
 rateMeanRateTreeL :: Lens' I (Double, Tree Length Name)
 rateMeanRateTreeL = tupleLens rateMean rateTree
 
--- Lens for a contrary proposal on the rate variance and rate tree.
+-- Lens for proposals on the rate variance and rate tree.
 rateVarianceRateTreeL :: Lens' I (Double, Tree Length Name)
 rateVarianceRateTreeL = tupleLens rateVariance rateTree
 
@@ -306,7 +306,7 @@ proposalsRateTree t =
         ++ scaleSubTrees t hl 100 n (pWeight 3) (pWeight 8) Tune
     -- I am proud of the next two proposals :).
     psMeanContra = scaleNormAndTreeContrarily t 100 nR (pWeight 3) Tune
-    psVarianceContra = scaleVarianceAndTreeContrarily t 100 nR (pWeight 3) Tune
+    psVarianceContra = scaleVarianceAndTree t 100 nR (pWeight 3) Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
 
@@ -316,7 +316,7 @@ proposalsTimeRateTreeContra t =
   map (liftProposalWith jacobianRootBranch timeRateTreesL) psAtRoot
     ++ map (liftProposal timeRateTreesL) psOthers
   where
-    -- Lens for a contrary proposal on the trees.
+    -- Lens for the contrary proposal on the trees.
     timeRateTreesL :: Lens' I (HeightTree Name, Tree Length Name)
     timeRateTreesL = tupleLens timeTree rateTree
     nR = PName "Trees contra [R]"
