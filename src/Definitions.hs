@@ -130,9 +130,9 @@ import Tools
 -- not ensured by the types. Equality of the topology could be ensured by using
 -- one tree storing both, the times and the rates.
 data I = I
-  { -- | Birth rate of relative time tree.
+  { -- | Hyper-parameter. Birth rate of relative time tree.
     _timeBirthRate :: Double,
-    -- | Death rate of relative time tree.
+    -- | Hyper-parameter. Death rate of relative time tree.
     _timeDeathRate :: Double,
     -- | Height of the absolute time tree in unit time. Here, we use units of
     -- million years; see the calibrations.
@@ -142,7 +142,7 @@ data I = I
     _timeTree :: HeightTree Name,
     -- | The mean of the absolute rates.
     _rateMean :: Double,
-    -- | The variance of the relative rates.
+    -- | Hyper-parameter. The variance of the relative rates.
     _rateVariance :: Double,
     -- | Relative rate tree. Branch labels denote relative rates with mean 1.0.
     -- Node labels store names.
@@ -295,7 +295,7 @@ rateVarianceRateTreeL = tupleLens rateVariance rateTree
 proposalsRateTree :: Show a => Tree e a -> [Proposal I]
 proposalsRateTree t =
   liftProposalWith jacobianRootBranch rateMeanRateTreeL psMeanContra :
-  liftProposalWith jacobianRootBranch rateVarianceRateTreeL psVarianceContra :
+  liftProposalWith jacobianRootBranch rateVarianceRateTreeL psVariance :
   map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
     ++ map (liftProposal rateTree) psOthers
   where
@@ -306,7 +306,7 @@ proposalsRateTree t =
         ++ scaleSubTrees t hl 100 n (pWeight 3) (pWeight 8) Tune
     -- I am proud of the next two proposals :).
     psMeanContra = scaleNormAndTreeContrarily t 100 nR (pWeight 3) Tune
-    psVarianceContra = scaleVarianceAndTree t 100 nR (pWeight 3) Tune
+    psVariance= scaleVarianceAndTree t 100 nR (pWeight 3) Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
 
