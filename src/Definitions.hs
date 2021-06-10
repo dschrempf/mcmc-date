@@ -262,10 +262,7 @@ proposalsTimeTree t =
 
 -- Lens for a contrary proposal on the rate mean and rate tree.
 rateMeanRateTreeL :: Lens' I (Double, Tree Length Name)
-rateMeanRateTreeL =
-  lens
-    (\x -> (x ^. rateMean, x ^. rateTree))
-    (\x (mu, r) -> x {_rateMean = mu, _rateTree = r})
+rateMeanRateTreeL = tupleLens rateMean rateTree
 
 -- Proposals for the rate tree.
 proposalsRateTree :: Show a => Tree e a -> [Proposal I]
@@ -291,10 +288,7 @@ proposalsTimeRateTreeContra t =
   where
     -- Lens for a contrary proposal on the trees.
     timeRateTreesL :: Lens' I (HeightTree Name, Tree Length Name)
-    timeRateTreesL =
-      lens
-        (\x -> (x ^. timeTree, x ^. rateTree))
-        (\x (tTr, rTr) -> x {_timeTree = tTr, _rateTree = rTr})
+    timeRateTreesL = tupleLens timeTree rateTree
     nR = PName "Trees contra [R]"
     nO = PName "Trees contra [O]"
     ps hd n = scaleSubTreesContrarily t hd 0.01 n (pWeight 3) (pWeight 8) Tune
@@ -303,10 +297,7 @@ proposalsTimeRateTreeContra t =
 
 -- Lens for a contrary proposal on the time height and rate mean.
 timeHeightRateMeanL :: Lens' I (Double, Double)
-timeHeightRateMeanL =
-  lens
-    (\x -> (x ^. timeHeight, x ^. rateMean))
-    (\x (h, mu) -> x {_timeHeight = h, _rateMean = mu})
+timeHeightRateMeanL = tupleLens timeHeight rateMean
 
 -- | The proposal cycle includes proposals for the other parameters.
 proposals :: Show a => Bool -> Tree e a -> Cycle I

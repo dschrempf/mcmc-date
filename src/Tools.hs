@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 
 -- |
 -- Module      :  Tools
@@ -14,9 +15,11 @@ module Tools
   ( getBranches,
     sumFirstTwo,
     toNewickTopology,
+    tupleLens,
   )
 where
 
+import Control.Lens
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Vector.Storable as V
@@ -43,3 +46,12 @@ sumFirstTwo v = (v V.! 0 + v V.! 1) `V.cons` V.drop 2 v
 -- | Convert a topology to Newick format.
 toNewickTopology :: T.Topology Name -> BL.ByteString
 toNewickTopology = toNewick . first (const $ Phylo Nothing Nothing) . T.toLabeledTreeWith ""
+
+-- | Create lenses for tuples.
+--
+-- Useful for contrary proposals.
+tupleLens :: Lens' a b1 -> Lens' a b2 -> Lens' a (b1, b2)
+tupleLens l1 l2 =
+  lens
+    (\x -> (x ^. l1, x ^. l2))
+    (\x (y1', y2') -> x & l1 .~ y1' & l2 .~ y2')
