@@ -1,5 +1,5 @@
 {
-  description = "ELynx environment";
+  description = "Evolution development environment";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
@@ -21,12 +21,21 @@
           {
             devShell = pkgs.mkShell {
               nativeBuildInputs = [];
-              buildInputs = with pkgs.haskell.packages.ghc8104;
+              buildInputs =
+                with pkgs.haskell.packages.ghc8104;
+                with dschrempf;
                 [
+                  # ELynx.
                   elynx
                   slynx
                   tlynx
-                  dschrempf.phylobayes
+
+                  # Misc.
+                  beast2
+                  figtree
+                  iqtree2
+                  phylobayes
+                  tracer
                 ];
             };
           }
