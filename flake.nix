@@ -1,5 +1,5 @@
 {
-  description = "Evolution development environment";
+  description = "Evolution environment";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
@@ -17,20 +17,26 @@
           dschrempf = import dschrempf-nur {
             inherit pkgs;
           };
+          evolHaskellEnv = pkgs.haskell.packages.ghc8104.ghcWithPackages
+            (
+              haskellPackages: with haskellPackages; [
+                # ELynx library.
+                elynx
+                slynx
+                tlynx
+              ]
+            );
         in
           {
             devShell = pkgs.mkShell {
               nativeBuildInputs = [];
               buildInputs =
-                with pkgs.haskell.packages.ghc8104;
                 with dschrempf;
                 [
-                  # ELynx.
-                  elynx
-                  slynx
-                  tlynx
+                  # GHC with libraries.
+                  evolHaskellEnv
 
-                  # Misc.
+                  # Tools.
                   beast2
                   figtree
                   iqtree2
