@@ -170,6 +170,9 @@ priorFunction cb cs (I l m h t mu va r) =
       -- Relative time tree.
       birthDeath ConditionOnTimeOfMrca l m 1.0 t',
       -- Mean rate.
+      --
+      -- IDEA: Use gamma distribution with mean calculated using the number of
+      -- branches and the total length of the substitution-like tree.
       exponential 1 mu,
       -- Variance of the relative rates.
       exponential 1 va,
