@@ -222,7 +222,7 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
   -- Either use the MC3 algorithm.
   let mc3S = MC3Settings (NChains 4) (SwapPeriod 2) (NSwaps 3)
   a <- mc3 mc3S pr' lh' cc' mon' TraceAuto start' g
-  --
+
   -- -- Or the standard MHG algorithm.
   -- a <- mhg pr' lh' cc' mon' TraceAuto start' g
 
@@ -287,7 +287,7 @@ runMarginalLikelihood (Spec an cals cons) = do
   g <- create
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
-  let mcmcS =
+  let mlS =
         MLSettings
           (AnalysisName an)
           SteppingStoneSampling
@@ -300,7 +300,7 @@ runMarginalLikelihood (Spec an cals cons) = do
           Debug
 
   -- Run the Markov chain.
-  void $ marginalLikelihood mcmcS pr' lh' cc' mon' start' g
+  void $ marginalLikelihood mlS pr' lh' cc' mon' start' g
 
 main :: IO ()
 main = do
