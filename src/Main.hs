@@ -22,6 +22,7 @@ import Control.Monad
 import Data.Aeson
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.Either
 import Data.List
 import Data.Maybe
 import qualified Data.Vector as VB
@@ -99,12 +100,16 @@ prepare (PrepSpec an rt ts) = do
       !treesRooted =
         force $
           map
-            ( either error id
-                . outgroup og
-                . either error id
-                -- First root at midpoint. This treats a pathological case when
-                -- one branch length is zero, in which case the MCMC fails.
-                . midpoint
+            ( \x ->
+                either error id $
+                  outgroup og $
+                    -- If midpoint rooting does not work, root the original
+                    -- tree.
+                    fromRight x
+                    -- First root at midpoint. This treats a pathological case when
+                    -- one branch length is zero, in which case the MCMC fails.
+                    $
+                      midpoint x
             )
             trs
 
