@@ -264,10 +264,15 @@ proposalsTimeTree t =
 rateMeanRateTreeL :: Lens' I (Double, Tree Length Name)
 rateMeanRateTreeL = tupleLens rateMean rateTree
 
+-- Lens for a contrary proposal on the rate variance and rate tree.
+rateVarianceRateTreeL :: Lens' I (Double, Tree Length Name)
+rateVarianceRateTreeL = tupleLens rateVariance rateTree
+
 -- Proposals for the rate tree.
 proposalsRateTree :: Show a => Tree e a -> [Proposal I]
 proposalsRateTree t =
-  liftProposalWith jacobianRootBranch rateMeanRateTreeL psContra :
+  liftProposalWith jacobianRootBranch rateMeanRateTreeL psMeanContra :
+  liftProposalWith jacobianRootBranch rateVarianceRateTreeL psVarianceContra :
   map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
     ++ map (liftProposal rateTree) psOthers
   where
@@ -276,7 +281,9 @@ proposalsRateTree t =
     ps hd n =
       scaleBranches t hd 100 n (pWeight 3) Tune
         ++ scaleSubTrees t hd 100 n (pWeight 3) (pWeight 8) Tune
-    psContra = scaleNormAndTreeContrarily t 100 nR (pWeight 3) Tune
+    -- I am proud of the next two proposals :).
+    psMeanContra = scaleNormAndTreeContrarily t 100 nR (pWeight 3) Tune
+    psVarianceContra = scaleVarianceAndTreeContrarily t 100 nR (pWeight 3) Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
 
