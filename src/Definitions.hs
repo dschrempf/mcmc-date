@@ -305,10 +305,13 @@ proposalsRateTree t =
       scaleBranches t hl 100 n (pWeight 3) Tune
         ++ scaleSubTrees t hl 100 n (pWeight 3) (pWeight 8) Tune
     -- I am proud of the next two proposals :).
-    psMeanContra = scaleNormAndTreeContrarily t 100 nR (pWeight 3) Tune
-    psVariance= scaleVarianceAndTree t 100 nR (pWeight 3) Tune
+    psMeanContra = scaleNormAndTreeContrarily t 100 nR w Tune
+    psVariance= scaleVarianceAndTree t 100 nR w Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
+    nBr :: Double
+    nBr = fromIntegral $ length t
+    w = pWeight $ floor $ logBase 1.5 nBr
 
 -- Contrary proposals on the time and rate trees.
 proposalsTimeRateTreeContra :: Show a => Tree e a -> [Proposal I]
@@ -333,10 +336,10 @@ timeHeightRateMeanL = tupleLens timeHeight rateMean
 proposals :: Show a => Bool -> Tree e a -> Cycle I
 proposals calibrationsAvailable t =
   cycleFromList $
-    [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") (pWeight 20) Tune,
-      timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") (pWeight 20) Tune,
-      rateMean @~ scaleUnbiased 10 (PName "Rate mean") (pWeight 20) Tune,
-      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") (pWeight 20) Tune
+    [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
+      timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
+      rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
+      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
     ]
       ++ proposalsTimeTree t
       ++ proposalsRateTree t
@@ -344,12 +347,15 @@ proposals calibrationsAvailable t =
       -- Only add proposals on time tree height when calibrations are available.
       ++ heightProposals
   where
+    nBr :: Double
+    nBr = fromIntegral $ length t
+    w = pWeight $ floor $ logBase 1.5 nBr
     heightProposals =
       if calibrationsAvailable
         then
-          [ timeHeight @~ scaleUnbiased 3000 (PName "Time height") (pWeight 20) Tune,
+          [ timeHeight @~ scaleUnbiased 3000 (PName "Time height") w Tune,
             timeHeightRateMeanL
-              @~ scaleContrarily 10 0.1 (PName "Time height, rate mean") (pWeight 20) Tune
+              @~ scaleContrarily 10 0.1 (PName "Time height, rate mean") w Tune
           ]
         else []
 
