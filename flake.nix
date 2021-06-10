@@ -29,8 +29,13 @@
         in
           {
             devShell = pkgs.mkShell {
-              nativeBuildInputs = [];
-              buildInputs =
+              shellHook = let
+                scripts = ./scripts;
+              in
+                ''
+                  export PATH="${scripts}:$PATH"
+                '';
+              packages =
                 with dschrempf;
                 [
                   # GHC with libraries.
