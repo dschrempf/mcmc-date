@@ -27,10 +27,12 @@ module Definitions
   )
 where
 
--- NOTE: For large trees, mixing is an issue. I tried:
+-- NOTE: For large trees, mixing is difficult.
 --
--- - Using per-branch normal distributions in the likelihood function instead of
--- - a multivariate normal distribution.
+-- Measures that didn't help at all:
+--
+-- - Per-branch normal distributions in the likelihood function instead of a
+--   multivariate normal distribution.
 --
 -- - Re-parametrization of the branches leading to the root: Using a single rate
 --   for both branches.
@@ -38,8 +40,9 @@ where
 -- - Re-parametrization of the time and rate trees: Use time and rate trees with
 --   absolute branch lengths (and not branch lengths in relative time and rate).
 --
--- - Using the diversification rate (diversification rate = birth rate - death
---   rate) and a fixed death rate.
+-- - Re-parametrization of the birth and death rates: Use diversification rate
+--   (diversification rate = birth rate - death rate) and a possibly fixed death
+--   rate.
 --
 -- - Fix rate mean (remove hyper-prior on mean).
 --
@@ -357,8 +360,8 @@ monParams =
     _timeDeathRate >$< monitorDouble "TimeDeathRate",
     _timeHeight >$< monitorDouble "TimeHeight",
     _rateMean >$< monitorDouble "RateMean",
-    _rateVariance >$< monitorDouble "RateVariance",
-    fromLength . sum . branches . _rateTree >$< monitorDouble "TotalRate"
+    _rateVariance >$< monitorDouble "RateVariance"
+    -- fromLength . sum . branches . _rateTree >$< monitorDouble "TotalRate"
   ]
 
 -- Monitor to standard output.
