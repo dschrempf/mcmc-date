@@ -254,9 +254,9 @@ proposalsTimeTree t =
         | null (forest r) -> []
         | otherwise -> [pulleyUltrametric t 0.01 nR (pWeight 6) Tune]
       _ -> error "maybePulley: Tree is not bifurcating."
-    ps hd n =
-      slideNodesUltrametric t hd 0.01 n (pWeight 3) Tune
-        ++ scaleSubTreesUltrametric t hd 0.01 n (pWeight 3) (pWeight 8) Tune
+    ps hl n =
+      slideNodesUltrametric t hl 0.01 n (pWeight 3) Tune
+        ++ scaleSubTreesUltrametric t hl 0.01 n (pWeight 3) (pWeight 8) Tune
     psAtRoot = maybePulley ++ ps (== 1) nR
     psOthers = ps (> 1) nO
 
@@ -278,9 +278,9 @@ proposalsRateTree t =
   where
     nR = PName "Rate tree [R]"
     nO = PName "Rate tree [O]"
-    ps hd n =
-      scaleBranches t hd 100 n (pWeight 3) Tune
-        ++ scaleSubTrees t hd 100 n (pWeight 3) (pWeight 8) Tune
+    ps hl n =
+      scaleBranches t hl 100 n (pWeight 3) Tune
+        ++ scaleSubTrees t hl 100 n (pWeight 3) (pWeight 8) Tune
     -- I am proud of the next two proposals :).
     psMeanContra = scaleNormAndTreeContrarily t 100 nR (pWeight 3) Tune
     psVarianceContra = scaleVarianceAndTreeContrarily t 100 nR (pWeight 3) Tune
@@ -298,7 +298,7 @@ proposalsTimeRateTreeContra t =
     timeRateTreesL = tupleLens timeTree rateTree
     nR = PName "Trees contra [R]"
     nO = PName "Trees contra [O]"
-    ps hd n = scaleSubTreesContrarily t hd 0.01 n (pWeight 3) (pWeight 8) Tune
+    ps hl n = scaleSubTreesContrarily t hl 0.01 n (pWeight 3) (pWeight 8) Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
 
