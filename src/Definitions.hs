@@ -43,8 +43,13 @@ where
 --
 -- - Fix rate mean (remove hyper-prior on mean).
 --
--- I managed to improve converge aslightly by using non-uniform proposal weights
--- for sub-tree proposals on the time and rate trees.
+-- Measures that improved mixing:
+--
+-- - Non-uniform proposal weights for sub-tree proposals on the time and rate
+--   trees.
+--
+-- - Contrary proposals (time and rate trees, time height and rate mean, rate
+--   mean and rate tree).
 --
 -- I also observe that the chain mixes for small trees, so the model per se is
 -- fine.
