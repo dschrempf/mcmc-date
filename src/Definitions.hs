@@ -56,7 +56,7 @@ import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
 import GHC.Generics
 import qualified Numeric.LinearAlgebra as L
-import Numeric.Log
+import Numeric.Log hiding (sum)
 import Numeric.MathFunctions.Constants
 
 -- import Debug.Trace
@@ -322,7 +322,8 @@ monParams =
     _timeDeathRate >$< monitorDouble "TimeDeathRate",
     _timeHeight >$< monitorDouble "TimeHeight",
     _rateMean >$< monitorDouble "RateMean",
-    _rateVariance >$< monitorDouble "RateVariance"
+    _rateVariance >$< monitorDouble "RateVariance",
+    fromLength . sum . branches . _rateTree >$< monitorDouble "TotalRate"
   ]
 
 -- Monitor to standard output.
