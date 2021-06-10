@@ -81,30 +81,51 @@ import Tools
 
 -- | State space containing all parameters.
 --
--- We are interested in inferring an ultrametric tree with branch lengths
--- measured in units of time (e.g., in million years). Let T be the length of a
--- branch of the time tree, and R be the absolute evolutionary rate on this
--- branch. Then, the length of this very same branch measured in average number
--- of substitutions is d=T*R.
+-- We are interested in inferring an ultrametric time tree with branch lengths
+-- measured in units of time (e.g., in million years). Let i be a branch of the
+-- time tree. Further, let T_i be the length of branch i, and R_i be the
+-- absolute evolutionary rate on this branch. Then, the length of branch i
+-- measured in average number of substitutions is d_i=T_i*R_i.
 --
--- Internally, a relative time t and relative rate r are used such that the
--- branch length measured in average number of substitution is
--- d=T*R=(t*h)*(r*mu), where h is the root height of the time tree, and mu is
--- the mean rate.
+-- Internally, a relative time t_i and relative rate r_i are stored and used
+-- such that the branch length measured in average number of substitution is
+-- d_i=T_i*R_i=(t_i*h)*(r_i*mu), where h is the root height of the time tree,
+-- and mu is the mean rate.
 --
--- In brief, the relative time and rate are defined as t=T/h, and r=R/mu, where
--- h is the root height and mu is the mean rate.
+-- In brief, the relative time and rate are defined as t_i=T_i/h, and
+-- r_i=R_i/mu.
 --
--- This has two advantages:
+-- This has various advantages:
 --
 -- 1. The ultrametric tree object storing the relative times is a normalized
 --    tree with root height 1.0.
 --
 -- 2. The relative rates have a mean of 1.0.
 --
--- Remark: The topologies of the time and rate tree are equal. This is, however,
--- not ensured by the types. One could use one tree storing both, the times and
--- the rates.
+-- 3. The absolute times and rates can be scaled easily by proposing new values
+--    for h or mu.
+--
+-- NOTE: The relative times and rates are stored using two separate tree
+-- objects: (1) An ultrametric time tree, and (2) an unconstrained rate tree.
+-- The separation of the two trees allows usage of two different types:
+--
+-- (1) The time tree is of type 'HeightTree' because the ultrametricity
+--     constraint allows the change of node heights only.
+--
+-- (2) The rate tree is of type 'Tree' because the branch lengths are not
+--     limited by any constraints (but of course they have to be
+--     positive).
+--
+-- Accordingly, the types of the proposals ensure that they are used on the
+-- correct tree objects.
+--
+-- NOTE: Absolute times can only be inferred if node calibrations are available.
+-- Otherwise, the time tree height will be left unchanged at 1.0, and relative
+-- times will be inferred.
+--
+-- NOTE: The topologies of the time and rate trees are equal. This is, however,
+-- not ensured by the types. Equality of the topology could be ensured by using
+-- one tree storing both, the times and the rates.
 data I = I
   { -- | Birth rate of relative time tree.
     _timeBirthRate :: Double,
@@ -114,14 +135,14 @@ data I = I
     -- million years; see the calibrations.
     _timeHeight :: Double,
     -- | Normalized time tree of height 1.0. Branch labels denote relative
-    -- times; node labels store relative node heights and names.
+    -- times. Node labels store relative node heights and names.
     _timeTree :: HeightTree Name,
     -- | The mean of the absolute rates.
     _rateMean :: Double,
     -- | The variance of the relative rates.
     _rateVariance :: Double,
-    -- | Relative rate tree. Branch labels denote relative rates with mean 1.0;
-    -- node labels store names.
+    -- | Relative rate tree. Branch labels denote relative rates with mean 1.0.
+    -- Node labels store names.
     _rateTree :: Tree Length Name
   }
   deriving (Generic)
@@ -178,7 +199,6 @@ priorFunction cb cs (I l m h t mu va r) =
       exponential 1 va,
       -- Relative rate tree.
       uncorrelatedGamma withoutStem 1 va r
-      -- autocorrelatedGamma withoutStem 1 va t' r
     ]
   where
     t' = fromHeightTree t
@@ -239,7 +259,7 @@ rootBranch x = t1 * r1 + t2 * r2
 jacobianRootBranch :: JacobianFunction I
 jacobianRootBranch = Exp . log . recip . rootBranch
 
--- Proposals for the time tree.
+-- Proposals on the time tree.
 proposalsTimeTree :: Show a => Tree e a -> [Proposal I]
 proposalsTimeTree t =
   map (liftProposalWith jacobianRootBranch timeTree) psAtRoot
@@ -268,7 +288,7 @@ rateMeanRateTreeL = tupleLens rateMean rateTree
 rateVarianceRateTreeL :: Lens' I (Double, Tree Length Name)
 rateVarianceRateTreeL = tupleLens rateVariance rateTree
 
--- Proposals for the rate tree.
+-- Proposals on the rate tree.
 proposalsRateTree :: Show a => Tree e a -> [Proposal I]
 proposalsRateTree t =
   liftProposalWith jacobianRootBranch rateMeanRateTreeL psMeanContra :
@@ -375,18 +395,6 @@ monConstrainedNodes cs =
   ]
   where
     name s = "Constraint " ++ s
-
--- -- Monitor the separate parts of the prior function.
--- monPrior :: [MonitorParameter I]
--- monPrior =
---   [ (ln . exponential 1 . _timeBirthRate) >$< monitorDouble "TimeBirthRatePrior",
---     (ln . exponential 1 . _timeDeathRate) >$< monitorDouble "TimeDeathRatePrior",
---     (\x -> ln $ birthDeath ConditionOnTimeOfMrca (x ^. timeBirthRate) (x ^. timeDeathRate) 1.0 (fromHeightTree (x ^. timeTree))) >$< monitorDouble "TimeTreePrior",
---     (ln . exponential 1 . _rateMean) >$< monitorDouble "RateMeanPrior",
---     -- -- Variance of the relative rates.
---     (ln . exponential 1 . _rateVariance) >$< monitorDouble "RateVariancePrior",
---     (\x -> ln $ uncorrelatedGamma withoutStem 1 (x ^. rateVariance) (x ^. rateTree)) >$< monitorDouble "RateTreePrior"
---   ]
 
 -- The file monitor is more verbose.
 monFileParams :: [Calibration] -> [Constraint] -> MonitorFile I
