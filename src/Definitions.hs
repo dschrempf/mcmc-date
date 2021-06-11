@@ -182,8 +182,8 @@ initWith t =
 priorFunction :: VB.Vector Calibration -> VB.Vector Constraint -> PriorFunction I
 priorFunction cb cs (I l m h t mu va r) =
   product' $
-    calibrateUnsafe 1e-3 cb h t :
-    constrainUnsafe 1e-3 cs t :
+    calibrateUnsafe 1e-4 cb h t :
+    constrainUnsafe 1e-4 cs t :
     [ -- Birth and death rates of the relative time tree.
       exponential 1 l,
       exponential 1 m,
@@ -278,7 +278,7 @@ proposalsTimeTree t =
         | otherwise -> [pulleyUltrametric t 0.01 nR (pWeight 6) Tune]
       _ -> error "maybePulley: Tree is not bifurcating."
     ps hl n =
-      slideNodesUltrametric t hl 0.01 n (pWeight 3) Tune
+      slideNodesUltrametric t hl 0.01 n (pWeight 5) Tune
         ++ scaleSubTreesUltrametric t hl 0.01 n (pWeight 3) (pWeight 8) Tune
     psAtRoot = maybePulley ++ ps (== 1) nR
     psOthers = ps (> 1) nO
@@ -311,7 +311,7 @@ proposalsRateTree t =
     psOthers = ps (> 1) nO
     nBr :: Double
     nBr = fromIntegral $ length t
-    w = pWeight $ floor $ logBase 1.5 nBr
+    w = pWeight $ floor $ logBase 1.2 nBr
 
 -- Contrary proposals on the time and rate trees.
 proposalsTimeRateTreeContra :: Show a => Tree e a -> [Proposal I]
@@ -349,7 +349,7 @@ proposals calibrationsAvailable t =
   where
     nBr :: Double
     nBr = fromIntegral $ length t
-    w = pWeight $ floor $ logBase 1.5 nBr
+    w = pWeight $ floor $ logBase 1.2 nBr
     heightProposals =
       if calibrationsAvailable
         then
