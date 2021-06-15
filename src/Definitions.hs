@@ -269,19 +269,20 @@ proposalsTimeTree t =
   map (liftProposalWith jacobianRootBranch timeTree) psAtRoot
     ++ map (liftProposal timeTree) psOthers
   where
-    nR = PName "Time tree [R]"
-    nO = PName "Time tree [O]"
     -- Pulley on the root node.
+    nP = PName "Time tree [R], Pulley"
     maybePulley = case t of
       Node _ _ [l, r]
         | null (forest l) -> []
         | null (forest r) -> []
-        | otherwise -> [pulleyUltrametric t 0.01 nR (pWeight 6) Tune]
+        | otherwise -> [pulleyUltrametric t 0.01 nP (pWeight 6) Tune]
       _ -> error "maybePulley: Tree is not bifurcating."
     ps hl n =
       slideNodesUltrametric t hl 0.01 n (pWeight 5) Tune
         ++ scaleSubTreesUltrametric t hl 0.01 n (pWeight 3) (pWeight 8) Tune
+    nR = PName "Time tree [R]"
     psAtRoot = maybePulley ++ ps (== 1) nR
+    nO = PName "Time tree [O]"
     psOthers = ps (> 1) nO
 
 -- Lens for proposals on the rate mean and rate tree.
@@ -305,16 +306,19 @@ proposalsRateTree t =
   map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
     ++ map (liftProposal rateTree) psOthers
   where
-    nR = PName "Rate tree [R]"
-    nO = PName "Rate tree [O]"
+    -- I am proud of the next three proposals :).
+    nM = PName "Rate tree [R], Mean"
+    psMeanContra = scaleNormAndTreeContrarily t 100 nM w Tune
+    nH = PName "Rate tree [R], Height"
+    psHeightContra = scaleNormAndTreeContrarily t 100 nH w Tune
+    nV = PName "Rate tree [R], Variance"
+    psVariance = scaleVarianceAndTree t 100 nV w Tune
     ps hl n =
       scaleBranches t hl 100 n (pWeight 3) Tune
         ++ scaleSubTrees t hl 100 n (pWeight 3) (pWeight 8) Tune
-    -- I am proud of the next two proposals :).
-    psMeanContra = scaleNormAndTreeContrarily t 100 nR w Tune
-    psHeightContra = scaleNormAndTreeContrarily t 100 nR w Tune
-    psVariance = scaleVarianceAndTree t 100 nR w Tune
+    nR = PName "Rate tree [R]"
     psAtRoot = ps (== 1) nR
+    nO = PName "Rate tree [O]"
     psOthers = ps (> 1) nO
     nBr :: Double
     nBr = fromIntegral $ length t
@@ -329,10 +333,10 @@ proposalsTimeRateTreeContra t =
     -- Lens for the contrary proposal on the trees.
     timeRateTreesL :: Lens' I (HeightTree Name, Tree Length Name)
     timeRateTreesL = tupleLens timeTree rateTree
-    nR = PName "Trees contra [R]"
-    nO = PName "Trees contra [O]"
     ps hl n = scaleSubTreesContrarily t hl 0.01 n (pWeight 3) (pWeight 8) Tune
+    nR = PName "Trees contra [R]"
     psAtRoot = ps (== 1) nR
+    nO = PName "Trees contra [O]"
     psOthers = ps (> 1) nO
 
 -- Lens for a contrary proposal on the time height and rate mean.
