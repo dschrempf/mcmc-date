@@ -22,7 +22,6 @@ module Definitions
     burnIn,
     iterations,
     nPoints,
-    initialBurnIn,
     repetitiveBurnIn,
   )
 where
@@ -448,10 +447,6 @@ iterations = Iterations 500
 -- | Number of points of the stepping stone sampler.
 nPoints :: NPoints
 nPoints = NPoints 10
-
--- | Initial burn in iterations and auto tuning period.
-initialBurnIn :: BurnInSpecification
-initialBurnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 50]
 
 -- | Repetitive burn in at each point on the path.
 repetitiveBurnIn :: BurnInSpecification
