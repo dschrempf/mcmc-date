@@ -116,8 +116,7 @@ import Tools
 --     constraint allows the change of node heights only.
 --
 -- (2) The rate tree is of type 'Tree' because the branch lengths are not
---     limited by any constraints (but of course they have to be
---     positive).
+--     limited by any other constraints than being positive.
 --
 -- Accordingly, the types of the proposals ensure that they are used on the
 -- correct tree objects.
@@ -134,13 +133,14 @@ data I = I
     _timeBirthRate :: Double,
     -- | Hyper-parameter. Death rate of relative time tree.
     _timeDeathRate :: Double,
-    -- | Height of the absolute time tree in unit time. Here, we use units of
-    -- million years; see the calibrations.
+    -- | Height of absolute time tree in unit time. Normalization factor of
+    -- relative time. Here, we use units of million years; see the
+    -- calibrations.
     _timeHeight :: Double,
     -- | Normalized time tree of height 1.0. Branch labels denote relative
     -- times. Node labels store relative node heights and names.
     _timeTree :: HeightTree Name,
-    -- | The mean of the absolute rates.
+    -- | Mean of the absolute rates. Normalization factor of relative rates.
     _rateMean :: Double,
     -- | Hyper-parameter. The variance of the relative rates.
     _rateVariance :: Double,
@@ -182,8 +182,8 @@ initWith t =
 priorFunction :: VB.Vector Calibration -> VB.Vector Constraint -> PriorFunction I
 priorFunction cb cs (I l m h t mu va r) =
   product' $
-    calibrateUnsafe 1e-4 cb h t :
-    constrainUnsafe 1e-4 cs t :
+    calibrate 1e-4 cb h t :
+    constrain 1e-4 cs t :
     [ -- Birth and death rates of the relative time tree.
       exponential 1 l,
       exponential 1 m,
@@ -270,7 +270,7 @@ proposalsTimeTree t =
   where
     nR = PName "Time tree [R]"
     nO = PName "Time tree [O]"
-    -- Pulley on the root node (no Jacobian required because rate is shared).
+    -- Pulley on the root node.
     maybePulley = case t of
       Node _ _ [l, r]
         | null (forest l) -> []
@@ -377,7 +377,7 @@ monStdOut = monitorStdOut (take 4 monParams) 2
 
 -- Get the height of the node at path. Useful to have a look at calibrated nodes.
 getTimeTreeNodeHeight :: Path -> I -> Double
-getTimeTreeNodeHeight p x = (* h) $ fromHeight $ t ^. subTreeAtUnsafeL p . labelL . hasHeightL
+getTimeTreeNodeHeight p x = (* h) $ fromHeight $ t ^. subTreeAtL p . labelL . hasHeightL
   where
     t = x ^. timeTree
     h = x ^. timeHeight
