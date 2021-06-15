@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-stack build --profile
+stack exec -- mcmc-date prepare \
+      --analysis-name profile \
+      --rooted-tree data/time.tree \
+      --in-trees data/alignment.fasta.trees.only
 
-stack exec --profile -- mcmc-date \
-      --analysisName test \
-      --rootedTree data/time.tree \
-      --trees data/alignment.fasta.trees.only \
+stack exec --profile -- mcmc-date run \
+      --analysis-name profile \
       --calibrations data/calibrations.csv \
-      --computeMarginalLikelihood \
       +RTS -p -h -s
 
 hp2ps mcmc-date.hp
