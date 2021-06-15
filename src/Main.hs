@@ -297,7 +297,7 @@ runMarginalLikelihood (Spec an cals cons) = do
           (AnalysisName an)
           SteppingStoneSampling
           nPoints
-          initialBurnIn
+          burnIn
           repetitiveBurnIn
           iterations
           Overwrite
