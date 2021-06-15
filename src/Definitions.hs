@@ -451,7 +451,7 @@ nPoints = NPoints 128
 
 -- | Initial burn in iterations and auto tuning period.
 initialBurnIn :: BurnInSpecification
-initialBurnIn = BurnInWithCustomAutoTuning [10, 20 .. 300]
+initialBurnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 300]
 
 -- | Repetitive burn in at each point on the path.
 repetitiveBurnIn :: BurnInSpecification
