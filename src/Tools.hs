@@ -16,6 +16,7 @@ module Tools
     sumFirstTwo,
     toNewickTopology,
     tupleLens,
+    tripleLens,
   )
 where
 
@@ -49,9 +50,18 @@ toNewickTopology = toNewick . first (const $ Phylo Nothing Nothing) . T.toLabele
 
 -- | Create lenses for tuples.
 --
--- Useful for contrary proposals.
+-- Useful for combining proposals.
 tupleLens :: Lens' a b1 -> Lens' a b2 -> Lens' a (b1, b2)
 tupleLens l1 l2 =
   lens
     (\x -> (x ^. l1, x ^. l2))
     (\x (y1', y2') -> x & l1 .~ y1' & l2 .~ y2')
+
+-- | Create lenses for triples.
+--
+-- Useful for combining proposals.
+tripleLens :: Lens' a b1 -> Lens' a b2 -> Lens' a b3 -> Lens' a (b1, b2, b3)
+tripleLens l1 l2 l3 =
+  lens
+    (\x -> (x ^. l1, x ^. l2, x ^. l3))
+    (\x (y1', y2', y3') -> x & l1 .~ y1' & l2 .~ y2' & l3 .~ y3')
