@@ -270,7 +270,7 @@ proposalsTimeTree t =
     ++ map (liftProposal timeTree) psOthers
   where
     -- Pulley on the root node.
-    nP = PName "Time tree [R], Pulley"
+    nP = PName "Time tree [R] pulley"
     maybePulley = case t of
       Node _ _ [l, r]
         | null (forest l) -> []
@@ -307,11 +307,11 @@ proposalsRateTree t =
     ++ map (liftProposal rateTree) psOthers
   where
     -- I am proud of the next three proposals :).
-    nM = PName "Rate tree [R], Mean"
+    nM = PName "Rate tree [R] mean"
     psMeanContra = scaleNormAndTreeContrarily t 100 nM w Tune
-    nH = PName "Rate tree [R], Height"
+    nH = PName "Rate tree [R] height"
     psHeightContra = scaleNormAndTreeContrarily t 100 nH w Tune
-    nV = PName "Rate tree [R], Variance"
+    nV = PName "Rate tree [R] variance"
     psVariance = scaleVarianceAndTree t 100 nV w Tune
     ps hl n =
       scaleBranches t hl 100 n (pWeight 3) Tune
