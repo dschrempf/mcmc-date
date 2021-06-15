@@ -305,7 +305,7 @@ proposalsRateTree t =
         ++ scaleSubTrees t hl 100 n (pWeight 3) (pWeight 8) Tune
     -- I am proud of the next two proposals :).
     psMeanContra = scaleNormAndTreeContrarily t 100 nR w Tune
-    psVariance= scaleVarianceAndTree t 100 nR w Tune
+    psVariance = scaleVarianceAndTree t 100 nR w Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
     nBr :: Double
@@ -438,7 +438,7 @@ monitor cb cs = Monitor monStdOut [monFileParams cb cs, monFileTimeTree, monFile
 
 -- | Number of burn in iterations and auto tuning period.
 burnIn :: BurnInSpecification
-burnIn = BurnInWithAutoTuning 300 100
+burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 50]
 
 -- | Number of iterations after burn in.
 iterations :: Iterations
