@@ -4,7 +4,7 @@
 -- |
 -- Module      :  Main
 -- Description :  Approximate phylogenetic likelihood with multivariate normal distribution
--- Copyright   :  (c) Dominik Schrempf, 2020
+-- Copyright   :  (c) Dominik Schrempf, 2021
 -- License     :  GPL-3.0-or-later
 --
 -- Maintainer  :  dominik.schrempf@gmail.com
@@ -22,6 +22,7 @@ import Control.Monad
 import Data.Aeson
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.Either
 import Data.List
 import Data.Maybe
 import qualified Data.Vector as VB
@@ -96,7 +97,21 @@ prepare (PrepSpec an rt ts) = do
 
   putStrLn "Root the trees at the same point as the given rooted tree."
   let og = fst $ fromBipartition $ either error id $ bipartition treeRooted
-      !treesRooted = force $ map (either error id . outgroup og) trs
+      !treesRooted =
+        force $
+          map
+            ( \x ->
+                either error id $
+                  outgroup og $
+                    -- If midpoint rooting does not work, root the original
+                    -- tree.
+                    fromRight x
+                    -- First root at midpoint. This treats a pathological case when
+                    -- one branch length is zero, in which case the MCMC fails.
+                    $
+                      midpoint x
+            )
+            trs
 
   putStrLn "Check if topologies of the trees in the tree list are equal."
   putStrLn "Topology AND sub tree orders need to match."
@@ -151,9 +166,8 @@ prepare (PrepSpec an rt ts) = do
       pm = getPosteriorMatrix treesRooted
       -- Mean Vector including both branches to the root.
       (means, _) = L.meanCov pm
-  let
-    toLength' = either (error . (<>) "prepare: ") id . toLength
-    meanTreeRooted =
+  let toLength' = either (error . (<>) "prepare: ") id . toLength
+      meanTreeRooted =
         fromMaybe (error "prepare: Could not label tree with mean branch lengths") $
           setBranches (map toLength' $ VS.toList means) treeR
   putStrLn "The rooted tree with mean branch lengths is:"
@@ -213,7 +227,7 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
   -- Either use the MC3 algorithm.
   let mc3S = MC3Settings (NChains 4) (SwapPeriod 2) (NSwaps 3)
   a <- mc3 mc3S pr' lh' cc' mon' TraceAuto start' g
-  --
+
   -- -- Or the standard MHG algorithm.
   -- a <- mhg pr' lh' cc' mon' TraceAuto start' g
 
@@ -278,7 +292,7 @@ runMarginalLikelihood (Spec an cals cons) = do
   g <- create
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
-  let mcmcS =
+  let mlS =
         MLSettings
           (AnalysisName an)
           SteppingStoneSampling
@@ -291,7 +305,7 @@ runMarginalLikelihood (Spec an cals cons) = do
           Debug
 
   -- Run the Markov chain.
-  void $ marginalLikelihood mcmcS pr' lh' cc' mon' start' g
+  void $ marginalLikelihood mlS pr' lh' cc' mon' start' g
 
 main :: IO ()
 main = do

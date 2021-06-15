@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-cut -f 5 alignment.fasta.trees | tail -n +2 > alignment.fasta.trees.only

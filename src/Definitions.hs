@@ -4,7 +4,7 @@
 -- |
 -- Module      :  Definitions
 -- Description :  State space, prior function, likelihood function and more.
--- Copyright   :  (c) Dominik Schrempf, 2020
+-- Copyright   :  (c) Dominik Schrempf, 2021
 -- License     :  GPL-3.0-or-later
 --
 -- Maintainer  :  dominik.schrempf@gmail.com
@@ -27,6 +27,36 @@ module Definitions
   )
 where
 
+-- NOTE: For large trees, mixing is difficult.
+--
+-- Measures that didn't help at all:
+--
+-- - Per-branch normal distributions in the likelihood function instead of a
+--   multivariate normal distribution.
+--
+-- - Re-parametrization of the branches leading to the root: Using a single rate
+--   for both branches.
+--
+-- - Re-parametrization of the time and rate trees: Use time and rate trees with
+--   absolute branch lengths (and not branch lengths in relative time and rate).
+--
+-- - Re-parametrization of the birth and death rates: Use diversification rate
+--   (diversification rate = birth rate - death rate) and a possibly fixed death
+--   rate.
+--
+-- - Fix rate mean (remove hyper-prior on mean).
+--
+-- Measures that improved mixing:
+--
+-- - Non-uniform proposal weights for sub-tree proposals on the time and rate
+--   trees.
+--
+-- - Contrary proposals (time and rate trees, time height and rate mean, rate
+--   mean and rate tree).
+--
+-- I also observe that the chain mixes for small trees, so the model per se is
+-- fine.
+
 import Control.Lens
 import Data.Aeson
 import Data.Bifunctor
@@ -34,7 +64,7 @@ import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
 import GHC.Generics
 import qualified Numeric.LinearAlgebra as L
-import Numeric.Log
+import Numeric.Log hiding (sum)
 import Numeric.MathFunctions.Constants
 
 -- import Debug.Trace
@@ -54,47 +84,68 @@ import Tools
 
 -- | State space containing all parameters.
 --
--- We are interested in inferring an ultrametric tree with branch lengths
--- measured in units of time (e.g., in million years). Let T be the length of a
--- branch of the time tree, and R be the absolute evolutionary rate on this
--- branch. Then, the length of this very same branch measured in average number
--- of substitutions is d=T*R.
+-- We are interested in inferring an ultrametric time tree with branch lengths
+-- measured in units of time (e.g., in million years). Let i be a branch of the
+-- time tree. Further, let T_i be the length of branch i, and R_i be the
+-- absolute evolutionary rate on this branch. Then, the length of branch i
+-- measured in average number of substitutions is d_i=T_i*R_i.
 --
--- Internally, a relative time t and relative rate r are used such that the
--- branch length measured in average number of substitution is
--- d=T*R=(t*h)*(r*mu), where h is the root height of the time tree, and mu is
--- the mean rate.
+-- Internally, a relative time t_i and relative rate r_i are stored and used
+-- such that the branch length measured in average number of substitution is
+-- d_i=T_i*R_i=(t_i*h)*(r_i*mu), where h is the root height of the time tree,
+-- and mu is the mean rate.
 --
--- In brief, the relative time and rate are defined as t=T/h, and r=R/mu, where
--- h is the root height and mu is the mean rate.
+-- In brief, the relative time and rate are defined as t_i=T_i/h, and
+-- r_i=R_i/mu.
 --
--- This has two advantages:
+-- This has various advantages:
 --
 -- 1. The ultrametric tree object storing the relative times is a normalized
 --    tree with root height 1.0.
 --
 -- 2. The relative rates have a mean of 1.0.
 --
--- Remark: The topologies of the time and rate tree are equal. This is, however,
--- not ensured by the types. One could use one tree storing both, the times and
--- the rates.
+-- 3. The absolute times and rates can be scaled easily by proposing new values
+--    for h or mu.
+--
+-- NOTE: The relative times and rates are stored using two separate tree
+-- objects: (1) An ultrametric time tree, and (2) an unconstrained rate tree.
+-- The separation of the two trees allows usage of two different types:
+--
+-- (1) The time tree is of type 'HeightTree' because the ultrametricity
+--     constraint allows the change of node heights only.
+--
+-- (2) The rate tree is of type 'Tree' because the branch lengths are not
+--     limited by any other constraints than being positive.
+--
+-- Accordingly, the types of the proposals ensure that they are used on the
+-- correct tree objects.
+--
+-- NOTE: Absolute times can only be inferred if node calibrations are available.
+-- Otherwise, the time tree height will be left unchanged at 1.0, and relative
+-- times will be inferred.
+--
+-- NOTE: The topologies of the time and rate trees are equal. This is, however,
+-- not ensured by the types. Equality of the topology could be ensured by using
+-- one tree storing both, the times and the rates.
 data I = I
-  { -- | Birth rate of relative time tree.
+  { -- | Hyper-parameter. Birth rate of relative time tree.
     _timeBirthRate :: Double,
-    -- | Death rate of relative time tree.
+    -- | Hyper-parameter. Death rate of relative time tree.
     _timeDeathRate :: Double,
-    -- | Height of the absolute time tree in unit time. Here, we use units of
-    -- million years; see the calibrations.
+    -- | Height of absolute time tree in unit time. Normalization factor of
+    -- relative time. Here, we use units of million years; see the
+    -- calibrations.
     _timeHeight :: Double,
     -- | Normalized time tree of height 1.0. Branch labels denote relative
-    -- times; node labels store relative node heights and names.
+    -- times. Node labels store relative node heights and names.
     _timeTree :: HeightTree Name,
-    -- | The mean of the absolute rates.
+    -- | Mean of the absolute rates. Normalization factor of relative rates.
     _rateMean :: Double,
-    -- | The variance of the relative rates.
+    -- | Hyper-parameter. The variance of the relative rates.
     _rateVariance :: Double,
-    -- | Relative rate tree. Branch labels denote relative rates with mean 1.0;
-    -- node labels store names.
+    -- | Relative rate tree. Branch labels denote relative rates with mean 1.0.
+    -- Node labels store names.
     _rateTree :: Tree Length Name
   }
   deriving (Generic)
@@ -131,8 +182,8 @@ initWith t =
 priorFunction :: VB.Vector Calibration -> VB.Vector Constraint -> PriorFunction I
 priorFunction cb cs (I l m h t mu va r) =
   product' $
-    calibrateUnsafe 1e-3 cb h t :
-    constrainUnsafe 1e-3 cs t :
+    calibrate 1e-4 cb h t :
+    constrain 1e-4 cs t :
     [ -- Birth and death rates of the relative time tree.
       exponential 1 l,
       exponential 1 m,
@@ -143,12 +194,14 @@ priorFunction cb cs (I l m h t mu va r) =
       -- Relative time tree.
       birthDeath ConditionOnTimeOfMrca l m 1.0 t',
       -- Mean rate.
+      --
+      -- IDEA: Use gamma distribution with mean calculated using the number of
+      -- branches and the total length of the substitution-like tree.
       exponential 1 mu,
       -- Variance of the relative rates.
       exponential 1 va,
       -- Relative rate tree.
       uncorrelatedGamma withoutStem 1 va r
-      -- autocorrelatedGamma withoutStem 1 va t' r
     ]
   where
     t' = fromHeightTree t
@@ -209,73 +262,84 @@ rootBranch x = t1 * r1 + t2 * r2
 jacobianRootBranch :: JacobianFunction I
 jacobianRootBranch = Exp . log . recip . rootBranch
 
--- Proposals for the time tree.
+-- Proposals on the time tree.
 proposalsTimeTree :: Show a => Tree e a -> [Proposal I]
 proposalsTimeTree t =
   map (liftProposalWith jacobianRootBranch timeTree) psAtRoot
     ++ map (liftProposal timeTree) psOthers
   where
-    w = PWeight 3
     nR = PName "Time tree [R]"
     nO = PName "Time tree [O]"
-    -- Pulley on the root node (no Jacobian required because rate is shared).
+    -- Pulley on the root node.
     maybePulley = case t of
       Node _ _ [l, r]
         | null (forest l) -> []
         | null (forest r) -> []
-        | otherwise -> [pulleyUltrametric t 0.01 nR w Tune]
+        | otherwise -> [pulleyUltrametric t 0.01 nR (pWeight 6) Tune]
       _ -> error "maybePulley: Tree is not bifurcating."
-    ps hd n = slideNodesUltrametric t hd 0.01 n w Tune ++ scaleSubTreesUltrametric t hd 0.01 n w Tune
+    ps hl n =
+      slideNodesUltrametric t hl 0.01 n (pWeight 5) Tune
+        ++ scaleSubTreesUltrametric t hl 0.01 n (pWeight 3) (pWeight 8) Tune
     psAtRoot = maybePulley ++ ps (== 1) nR
     psOthers = ps (> 1) nO
 
--- Proposals for the rate tree.
+-- Lens for proposals on the rate mean and rate tree.
+rateMeanRateTreeL :: Lens' I (Double, Tree Length Name)
+rateMeanRateTreeL = tupleLens rateMean rateTree
+
+-- Lens for proposals on the rate variance and rate tree.
+rateVarianceRateTreeL :: Lens' I (Double, Tree Length Name)
+rateVarianceRateTreeL = tupleLens rateVariance rateTree
+
+-- Proposals on the rate tree.
 proposalsRateTree :: Show a => Tree e a -> [Proposal I]
 proposalsRateTree t =
+  liftProposalWith jacobianRootBranch rateMeanRateTreeL psMeanContra :
+  liftProposalWith jacobianRootBranch rateVarianceRateTreeL psVariance :
   map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
     ++ map (liftProposal rateTree) psOthers
   where
-    w = PWeight 3
     nR = PName "Rate tree [R]"
     nO = PName "Rate tree [O]"
-    ps hd n = scaleBranches t hd 100 n w Tune ++ scaleSubTrees t hd 100 n w Tune
+    ps hl n =
+      scaleBranches t hl 100 n (pWeight 3) Tune
+        ++ scaleSubTrees t hl 100 n (pWeight 3) (pWeight 8) Tune
+    -- I am proud of the next two proposals :).
+    psMeanContra = scaleNormAndTreeContrarily t 100 nR w Tune
+    psVariance= scaleVarianceAndTree t 100 nR w Tune
     psAtRoot = ps (== 1) nR
     psOthers = ps (> 1) nO
+    nBr :: Double
+    nBr = fromIntegral $ length t
+    w = pWeight $ floor $ logBase 1.2 nBr
 
 -- Contrary proposals on the time and rate trees.
 proposalsTimeRateTreeContra :: Show a => Tree e a -> [Proposal I]
 proposalsTimeRateTreeContra t =
   map (liftProposalWith jacobianRootBranch timeRateTreesL) psAtRoot
-  ++ map (liftProposal timeRateTreesL) psOthers
+    ++ map (liftProposal timeRateTreesL) psOthers
   where
-    -- Lens for a contrary proposal on the trees.
+    -- Lens for the contrary proposal on the trees.
     timeRateTreesL :: Lens' I (HeightTree Name, Tree Length Name)
-    timeRateTreesL =
-      lens
-        (\x -> (x ^. timeTree, x ^. rateTree))
-        (\x (tTr, rTr) -> x {_timeTree = tTr, _rateTree = rTr})
-    w = PWeight 3
+    timeRateTreesL = tupleLens timeTree rateTree
     nR = PName "Trees contra [R]"
     nO = PName "Trees contra [O]"
-    ps hd n = scaleSubTreesContrarily t hd 0.01 n w Tune
-    psAtRoot = ps (==1) nR
-    psOthers = ps (>1) nO
+    ps hl n = scaleSubTreesContrarily t hl 0.01 n (pWeight 3) (pWeight 8) Tune
+    psAtRoot = ps (== 1) nR
+    psOthers = ps (> 1) nO
 
 -- Lens for a contrary proposal on the time height and rate mean.
 timeHeightRateMeanL :: Lens' I (Double, Double)
-timeHeightRateMeanL =
-  lens
-    (\x -> (x ^. timeHeight, x ^. rateMean))
-    (\x (h, mu) -> x {_timeHeight = h, _rateMean = mu})
+timeHeightRateMeanL = tupleLens timeHeight rateMean
 
 -- | The proposal cycle includes proposals for the other parameters.
 proposals :: Show a => Bool -> Tree e a -> Cycle I
 proposals calibrationsAvailable t =
   cycleFromList $
-    [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") (PWeight 20) Tune,
-      timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") (PWeight 20) Tune,
-      rateMean @~ scaleUnbiased 10 (PName "Rate mean") (PWeight 20) Tune,
-      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") (PWeight 20) Tune
+    [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
+      timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
+      rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
+      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
     ]
       ++ proposalsTimeTree t
       ++ proposalsRateTree t
@@ -283,12 +347,15 @@ proposals calibrationsAvailable t =
       -- Only add proposals on time tree height when calibrations are available.
       ++ heightProposals
   where
+    nBr :: Double
+    nBr = fromIntegral $ length t
+    w = pWeight $ floor $ logBase 1.2 nBr
     heightProposals =
       if calibrationsAvailable
         then
-          [ timeHeight @~ scaleUnbiased 3000 (PName "Time height") (PWeight 20) Tune,
+          [ timeHeight @~ scaleUnbiased 3000 (PName "Time height") w Tune,
             timeHeightRateMeanL
-              @~ scaleContrarily 10 0.1 (PName "Time height, rate mean") (PWeight 20) Tune
+              @~ scaleContrarily 10 0.1 (PName "Time height, rate mean") w Tune
           ]
         else []
 
@@ -300,6 +367,7 @@ monParams =
     _timeHeight >$< monitorDouble "TimeHeight",
     _rateMean >$< monitorDouble "RateMean",
     _rateVariance >$< monitorDouble "RateVariance"
+    -- fromLength . sum . branches . _rateTree >$< monitorDouble "TotalRate"
   ]
 
 -- Monitor to standard output.
@@ -309,7 +377,7 @@ monStdOut = monitorStdOut (take 4 monParams) 2
 
 -- Get the height of the node at path. Useful to have a look at calibrated nodes.
 getTimeTreeNodeHeight :: Path -> I -> Double
-getTimeTreeNodeHeight p x = (* h) $ fromHeight $ t ^. subTreeAtUnsafeL p . labelL . hasHeightL
+getTimeTreeNodeHeight p x = (* h) $ fromHeight $ t ^. subTreeAtL p . labelL . hasHeightL
   where
     t = x ^. timeTree
     h = x ^. timeHeight
@@ -343,6 +411,7 @@ monFileParams cb cs =
   monitorFile
     "params"
     ( monParams
+        -- ++ monPrior
         ++ monCalibratedNodes cb
         ++ monConstrainedNodes cs
     )
@@ -382,7 +451,7 @@ nPoints = NPoints 10
 
 -- | Initial burn in iterations and auto tuning period.
 initialBurnIn :: BurnInSpecification
-initialBurnIn = BurnInWithAutoTuning 300 100
+initialBurnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 50]
 
 -- | Repetitive burn in at each point on the path.
 repetitiveBurnIn :: BurnInSpecification

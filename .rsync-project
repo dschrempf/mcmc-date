@@ -8,3 +8,9 @@ EXCLUDE=$(cat <<EOF
 - dist-newstyle/
 EOF
 )
+INCLUDE=$(cat <<EOF
+- '**'
+- 'analyses/**'
+EOF
+)
+GITIGNORE=FALSE

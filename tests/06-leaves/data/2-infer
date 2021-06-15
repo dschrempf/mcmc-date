@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+pb -f -T time.tree -d data.phylip -lg -uni -x 1 1000 test
