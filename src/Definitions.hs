@@ -247,7 +247,7 @@ likelihoodFunction mu sigmaInv logSigmaDet x =
 -- function retrieves the root branch measured in expected number of
 -- substitutions.
 rootBranch :: I -> Double
-rootBranch x = t1 * r1 + t2 * r2
+rootBranch x = tH * rM * (t1 * r1 + t2 * r2)
   where
     (t1, t2) = case fromHeightTree $ x ^. timeTree of
       Node _ _ [l, r] -> (fromLength $ branch l, fromLength $ branch r)
@@ -255,6 +255,8 @@ rootBranch x = t1 * r1 + t2 * r2
     (r1, r2) = case x ^. rateTree of
       Node _ _ [l, r] -> (fromLength $ branch l, fromLength $ branch r)
       _ -> error "rootBranch: Rate tree is not bifurcating."
+    tH = x ^. timeHeight
+    rM = x ^. rateMean
 
 -- This Jacobian is necessary to have unbiased proposals on the branches leading
 -- to the root of the time tree.
