@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-slynx -f -o data simulate -t substitution.tree -s LG -l 5000
+slynx -f -o data simulate -t substitution.alpha.tree -s LG -l 5000
 fasta-to-phylip data.fasta > data.phylip
