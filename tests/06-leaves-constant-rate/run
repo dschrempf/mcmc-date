@@ -7,8 +7,8 @@ rooted_tree="data/time.tree"
 trees="data/test.treelist"
 calibrations="data/calibrations.csv"
 
-c_flags=(-c "../$calibrations")
-# c_flags=()
+# c_flags=(-c "../$calibrations")
+c_flags=()
 
 # p_flags=(--profile)
 p_flags=()
