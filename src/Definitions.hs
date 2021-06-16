@@ -263,6 +263,13 @@ rootBranch x = tH * rM * (t1 * r1 + t2 * r2)
 jacobianRootBranch :: JacobianFunction I
 jacobianRootBranch = Exp . log . recip . rootBranch
 
+-- Weight of proposals not acting on individual branches. The larger the tree,
+-- the higher the weight.
+weightNBranches :: Int -> PWeight
+weightNBranches n =
+  let n' = fromIntegral n :: Double
+   in pWeight $ floor $ logBase 1.3 n'
+
 -- Proposals on the time tree.
 proposalsTimeTree :: Show a => Tree e a -> [Proposal I]
 proposalsTimeTree t =
@@ -289,10 +296,6 @@ proposalsTimeTree t =
 rateMeanRateTreeL :: Lens' I (Double, Tree Length Name)
 rateMeanRateTreeL = tupleLens rateMean rateTree
 
--- Lens for proposals on the rate mean and rate tree.
-timeHeightRateTreeL :: Lens' I (Double, Tree Length Name)
-timeHeightRateTreeL = tupleLens timeHeight rateTree
-
 -- Lens for proposals on the rate variance and rate tree.
 rateVarianceRateTreeL :: Lens' I (Double, Tree Length Name)
 rateVarianceRateTreeL = tupleLens rateVariance rateTree
@@ -301,16 +304,14 @@ rateVarianceRateTreeL = tupleLens rateVariance rateTree
 proposalsRateTree :: Show a => Tree e a -> [Proposal I]
 proposalsRateTree t =
   liftProposalWith jacobianRootBranch rateMeanRateTreeL psMeanContra :
-  liftProposalWith jacobianRootBranch timeHeightRateTreeL psHeightContra :
   liftProposalWith jacobianRootBranch rateVarianceRateTreeL psVariance :
   map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
     ++ map (liftProposal rateTree) psOthers
   where
+    w = weightNBranches $ length t
     -- I am proud of the next three proposals :).
     nM = PName "Rate tree [R] mean"
     psMeanContra = scaleNormAndTreeContrarily t 100 nM w Tune
-    nH = PName "Rate tree [R] height"
-    psHeightContra = scaleNormAndTreeContrarily t 100 nH w Tune
     nV = PName "Rate tree [R] variance"
     psVariance = scaleVarianceAndTree t 100 nV w Tune
     ps hl n =
@@ -320,9 +321,6 @@ proposalsRateTree t =
     psAtRoot = ps (== 1) nR
     nO = PName "Rate tree [O]"
     psOthers = ps (> 1) nO
-    nBr :: Double
-    nBr = fromIntegral $ length t
-    w = pWeight $ floor $ logBase 1.2 nBr
 
 -- Contrary proposals on the time and rate trees.
 proposalsTimeRateTreeContra :: Show a => Tree e a -> [Proposal I]
@@ -343,6 +341,23 @@ proposalsTimeRateTreeContra t =
 timeHeightRateMeanL :: Lens' I (Double, Double)
 timeHeightRateMeanL = tupleLens timeHeight rateMean
 
+-- Lens for proposals on the rate mean and rate tree.
+timeHeightRateTreeL :: Lens' I (Double, Tree Length Name)
+timeHeightRateTreeL = tupleLens timeHeight rateTree
+
+-- Proposals only activated when calibrations are available and absolute times
+-- are estimated.
+proposalsChangingTimeHeight :: Tree e a -> [Proposal I]
+proposalsChangingTimeHeight t =
+  [ timeHeight @~ scaleUnbiased 3000 (PName "Time height") w Tune,
+    timeHeightRateMeanL @~ scaleContrarily 10 0.1 (PName "Time height, rate mean") w Tune,
+    liftProposalWith jacobianRootBranch timeHeightRateTreeL psHeightContra
+  ]
+  where
+    w = weightNBranches $ length t
+    nH = PName "Rate tree [R] height"
+    psHeightContra = scaleNormAndTreeContrarily t 100 nH w Tune
+
 -- | The proposal cycle includes proposals for the other parameters.
 proposals :: Show a => Bool -> Tree e a -> Cycle I
 proposals calibrationsAvailable t =
@@ -356,19 +371,9 @@ proposals calibrationsAvailable t =
       ++ proposalsRateTree t
       ++ proposalsTimeRateTreeContra t
       -- Only add proposals on time tree height when calibrations are available.
-      ++ heightProposals
+      ++ if calibrationsAvailable then proposalsChangingTimeHeight t else []
   where
-    nBr :: Double
-    nBr = fromIntegral $ length t
-    w = pWeight $ floor $ logBase 1.2 nBr
-    heightProposals =
-      if calibrationsAvailable
-        then
-          [ timeHeight @~ scaleUnbiased 3000 (PName "Time height") w Tune,
-            timeHeightRateMeanL
-              @~ scaleContrarily 10 0.1 (PName "Time height, rate mean") w Tune
-          ]
-        else []
+    w = weightNBranches $ length t
 
 -- Monitor parameters.
 monParams :: [MonitorParameter I]
