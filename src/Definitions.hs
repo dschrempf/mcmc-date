@@ -300,6 +300,8 @@ rateMeanRateTreeL = tupleLens rateMean rateTree
 rateVarianceRateTreeL :: Lens' I (Double, Tree Length Name)
 rateVarianceRateTreeL = tupleLens rateVariance rateTree
 
+-- TODO: Add pulley proposal?
+
 -- Proposals on the rate tree.
 proposalsRateTree :: Show a => Tree e a -> [Proposal I]
 proposalsRateTree t =
@@ -347,18 +349,26 @@ timeHeightRateMeanL = tupleLens timeHeight rateMean
 timeHeightRateTreeL :: Lens' I (Double, Tree Length Name)
 timeHeightRateTreeL = tupleLens timeHeight rateTree
 
+-- Lens for proposals on the triple (1) absolute time height, (2) relative time
+-- tree, and (3) relative rate tree.
+heightTimeRateTreesLens :: Lens' I (Double, HeightTree Name, Tree Length Name)
+heightTimeRateTreesLens = tripleLens timeHeight timeTree rateTree
+
 -- Proposals only activated when calibrations are available and absolute times
 -- are estimated.
 proposalsChangingTimeHeight :: Tree e a -> [Proposal I]
 proposalsChangingTimeHeight t =
   [ timeHeight @~ scaleUnbiased 3000 (PName "Time height") w Tune,
     timeHeightRateMeanL @~ scaleContrarily 10 0.1 (PName "Time height, rate mean") w Tune,
-    liftProposalWith jacobianRootBranch timeHeightRateTreeL psHeightContra
+    liftProposalWith jacobianRootBranch timeHeightRateTreeL psHeightContra,
+    liftProposalWith jacobianRootBranch heightTimeRateTreesLens psSlideRoot
   ]
   where
     w = weightNBranches $ length t
     nH = PName "Rate tree [R] height"
     psHeightContra = scaleNormAndTreeContrarily t 100 nH w Tune
+    nRC = PName "Root contra"
+    psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
 -- | The proposal cycle includes proposals for the other parameters.
 proposals :: Show a => Bool -> Tree e a -> Cycle I
