@@ -2,60 +2,91 @@
 
 set -e
 
+source analysis.conf
+
 usage() {
-    echo "Usage: $(basename "$0") n t ts cs ks pr COMMAND"
-    echo " where"
-    echo " n   Analysis name"
-    echo " t   Rooted tree"
-    echo " ts  Trees"
-    echo " cs  Calibrations"
-    echo " ks  Constraints"
-    echo " pr  Profiling"
+    echo "Usage: $(basename "$0") [OPTIONS] COMMANDS"
     echo
-    echo "Available COMMANDS:"
+    echo "Available options:"
+    echo "-c Activate calibrations"
+    echo "-k Activate constraints"
+    echo "-p Activate profiling"
+    echo
+    echo "Available commands:"
     echo "p  Prepare"
     echo "r  Run"
     echo "c  Continue"
     echo "m  Marginal likelihood"
+    echo
+    echo "A configuration file \"analysis.conf\" specifying the following variables is expected."
+    echo "For reference, see the sample configuration file."
 }
 
-# The following seven variables are expected to be defined. Empty strings
-# deactivate calibrations, constraints or profiling.
-analysis_name=$1
-rooted_tree=$2
-trees=$3
-calibrations=$4
-constraints=$5
-profile=$6
-command=$7
+calibrations_activated=0
+constraints_activated=0
+profiling_activated=0
+OPTIND=1
+while getopts "h?ckp" opt; do
+    case "$opt" in
+        h|\?)
+            usage
+            exit 0
+            ;;
+        c)  calibrations_activated=1
+            ;;
+        k)  constraints_activated=1
+            ;;
+        p)  profiling_activated=1
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
 
-if [[ -z $7 ]]
+# Arguments.
+if [[ $# -lt 1 ]]
 then
     usage
     exit 1
 fi
 
-if [[ -n $calibrations ]]
+command=$1
+
+if [[ -z $analysis_name || -z $rooted_tree || -z $trees ]]
 then
-    outdir="results-calibrations"
-    c_flags=(-c "../$calibrations")
-elif [[ -n $constraints ]]
-then
-    outdir="results-constraints"
-    c_flags=(-k "../$constraints")
-elif [[ -n $calibrations && -n $constraints ]]
-then
-    outdir="results-ccs"
-    c_flags=(-c "../$calibrations" -k "../$constraints")
-else
-    outdir="results-no-ccs"
-    c_flags=()
+    usage
+    exit 1
 fi
 
-if [[ -n $profile ]]
+outdir="results"
+c_flags=()
+p_flags=()
+if [[ $calibrations_activated -eq 1 ]]
 then
-    p_flags=(--profile)
-    outdir="results-profile"
+    if [[ -z $calibrations ]]
+    then
+        echo "Calibrations activated but calibration file not available."
+        exit 1
+    else
+        outdir="${outdir}-calibrations"
+        c_flags+=(-c "../$calibrations")
+    fi
+elif [[ $constraints_activated -eq 1 ]]
+then
+    if [[ -z $constraints ]]
+    then
+        echo "Constraints activated but constraint file not available."
+        exit 1
+    else
+        outdir="${outdir}-constraints"
+        c_flags+=(-k "../$constraints")
+    fi
+fi
+
+if [[ $profiling_activated -eq 1 ]]
+then
+    p_flags+=(--profile)
+    outdir="${outdir}-profile"
 else
     p_flags=()
 fi
