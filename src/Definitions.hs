@@ -175,9 +175,9 @@ initWith t =
       _rateTree = setStem 0 $ first (const 1.0) t
     }
   where
-    -- Treat a pathological case when branch lengths are zero. In this case, the
-    -- initial state of the MCMC sampler would be invalid and the sampler would
-    -- fail.
+    -- Treat a pathological case when branch lengths (excluding the stem) are
+    -- zero. In this case, the initial state of the MCMC sampler would be
+    -- invalid and the sampler would fail.
     --
     -- Ignore the root branch.
     bs = concatMap branches $ forest t

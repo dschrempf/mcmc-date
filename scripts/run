@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+set -e
+
+usage() {
+    echo "Usage: $(basename "$0") n t ts cs ks pr COMMAND"
+    echo " where"
+    echo " n   Analysis name"
+    echo " t   Rooted tree"
+    echo " ts  Trees"
+    echo " cs  Calibrations"
+    echo " ks  Constraints"
+    echo " pr  Profiling"
+    echo
+    echo "Available COMMANDS:"
+    echo "p  Prepare"
+    echo "r  Run"
+    echo "c  Continue"
+    echo "m  Marginal likelihood"
+}
+
+# The following seven variables are expected to be defined. Empty strings
+# deactivate calibrations, constraints or profiling.
+analysis_name=$1
+rooted_tree=$2
+trees=$3
+calibrations=$4
+constraints=$5
+profile=$6
+command=$7
+
+if [[ -z $7 ]]
+then
+    usage
+    exit 1
+fi
+
+if [[ -n $calibrations ]]
+then
+    outdir="results-calibrations"
+    c_flags=(-c "$calibrations")
+elif [[ -n $constraints ]]
+then
+    outdir="results-constraints"
+    c_flags=(-k "$constraints")
+elif [[ -n $calibrations && -n $constraints ]]
+then
+    outdir="results-ccs"
+    c_flags=(-c "$calibrations" -k "$constraints")
+else
+    outdir="results-no-ccs"
+    c_flags=()
+fi
+
+if [[ -n $profile ]]
+then
+    p_flags=(--profile)
+    outdir="results-profile"
+else
+    p_flags=()
+fi
+
+mkdir -p $outdir; cd $outdir
+
+if [[ "$command" == "p" ]]
+then
+    stack exec "${p_flags[@]}" -- mcmc-date prepare \
+          -a "$analysis_name" -t "../$rooted_tree" -d "../$trees"
+elif [[ "$command" == "r" ]]
+then
+    stack exec "${p_flags[@]}" -- mcmc-date run \
+           -a "$analysis_name" "${c_flags[@]}" \
+           +RTS -N5
+elif [[ "$command" == "c" ]]
+then
+    stack exec "${p_flags[@]}" -- mcmc-date continue \
+          -a "$analysis_name" "${c_flags[@]}" \
+          +RTS -N5
+elif [[ "$command" == "m" ]]
+then
+    stack exec "${p_flags[@]}" -- mcmc-date marginal-likelihood \
+          -a "$analysis_name" "${c_flags[@]}" \
+          +RTS -N5
+else
+    usage
+    exit 1
+fi
