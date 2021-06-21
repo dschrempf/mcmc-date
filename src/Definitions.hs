@@ -169,13 +169,29 @@ initWith t =
     { _timeBirthRate = 1.0,
       _timeDeathRate = 1.0,
       _timeHeight = 1.0,
-      _timeTree = t',
+      _timeTree = initialTimeTree,
       _rateMean = 1.0,
       _rateVariance = 1.0,
       _rateTree = setStem 0 $ first (const 1.0) t
     }
   where
-    t' = either error id $ toHeightTreeUltrametric $ normalizeHeight $ makeUltrametric t
+    -- Treat a pathological case when branch lengths are zero. In this case, the
+    -- initial state of the MCMC sampler would be invalid and the sampler would
+    -- fail.
+    --
+    -- Ignore the root branch.
+    bs = concatMap branches $ forest t
+    n = length bs
+    tAverage = sum bs / fromIntegral n
+    -- Avoid branches of length zero. Exclude the stem.
+    tPositiveBranches = t & forestL %~ map (first (\x -> if x == 0 then tAverage else x))
+    -- Set the stem length to 0.
+    tPositiveBranchesStemZero = setStem 0 tPositiveBranches
+    initialTimeTree =
+      either error id $
+        toHeightTreeUltrametric $
+          normalizeHeight $
+            makeUltrametric tPositiveBranchesStemZero
 
 -- | Prior function.
 priorFunction :: VB.Vector Calibration -> VB.Vector Constraint -> PriorFunction I

@@ -22,7 +22,6 @@ import Control.Monad
 import Data.Aeson
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
-import Data.Either
 import Data.List
 import Data.Maybe
 import qualified Data.Vector as VB
@@ -97,21 +96,7 @@ prepare (PrepSpec an rt ts) = do
 
   putStrLn "Root the trees at the same point as the given rooted tree."
   let og = fst $ fromBipartition $ either error id $ bipartition treeRooted
-      !treesRooted =
-        force $
-          map
-            ( \x ->
-                either error id $
-                  outgroup og $
-                    -- If midpoint rooting does not work, root the original
-                    -- tree.
-                    fromRight x
-                    -- First root at midpoint. This treats a pathological case when
-                    -- one branch length is zero, in which case the MCMC fails.
-                    $
-                      midpoint x
-            )
-            trs
+      !treesRooted = force $ map (either error id . outgroup og) trs
 
   putStrLn "Check if topologies of the trees in the tree list are equal."
   putStrLn "Topology AND sub tree orders need to match."
@@ -119,9 +104,9 @@ prepare (PrepSpec an rt ts) = do
   if length differentTrees == 1
     then putStrLn "OK."
     else do
-      putStrLn "Trees have different topologies:"
+      putStrLn "Trees have different topologies or sub tree orders:"
       BL.putStrLn $ BL.unlines $ map toNewickTopology differentTrees
-      error "prepare: A single topology is required."
+      error "prepare: A single topology and equal sub tree orders are required."
 
   putStrLn "Check the topology of the rooted tree."
   putStrLn "The topology has to match the one of the trees in the tree list."
@@ -136,11 +121,14 @@ prepare (PrepSpec an rt ts) = do
       BL.putStrLn $ toNewickTopology topoHead
       error "prepare: A single topology is required."
 
+  putStrLn ""
   putStrLn "Get the posterior means and the posterior covariance matrix."
   let pmR = getPosteriorMatrixMergeBranchesToRoot treesRooted
       (mu, sigma) = second L.unSym $ L.meanCov pmR
   putStrLn "The mean branch lengths are:"
   print mu
+  putStrLn $ "Minimum mean branch length: " <> show (VS.minimum mu)
+  putStrLn $ "Maximum mean branch length: " <> show (VS.maximum mu)
   putStrLn $
     "Minimum value of absolute values of covariance matrix: "
       ++ show (L.minElement $ L.cmap abs sigma)
