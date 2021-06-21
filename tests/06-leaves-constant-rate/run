@@ -5,47 +5,16 @@ set -e
 analysis_name="test-06-leaves"
 rooted_tree="data/time.tree"
 trees="data/test.treelist"
-calibrations="data/calibrations.csv"
+calibrations=""
+# calibrations="data/calibrations.csv"
+constraints=""
+profile=""
 
-# c_flags=(-c "../$calibrations")
-c_flags=()
-
-# p_flags=(--profile)
-p_flags=()
-
-usage() {
-    echo "Usage: $(basename "$0") (p|r|c|m)"
-    echo
-    echo "p  Prepare"
-    echo "r  Run"
-    echo "c  Continue"
-    echo "m  Marginal likelihood"
-}
-
-mkdir -p results; cd results
-
-if [[ $1 == "p" ]]
-then
-    stack exec "${p_flags[@]}" -- mcmc-date prepare \
-          -a $analysis_name -t ../$rooted_tree -d ../$trees
-elif [[ $1 == "r" ]]
-then
-    stack exec "${p_flags[@]}" -- mcmc-date run \
-           -a $analysis_name "${c_flags[@]}" \
-           +RTS -N5
-elif [[ $1 == "c" ]]
-then
-    stack exec "${p_flags[@]}" -- mcmc-date continue \
-          -a $analysis_name "${c_flags[@]}" \
-          +RTS -N5
-elif [[ $1 == "m" ]]
-then
-    stack exec "${p_flags[@]}" -- mcmc-date marginal-likelihood \
-          -a $analysis_name "${c_flags[@]}" \
-          +RTS -N5
-else
-    usage
-    exit 1
-fi
-
-
+../../scripts/run \
+    "$analysis_name" \
+    "$rooted_tree" \
+    "$trees" \
+    "$calibrations" \
+    "$constraints" \
+    "$profile" \
+    "$1"

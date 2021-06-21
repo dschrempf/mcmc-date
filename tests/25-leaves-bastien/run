@@ -7,40 +7,13 @@ rooted_tree="data/time.tree"
 trees="data/alignment.fasta.trees.only"
 calibrations="data/calibrations.csv"
 constraints="data/constraints.csv"
+profile=""
 
-usage() {
-    echo "Usage: $(basename "$0") (p|r|c|m)"
-    echo
-    echo "p  Prepare"
-    echo "r  Run"
-    echo "c  Continue"
-    echo "m  Marginal likelihood"
-}
-
-mkdir -p results; cd results
-
-if [[ $1 == "p" ]]
-then
-    stack exec -- mcmc-date prepare \
-          -a $analysis_name -t ../$rooted_tree -d ../$trees
-elif [[ $1 == "r" ]]
-then
-     stack exec -- mcmc-date run \
-           -a $analysis_name -c ../$calibrations -k ../$constraints \
-           +RTS -N5
-elif [[ $1 == "c" ]]
-then
-    stack exec -- mcmc-date continue \
-          -a $analysis_name -c ../$calibrations -k ../$constraints \
-          +RTS -N5
-elif [[ $1 == "m" ]]
-then
-    stack exec -- mcmc-date marginal-likelihood \
-          -a $analysis_name -c ../$calibrations -k ../$constraints \
-          +RTS -N5
-else
-    usage
-    exit 1
-fi
-
-
+../../scripts/run \
+    "$analysis_name" \
+    "$rooted_tree" \
+    "$trees" \
+    "$calibrations" \
+    "$constraints" \
+    "$profile" \
+    "$1"
