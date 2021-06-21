@@ -2,7 +2,7 @@
 
 set -e
 
-analysis_name="test-06-leaves"
+analysis_name="test-12-leaves"
 rooted_tree="data/time.tree"
 trees="data/test.treelist"
 calibrations="data/calibrations.csv"
