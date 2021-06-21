@@ -38,15 +38,15 @@ fi
 if [[ -n $calibrations ]]
 then
     outdir="results-calibrations"
-    c_flags=(-c "$calibrations")
+    c_flags=(-c "../$calibrations")
 elif [[ -n $constraints ]]
 then
     outdir="results-constraints"
-    c_flags=(-k "$constraints")
+    c_flags=(-k "../$constraints")
 elif [[ -n $calibrations && -n $constraints ]]
 then
     outdir="results-ccs"
-    c_flags=(-c "$calibrations" -k "$constraints")
+    c_flags=(-c "../$calibrations" -k "../$constraints")
 else
     outdir="results-no-ccs"
     c_flags=()
