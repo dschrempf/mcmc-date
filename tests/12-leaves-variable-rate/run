@@ -3,7 +3,7 @@
 set -e
 
 analysis_name="test-12-leaves"
-rooted_tree="data/time.tree"
+rooted_tree="data/time.alpha.rotated.tree"
 trees="data/test.treelist"
 calibrations="data/calibrations.csv"
 
