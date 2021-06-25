@@ -218,7 +218,7 @@ priorFunction cb cs (I l m h t mu va r) =
       -- Variance of the relative rates.
       exponential 1 va,
       -- Relative rate tree.
-      uncorrelatedGamma withoutStem 1 va r
+      uncorrelatedGamma WithoutStem 1 va r
     ]
   where
     t' = fromHeightTree t
@@ -288,6 +288,14 @@ weightNBranches n =
   let n' = fromIntegral n :: Double
    in pWeight $ floor $ logBase 1.3 n'
 
+-- Handle children of the root.
+childrenOfRoot :: HandleNode
+childrenOfRoot = (== 1) . length
+
+-- Handle other nodes.
+otherNodes :: HandleNode
+otherNodes = (> 1) . length
+
 -- Proposals on the time tree.
 proposalsTimeTree :: Show a => Tree e a -> [Proposal I]
 proposalsTimeTree t =
@@ -302,13 +310,13 @@ proposalsTimeTree t =
         | null (forest r) -> []
         | otherwise -> [pulleyUltrametric t 0.01 nP (pWeight 6) Tune]
       _ -> error "maybePulley: Tree is not bifurcating."
-    ps hl n =
-      slideNodesUltrametric t hl 0.01 n (pWeight 5) Tune
-        ++ scaleSubTreesUltrametric t hl 0.01 n (pWeight 3) (pWeight 8) Tune
+    ps hn n =
+      slideNodesUltrametric t hn 0.01 n (pWeight 5) Tune
+        ++ scaleSubTreesUltrametric t hn 0.01 n (pWeight 3) (pWeight 8) Tune
     nR = PName "Time tree [R]"
-    psAtRoot = maybePulley ++ ps (== 1) nR
+    psAtRoot = maybePulley ++ ps childrenOfRoot nR
     nO = PName "Time tree [O]"
-    psOthers = ps (> 1) nO
+    psOthers = ps otherNodes nO
 
 -- Lens for proposals on the rate mean and rate tree.
 rateMeanRateTreeL :: Lens' I (Double, Tree Length Name)
@@ -317,8 +325,6 @@ rateMeanRateTreeL = tupleLens rateMean rateTree
 -- Lens for proposals on the rate variance and rate tree.
 rateVarianceRateTreeL :: Lens' I (Double, Tree Length Name)
 rateVarianceRateTreeL = tupleLens rateVariance rateTree
-
--- TODO: Add pulley proposal?
 
 -- Proposals on the rate tree.
 proposalsRateTree :: Show a => Tree e a -> [Proposal I]
@@ -334,13 +340,13 @@ proposalsRateTree t =
     psMeanContra = scaleNormAndTreeContrarily t 100 nM w Tune
     nV = PName "Rate tree [R] variance"
     psVariance = scaleVarianceAndTree t 100 nV w Tune
-    ps hl n =
-      scaleBranches t hl 100 n (pWeight 3) Tune
-        ++ scaleSubTrees t hl 100 n (pWeight 3) (pWeight 8) Tune
+    ps hn n =
+      scaleBranches t hn 100 n (pWeight 3) Tune
+        ++ scaleSubTrees t hn 100 n (pWeight 3) (pWeight 8) Tune
     nR = PName "Rate tree [R]"
-    psAtRoot = ps (== 1) nR
+    psAtRoot = ps childrenOfRoot nR
     nO = PName "Rate tree [O]"
-    psOthers = ps (> 1) nO
+    psOthers = ps otherNodes nO
 
 -- Contrary proposals on the time and rate trees.
 proposalsTimeRateTreeContra :: Show a => Tree e a -> [Proposal I]
@@ -351,13 +357,13 @@ proposalsTimeRateTreeContra t =
     -- Lens for the contrary proposal on the trees.
     timeRateTreesL :: Lens' I (HeightTree Name, Tree Length Name)
     timeRateTreesL = tupleLens timeTree rateTree
-    ps hl n =
-      slideNodesContrarily t hl 0.01 (n <> PName " slide") (pWeight 3) (pWeight 8) Tune
-        ++ scaleSubTreesContrarily t hl 0.01 (n <> PName " scale") (pWeight 3) (pWeight 8) Tune
+    ps hn n =
+      slideNodesContrarily t hn 0.01 (n <> PName " slide") (pWeight 3) (pWeight 8) Tune
+        ++ scaleSubTreesContrarily t hn 0.01 (n <> PName " scale") (pWeight 3) (pWeight 8) Tune
     nR = PName "Trees [C] [R]"
-    psAtRoot = ps (== 1) nR
+    psAtRoot = ps childrenOfRoot nR
     nO = PName "Trees [C] [O]"
-    psOthers = ps (> 1) nO
+    psOthers = ps otherNodes nO
 
 -- Lens for a contrary proposal on the time height and rate mean.
 timeHeightRateMeanL :: Lens' I (Double, Double)
