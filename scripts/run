@@ -56,6 +56,10 @@ if [[ -z $analysis_name || -z $rooted_tree || -z $trees ]]
 then
     usage
     exit 1
+else
+    echo "Analysis name: ${analysis_name}."
+    echo "Rooted tree: ${rooted_tree}."
+    echo "Trees: ${trees}."
 fi
 
 outdir="results"
@@ -68,16 +72,20 @@ then
         echo "Calibrations activated but calibration file not available."
         exit 1
     else
+        echo "Calibrations: ${calibrations}."
         outdir="${outdir}-calibrations"
         c_flags+=(-c "../$calibrations")
     fi
-elif [[ $constraints_activated -eq 1 ]]
+fi
+
+if [[ $constraints_activated -eq 1 ]]
 then
     if [[ -z $constraints ]]
     then
         echo "Constraints activated but constraint file not available."
         exit 1
     else
+        echo "Constraints: ${constraints}."
         outdir="${outdir}-constraints"
         c_flags+=(-k "../$constraints")
     fi
@@ -91,6 +99,7 @@ else
     p_flags=()
 fi
 
+echo "Results directory: ${outdir}."
 mkdir -p $outdir; cd $outdir
 
 if [[ "$command" == "p" ]]
