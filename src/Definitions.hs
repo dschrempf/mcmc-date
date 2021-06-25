@@ -197,8 +197,10 @@ initWith t =
 priorFunction :: VB.Vector Calibration -> VB.Vector Constraint -> PriorFunction I
 priorFunction cb cs (I l m h t mu va r) =
   product' $
-    calibrate 1e-4 cb h t :
-    constrain 1e-4 cs t :
+    -- Usually, the combined treatment is faster.
+    -- calibrate 1e-4 cb h t :
+    -- constrain 1e-4 cs t :
+    calibrateAndConstrain 1e-4 cb h 1e-4 cs t :
     [ -- Birth and death rates of the relative time tree.
       exponential 1 l,
       exponential 1 m,
@@ -429,8 +431,8 @@ getTimeTreeNodeHeight p x = (* h) $ fromHeight $ t ^. subTreeAtL p . labelL . ha
 -- Monitor the height of calibrated nodes.
 monCalibratedNodes :: [Calibration] -> [MonitorParameter I]
 monCalibratedNodes cb =
-  [ getTimeTreeNodeHeight p >$< monitorDouble (name n i)
-    | Calibration n p i <- cb
+  [ getTimeTreeNodeHeight p >$< monitorDouble (name n l)
+    | Calibration n p _ l <- cb
   ]
   where
     name nm iv = "Calibration " <> nm <> " " <> show iv
@@ -444,7 +446,7 @@ getTimeTreeDeltaNodeHeight y o x = getTimeTreeNodeHeight o x - getTimeTreeNodeHe
 monConstrainedNodes :: [Constraint] -> [MonitorParameter I]
 monConstrainedNodes cs =
   [ getTimeTreeDeltaNodeHeight y o >$< monitorDouble (name n)
-    | Constraint n y o <- cs
+    | Constraint n y _ o _ <- cs
   ]
   where
     name s = "Constraint " ++ s
