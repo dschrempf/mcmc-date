@@ -197,10 +197,10 @@ initWith t =
 priorFunction :: VB.Vector Calibration -> VB.Vector Constraint -> PriorFunction I
 priorFunction cb cs (I l m h t mu va r) =
   product' $
-    -- Usually, the combined treatment is faster.
+    calibrateAndConstrain 1e-4 cb h 1e-4 cs t :
+    -- -- Usually, the combined treatment is faster.
     -- calibrate 1e-4 cb h t :
     -- constrain 1e-4 cs t :
-    calibrateAndConstrain 1e-4 cb h 1e-4 cs t :
     [ -- Birth and death rates of the relative time tree.
       exponential 1 l,
       exponential 1 m,
