@@ -12,21 +12,9 @@
 -- Portability :  portable
 --
 -- Creation date: Thu Oct 22 20:05:05 2020.
-module Definitions
-  ( I (..),
-    initWith,
-    priorFunction,
-    likelihoodFunction,
-    proposals,
-    monitor,
-    burnIn,
-    iterations,
-    nPoints,
-    repetitiveBurnIn,
-  )
-where
-
--- NOTE: For large trees, mixing is difficult.
+--
+-- NOTE: For large trees, mixing is problematic. I also observe that the chain
+-- mixes well for small trees, so the model per se is fine.
 --
 -- Measures that didn't help at all:
 --
@@ -48,13 +36,33 @@ where
 -- Measures that improved mixing:
 --
 -- - Non-uniform proposal weights for sub-tree proposals on the time and rate
---   trees.
+--   trees. Proposals deeper in the tree which affect more parameters are
+--   assigned higher weights.
 --
 -- - Contrary proposals (time and rate trees, time height and rate mean, rate
 --   mean and rate tree).
 --
--- I also observe that the chain mixes for small trees, so the model per se is
--- fine.
+-- Game changers:
+--
+-- - Contrary node slide proposal. This proposal improved mixing a lot for all
+--   nodes accept the root node and the daughters.
+--
+-- - Slide root contrarily ('slideRootContrarily') proposal. This proposal
+--   finally improved mixing for the root node and the daughters.
+
+module Definitions
+  ( I (..),
+    initWith,
+    priorFunction,
+    likelihoodFunction,
+    proposals,
+    monitor,
+    burnIn,
+    iterations,
+    nPoints,
+    repetitiveBurnIn,
+  )
+where
 
 import Control.Lens
 import Data.Aeson
@@ -303,7 +311,7 @@ proposalsTimeTree t =
     ++ map (liftProposal timeTree) psOthers
   where
     -- Pulley on the root node.
-    nP = PName "Time tree [R] pulley"
+    nP = PName "Time tree [R]"
     maybePulley = case t of
       Node _ _ [l, r]
         | null (forest l) -> []
@@ -336,14 +344,12 @@ proposalsRateTree t =
   where
     w = weightNBranches $ length t
     -- I am proud of the next three proposals :).
-    nM = PName "Rate tree [R] mean"
-    psMeanContra = scaleNormAndTreeContrarily t 100 nM w Tune
-    nV = PName "Rate tree [R] variance"
-    psVariance = scaleVarianceAndTree t 100 nV w Tune
+    nR = PName "Rate tree [R]"
+    psMeanContra = scaleNormAndTreeContrarily t 100 nR w Tune
+    psVariance = scaleVarianceAndTree t 100 nR w Tune
     ps hn n =
       scaleBranches t hn 100 n (pWeight 3) Tune
         ++ scaleSubTrees t hn 100 n (pWeight 3) (pWeight 8) Tune
-    nR = PName "Rate tree [R]"
     psAtRoot = ps childrenOfRoot nR
     nO = PName "Rate tree [O]"
     psOthers = ps otherNodes nO
@@ -358,8 +364,8 @@ proposalsTimeRateTreeContra t =
     timeRateTreesL :: Lens' I (HeightTree Name, Tree Length Name)
     timeRateTreesL = tupleLens timeTree rateTree
     ps hn n =
-      slideNodesContrarily t hn 0.1 (n <> PName " slide") (pWeight 3) (pWeight 8) Tune
-        ++ scaleSubTreesContrarily t hn 0.1 (n <> PName " scale") (pWeight 3) (pWeight 8) Tune
+      slideNodesContrarily t hn 0.1 n (pWeight 3) (pWeight 8) Tune
+        ++ scaleSubTreesContrarily t hn 0.1 n (pWeight 3) (pWeight 8) Tune
     nR = PName "Trees [C] [R]"
     psAtRoot = ps childrenOfRoot nR
     nO = PName "Trees [C] [O]"
@@ -389,9 +395,9 @@ proposalsChangingTimeHeight t =
   ]
   where
     w = weightNBranches $ length t
-    nH = PName "Rate tree [R] height"
+    nH = PName "Rate tree [R]"
     psHeightContra = scaleNormAndTreeContrarily t 100 nH w Tune
-    nRC = PName "Root contra"
+    nRC = PName "Trees [R]"
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
 -- | The proposal cycle includes proposals for the other parameters.
@@ -419,7 +425,6 @@ monParams =
     _timeHeight >$< monitorDouble "TimeHeight",
     _rateMean >$< monitorDouble "RateMean",
     _rateVariance >$< monitorDouble "RateVariance"
-    -- fromLength . sum . branches . _rateTree >$< monitorDouble "TotalRate"
   ]
 
 -- Monitor to standard output.
