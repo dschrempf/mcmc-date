@@ -358,8 +358,8 @@ proposalsTimeRateTreeContra t =
     timeRateTreesL :: Lens' I (HeightTree Name, Tree Length Name)
     timeRateTreesL = tupleLens timeTree rateTree
     ps hn n =
-      slideNodesContrarily t hn 0.01 (n <> PName " slide") (pWeight 3) (pWeight 8) Tune
-        ++ scaleSubTreesContrarily t hn 0.01 (n <> PName " scale") (pWeight 3) (pWeight 8) Tune
+      slideNodesContrarily t hn 0.1 (n <> PName " slide") (pWeight 3) (pWeight 8) Tune
+        ++ scaleSubTreesContrarily t hn 0.1 (n <> PName " scale") (pWeight 3) (pWeight 8) Tune
     nR = PName "Trees [C] [R]"
     psAtRoot = ps childrenOfRoot nR
     nO = PName "Trees [C] [O]"
