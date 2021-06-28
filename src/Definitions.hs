@@ -344,9 +344,11 @@ proposalsRateTree t =
   where
     w = weightNBranches $ length t
     -- I am proud of the next three proposals :).
+    nMR = PName "Rate mean, Rate tree [R]"
+    psMeanContra = scaleNormAndTreeContrarily t 100 nMR w Tune
+    nVR = PName "Rate variance, Rate tree [R]"
+    psVariance = scaleVarianceAndTree t 100 nVR w Tune
     nR = PName "Rate tree [R]"
-    psMeanContra = scaleNormAndTreeContrarily t 100 nR w Tune
-    psVariance = scaleVarianceAndTree t 100 nR w Tune
     ps hn n =
       scaleBranches t hn 100 n (pWeight 3) Tune
         ++ scaleSubTrees t hn 100 n (pWeight 3) (pWeight 8) Tune
@@ -395,7 +397,7 @@ proposalsChangingTimeHeight t =
   ]
   where
     w = weightNBranches $ length t
-    nH = PName "Rate tree [R]"
+    nH = PName "Time height, Rate tree [R]"
     psHeightContra = scaleNormAndTreeContrarily t 100 nH w Tune
     nRC = PName "Trees [R]"
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
