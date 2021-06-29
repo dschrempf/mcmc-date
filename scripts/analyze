@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# Analyze all results.
+
+set -e
+
+function analyze_tree_monitor() {
+    echo "Prepare the Nexus file to be opened with Densitree."
+    echo "Thin the monitor file."
+    trace-thin 5 "$1" > "${1}.thinned"
+    echo "Convert thinned file to Nexus format."
+    trees-monitor-to-nexus "${1}.thinned"
+
+    echo "Compute other summary statistics."
+    trees-monitor-summary "${1}" 0.25
+}
+
+for d in results*
+do
+    ( cd "$d"
+      echo "Current directory: ${PWD}."
+      for m in *timetree.00.monitor
+      do
+          echo "Analyze monitor file ${m}."
+          analyze_tree_monitor "$m"
+      done
+      echo "Create tree file with node indices."
+      for f in *.meantree
+      do
+          tree-identify "$f"
+      done
+    )
+done

@@ -8,7 +8,7 @@
         ]
       },
       "locked": {
-        "narHash": "sha256-cQ8kvuf9eMjpQ8NIlP641SPxoVPik0B44zf6oS3jIFw=",
+        "narHash": "sha256-zxZQ+s7JzY+K/pVI6ykXRVt+8YLIRldKpEib326PwAY=",
         "path": "/home/dominik/Shared/config/nixos/nur",
         "type": "path"
       },
@@ -19,11 +19,11 @@
     },
     "flake-utils": {
       "locked": {
-        "lastModified": 1620759905,
-        "narHash": "sha256-WiyWawrgmyN0EdmiHyG2V+fqReiVi8bM9cRdMaKQOFg=",
+        "lastModified": 1623875721,
+        "narHash": "sha256-A8BU7bjS5GirpAUv4QA+QnJ4CceLHkcXdRp4xITDB0s=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "b543720b25df6ffdfcf9227afafc5b8c1fabfae8",
+        "rev": "f7e004a55b120c02ecb6219596820fcd32ca8772",
         "type": "github"
       },
       "original": {
@@ -34,11 +34,11 @@
     },
     "flake-utils_2": {
       "locked": {
-        "lastModified": 1622445595,
-        "narHash": "sha256-m+JRe6Wc5OZ/mKw2bB3+Tl0ZbtyxxxfnAWln8Q5qs+Y=",
+        "lastModified": 1623875721,
+        "narHash": "sha256-A8BU7bjS5GirpAUv4QA+QnJ4CceLHkcXdRp4xITDB0s=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "7d706970d94bc5559077eb1a6600afddcd25a7c8",
+        "rev": "f7e004a55b120c02ecb6219596820fcd32ca8772",
         "type": "github"
       },
       "original": {
@@ -49,18 +49,13 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1622966049,
-        "narHash": "sha256-6g+28v94ISkVk9TBSsITVOnB2slK8plieWPIF2jo/l0=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "fbfb79400a08bf754e32b4d4fc3f7d8f8055cf94",
-        "type": "github"
+        "narHash": "sha256-08SqS4g2UZI05L72D9OAm/vG7TNoxL3xd2v+cY8fEg8=",
+        "path": "/home/dominik/Nix/Nixpkgs",
+        "type": "path"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
+        "path": "/home/dominik/Nix/Nixpkgs",
+        "type": "path"
       }
     },
     "root": {

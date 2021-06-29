@@ -1,7 +1,7 @@
 {
   description = "Evolution environment";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.url = "path:/home/dominik/Nix/Nixpkgs";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.dschrempf-nur.url = "path:/home/dominik/Shared/config/nixos/nur";
   inputs.dschrempf-nur.inputs.nixpkgs.follows = "nixpkgs";
