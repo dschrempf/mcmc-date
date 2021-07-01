@@ -37,3 +37,8 @@ cabal.project.local~
 /misc/
 /scripts/TreesMonitorSummary
 /scripts/TreesMonitorSummary.hs
+
+# Latex stuff.
+*.bbl
+*.tex
+**/auto/

@@ -1,0 +1,83 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t
+#+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
+#+options: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
+#+options: tasks:t tex:t timestamp:t title:t toc:nil todo:t |:t
+#+title: Explanation of the results of the dating analyses
+#+author: Dominik Schrempf
+#+email: dominik.schrempf@gmail.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 27.2 (Org mode 9.4.6)
+
+#+latex_class: myArticle
+#+latex_class_options:
+#+latex_header:
+#+latex_header_extra:
+#+description:
+#+keywords:
+#+subtitle:
+#+latex_compiler: unused; see `org-latex-pdf-process'
+#+date: \today
+
+\noindent The analyses are split into the following directories:
+
+: ├── results
+: ├── results-calibrations
+: └── results-calibrations-constraints
+
+\noindent Let =name= be the analysis name. In each directory, the files are
+structured as follows:
+
+- =name.params.00.monitor= :: Monitor file of all parameters; can be opened in
+  Tracer. The first 5000 iterations are burn in. Each run includes a total
+  number of approximately 20000 iterations. The index =00= means that this is
+  the first chain of four parallel chains, the other three chains are heated,
+  and may be ignored.
+- =name.ratetree.00.monitor= :: Monitor file of the relative rate tree. Each
+  branch stores the relative rate used on that branch.
+- =name.timetree.00.monitor= :: Monitor file of the absolute or relative time
+  tree. Each branch stores the absolute or relative time between speciations.
+
+\noindent For the following files, the burn in of 5000 iteration has already
+been excluded:
+- =name.timetree.00.ages.full= :: Table of node ages. Each row shows the ages of
+  a specific node for all iterations. The nodes are integer indexed, and leaf
+  names are shown when available. The indices are distributed in pre-order. That
+  is, for a tree, we index the root first, then the sub trees from left to right
+  (sometime called depth first). For your reference, I have created a tree with
+  all node indices =name.meantree.index=.
+- =name.timetree.00.ages.summary= :: Table of node ages. Each row shows the mean
+  age and the variance of the age of a specific node. Further, the minimum ages,
+  the maximum ages, and the 95% confidence intervals are shown.
+- =name.timetree.00.monitor.nex= :: Nexus file of the tree monitor; can be
+  directly opened with /Densitree/.
+- =name.timetree.00.tree.mean= :: Tree with node ages denoting the mean node age
+  across all iterations.
+- =name.timetree.00.tree.variance= :: Tree with node ages denoting the variance
+  of node ages across all iterations.
+
+\noindent Other interesting files:
+- =name.meantree= :: Tree with branch lengths storing the average number of
+  substitutions per site.
+- =name.meantree.index= :: Same as =name.meantree= but the node indices are
+  printed instead of the node names.
+- =name.timetree.00.monitor.thinned= :: Thinned monitor file. Only every fifth
+  iterations is printed. Used to create the Nexus file for /Densitree/.
+
+\noindent Files related to the MCMC sampler:
+- =name.data= :: Internal data used by the sampler (mean branch lengths measured
+  in average number of substitutions per site, covariance matrix, and so on).
+- =name.mcmc.log= :: Log file of the MCMC sampler. One can have a look at the
+  proposals, the acceptance rates, and more.
+- =name.mcmc.mc3= :: Saved state for continuing the MCMC sampler.
+- =name.mcmc.setting= :: Saved settings such as the analysis name, the burn in
+  configuration and much more.
+
+\noindent The calibration name includes the boundaries, so they can be nicely
+viewed in Tracer at the x-axis label. For example, when opening the file
+=results-calibrations-constraints/name.params.00.monitor=, the age distribution
+of a node calibrated by a calibration may look like this:
+
+#+attr_latex: :width 1.0\textwidth :placement [h!]
+[[file:AgeDistributionOfCalibrationCladeChlorophyceae.png]]
