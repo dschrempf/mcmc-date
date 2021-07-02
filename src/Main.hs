@@ -100,7 +100,7 @@ prepare (PrepSpec an rt ts) = do
 
   putStrLn "Check if topologies of the trees in the tree list are equal."
   putStrLn "Topology AND sub tree orders need to match."
-  let differentTrees = nub $ map T.fromLabeledTree treesRooted
+  let differentTrees = nub $ map T.fromBranchLabelTree treesRooted
   if length differentTrees == 1
     then putStrLn "OK."
     else do
@@ -111,8 +111,8 @@ prepare (PrepSpec an rt ts) = do
   putStrLn "Check the topology of the rooted tree."
   putStrLn "The topology has to match the one of the trees in the tree list."
   putStrLn "The sub tree orders may differ."
-  let topoRooted = T.fromLabeledTree treeRooted
-      topoHead = T.fromLabeledTree $ head treesRooted
+  let topoRooted = T.fromBranchLabelTree treeRooted
+      topoHead = T.fromBranchLabelTree $ head treesRooted
   if T.equal' topoRooted topoHead
     then putStrLn "OK."
     else do
@@ -159,9 +159,9 @@ prepare (PrepSpec an rt ts) = do
         fromMaybe (error "prepare: Could not label tree with mean branch lengths") $
           setBranches (map toLength' $ VS.toList means) treeR
   putStrLn "The rooted tree with mean branch lengths is:"
-  BL.putStrLn $ toNewick $ measurableToPhyloTree meanTreeRooted
+  BL.putStrLn $ toNewick $ lengthToPhyloTree meanTreeRooted
   putStrLn $ "Save the rooted tree with mean branch lengths to " <> getMeanTreeFn an <> "."
-  BL.writeFile (getMeanTreeFn an) (toNewick $ measurableToPhyloTree meanTreeRooted)
+  BL.writeFile (getMeanTreeFn an) (toNewick $ lengthToPhyloTree meanTreeRooted)
 
 getCalibrations :: Tree e Name -> Maybe FilePath -> IO (VB.Vector Calibration)
 getCalibrations _ Nothing = return VB.empty
