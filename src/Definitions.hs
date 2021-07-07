@@ -13,8 +13,8 @@
 --
 -- Creation date: Thu Oct 22 20:05:05 2020.
 --
--- NOTE: For large trees, mixing is problematic. I also observe that the chain
--- mixes well for small trees, so the model per se is fine.
+-- NOTE: For large trees, mixing may be problematic. The chain mixes well for
+-- small- and medium-sized trees, so the model per se is fine.
 --
 -- Measures that didn't help at all:
 --
@@ -497,7 +497,7 @@ monitor :: [Calibration] -> [Constraint] -> Monitor I
 monitor cb cs = Monitor monStdOut [monFileParams cb cs, monFileTimeTree, monFileRateTree] []
 
 -- | Number of burn in iterations and auto tuning period.
-burnIn :: BurnInSpecification
+burnIn :: BurnInSettings
 burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 300]
 
 -- | Number of iterations after burn in.
@@ -509,5 +509,5 @@ nPoints :: NPoints
 nPoints = NPoints 128
 
 -- | Repetitive burn in at each point on the path.
-repetitiveBurnIn :: BurnInSpecification
+repetitiveBurnIn :: BurnInSettings
 repetitiveBurnIn = BurnInWithCustomAutoTuning $ [20, 40, 60, 80] <> replicate 9 100

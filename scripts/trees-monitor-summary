@@ -35,18 +35,18 @@ import System.FilePath
 getTree :: BS.ByteString -> Tree Length Name
 getTree l =
   either error id $
-    phyloToLengthTree $
+    toLengthTree $
       either error id $
         parseOnly (oneNewick Standard) $ BS.split '\t' l !! 4
 
 toNewickTopology :: T.Topology Name -> BL.ByteString
-toNewickTopology = toNewick . first (const $ Phylo Nothing Nothing) . T.toLabeledTreeWith ""
+toNewickTopology = toNewick . first (const $ Phylo Nothing Nothing) . T.toBranchLabelTreeWith ""
 
 checkTopologies :: [Tree e Name] -> IO ()
 checkTopologies ts = do
   putStrLn "Check if topologies of the trees in the tree list are equal."
   putStrLn "Topology AND sub tree orders need to match."
-  let differentTopologies = nub $ map T.fromLabeledTree ts
+  let differentTopologies = nub $ map T.fromBranchLabelTree ts
   if length differentTopologies == 1
     then putStrLn "OK."
     else do
@@ -201,7 +201,7 @@ main = do
       fnVarianceTree = dropExtension fn ++ ".tree.variance"
       fnSummary = dropExtension fn ++ ".ages.summary"
       fnFull = dropExtension fn ++ ".ages.full"
-  BL.writeFile fnMeanTree $ toNewick $ measurableToPhyloTree meanTree
-  BL.writeFile fnVarianceTree $ toNewick $ measurableToPhyloTree varianceTree
+  BL.writeFile fnMeanTree $ toNewick $ lengthToPhyloTree meanTree
+  BL.writeFile fnVarianceTree $ toNewick $ lengthToPhyloTree varianceTree
   BL.writeFile fnSummary $ renderTableSummary $ summarizeHeights hss
   BL.writeFile fnFull $ renderTable hss
