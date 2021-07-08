@@ -207,6 +207,7 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
           (AnalysisName an)
           burnIn
           iterations
+          TraceAuto
           Overwrite
           Parallel
           Save
@@ -214,7 +215,7 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
           Debug
   -- Either use the MC3 algorithm.
   let mc3S = MC3Settings (NChains 4) (SwapPeriod 2) (NSwaps 3)
-  a <- mc3 mc3S pr' lh' cc' mon' TraceAuto start' g
+  a <- mc3 mc3S mcmcS pr' lh' cc' mon' start' g
 
   -- -- Or the standard MHG algorithm.
   -- a <- mhg pr' lh' cc' mon' TraceAuto start' g
