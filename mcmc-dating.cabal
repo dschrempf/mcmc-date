@@ -26,6 +26,8 @@ executable mcmc-date
   other-modules:
       Definitions
       Options
+      Probability
+      State
       Tools
       Paths_mcmc_dating
   autogen-modules:

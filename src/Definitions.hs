@@ -1,6 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TemplateHaskell #-}
-
 -- |
 -- Module      :  Definitions
 -- Description :  State space, prior function, likelihood function and more.
@@ -49,10 +46,8 @@
 --
 -- - Slide root contrarily ('slideRootContrarily') proposal. This proposal
 --   finally improved mixing for the root node and the daughters.
-
 module Definitions
-  ( I (..),
-    initWith,
+  ( initWith,
     priorFunction,
     likelihoodFunction,
     proposals,
@@ -65,11 +60,9 @@ module Definitions
 where
 
 import Control.Lens
-import Data.Aeson
 import Data.Bifunctor
 import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
-import GHC.Generics
 import qualified Numeric.LinearAlgebra as L
 import Numeric.Log hiding (sum)
 import Numeric.MathFunctions.Constants
@@ -86,84 +79,9 @@ import Mcmc
 import Mcmc.Tree
 
 -- Local modules.
+import State
 import Tools
 {- ORMOLU_ENABLE -}
-
--- | State space containing all parameters.
---
--- We are interested in inferring an ultrametric time tree with branch lengths
--- measured in units of time (e.g., in million years). Let i be a branch of the
--- time tree. Further, let T_i be the length of branch i, and R_i be the
--- absolute evolutionary rate on this branch. Then, the length of branch i
--- measured in average number of substitutions is d_i=T_i*R_i.
---
--- Internally, a relative time t_i and relative rate r_i are stored and used
--- such that the branch length measured in average number of substitution is
--- d_i=T_i*R_i=(t_i*h)*(r_i*mu), where h is the root height of the time tree,
--- and mu is the mean rate.
---
--- In brief, the relative time and rate are defined as t_i=T_i/h, and
--- r_i=R_i/mu.
---
--- This has various advantages:
---
--- 1. The ultrametric tree object storing the relative times is a normalized
---    tree with root height 1.0.
---
--- 2. The relative rates have a mean of 1.0.
---
--- 3. The absolute times and rates can be scaled easily by proposing new values
---    for h or mu.
---
--- NOTE: The relative times and rates are stored using two separate tree
--- objects: (1) An ultrametric time tree, and (2) an unconstrained rate tree.
--- The separation of the two trees allows usage of two different types:
---
--- (1) The time tree is of type 'HeightTree' because the ultrametricity
---     constraint allows the change of node heights only.
---
--- (2) The rate tree is of type 'Tree' because the branch lengths are not
---     limited by any other constraints than being positive.
---
--- Accordingly, the types of the proposals ensure that they are used on the
--- correct tree objects.
---
--- NOTE: Absolute times can only be inferred if node calibrations are available.
--- Otherwise, the time tree height will be left unchanged at 1.0, and relative
--- times will be inferred.
---
--- NOTE: The topologies of the time and rate trees are equal. This is, however,
--- not ensured by the types. Equality of the topology could be ensured by using
--- one tree storing both, the times and the rates.
-data I = I
-  { -- | Hyper-parameter. Birth rate of relative time tree.
-    _timeBirthRate :: Double,
-    -- | Hyper-parameter. Death rate of relative time tree.
-    _timeDeathRate :: Double,
-    -- | Height of absolute time tree in unit time. Normalization factor of
-    -- relative time. Here, we use units of million years; see the
-    -- calibrations.
-    _timeHeight :: Double,
-    -- | Normalized time tree of height 1.0. Branch labels denote relative
-    -- times. Node labels store relative node heights and names.
-    _timeTree :: HeightTree Name,
-    -- | Mean of the absolute rates. Normalization factor of relative rates.
-    _rateMean :: Double,
-    -- | Hyper-parameter. The variance of the relative rates.
-    _rateVariance :: Double,
-    -- | Relative rate tree. Branch labels denote relative rates with mean 1.0.
-    -- Node labels store names.
-    _rateTree :: Tree Length Name
-  }
-  deriving (Generic)
-
--- Create accessors (lenses) to the parameters in the state space.
-makeLenses ''I
-
--- Allow storage of the trace as JSON.
-instance ToJSON I
-
-instance FromJSON I
 
 -- | Initial state.
 --
@@ -171,9 +89,9 @@ instance FromJSON I
 -- tree, the terminal branches are elongated such that the tree becomes
 -- ultrametric ('makeUltrametric'). For the rate tree, we just use the topology
 -- and set all rates to 1.0.
-initWith :: Tree Length Name -> I
+initWith :: Tree Length () -> I
 initWith t =
-  I
+  IG
     { _timeBirthRate = 1.0,
       _timeDeathRate = 1.0,
       _timeHeight = 1.0,
@@ -202,8 +120,8 @@ initWith t =
             makeUltrametric tPositiveBranchesStemZero
 
 -- | Prior function.
-priorFunction :: VB.Vector Calibration -> VB.Vector Constraint -> PriorFunction I
-priorFunction cb cs (I l m h t mu va r) =
+priorFunction :: VB.Vector (Calibration Double) -> VB.Vector Constraint -> PriorFunction I
+priorFunction cb cs (IG l m h t mu va r) =
   product' $
     calibrateAndConstrain 1e-4 cb h 1e-4 cs t :
     -- -- Usually, the combined treatment is faster.
@@ -276,10 +194,10 @@ rootBranch :: I -> Double
 rootBranch x = tH * rM * (t1 * r1 + t2 * r2)
   where
     (t1, t2) = case fromHeightTree $ x ^. timeTree of
-      Node _ _ [l, r] -> (fromLength $ branch l, fromLength $ branch r)
+      Node _ _ [l, r] -> (branch l, branch r)
       _ -> error "rootBranch: Time tree is not bifurcating."
     (r1, r2) = case x ^. rateTree of
-      Node _ _ [l, r] -> (fromLength $ branch l, fromLength $ branch r)
+      Node _ _ [l, r] -> (branch l, branch r)
       _ -> error "rootBranch: Rate tree is not bifurcating."
     tH = x ^. timeHeight
     rM = x ^. rateMean
@@ -327,11 +245,11 @@ proposalsTimeTree t =
     psOthers = ps otherNodes nO
 
 -- Lens for proposals on the rate mean and rate tree.
-rateMeanRateTreeL :: Lens' I (Double, Tree Length Name)
+rateMeanRateTreeL :: Lens' I (Double, Tree Double ())
 rateMeanRateTreeL = tupleLens rateMean rateTree
 
 -- Lens for proposals on the rate variance and rate tree.
-rateVarianceRateTreeL :: Lens' I (Double, Tree Length Name)
+rateVarianceRateTreeL :: Lens' I (Double, Tree Double ())
 rateVarianceRateTreeL = tupleLens rateVariance rateTree
 
 -- Proposals on the rate tree.
@@ -363,7 +281,7 @@ proposalsTimeRateTreeContra t =
     ++ map (liftProposal timeRateTreesL) psOthers
   where
     -- Lens for the contrary proposal on the trees.
-    timeRateTreesL :: Lens' I (HeightTree Name, Tree Length Name)
+    timeRateTreesL :: Lens' I (Tree () Double, Tree Double ())
     timeRateTreesL = tupleLens timeTree rateTree
     ps hn n =
       slideNodesContrarily t hn 0.1 n (pWeight 3) (pWeight 8) Tune
@@ -378,12 +296,12 @@ timeHeightRateMeanL :: Lens' I (Double, Double)
 timeHeightRateMeanL = tupleLens timeHeight rateMean
 
 -- Lens for proposals on the rate mean and rate tree.
-timeHeightRateTreeL :: Lens' I (Double, Tree Length Name)
+timeHeightRateTreeL :: Lens' I (Double, Tree Double ())
 timeHeightRateTreeL = tupleLens timeHeight rateTree
 
 -- Lens for proposals on the triple (1) absolute time height, (2) relative time
 -- tree, and (3) relative rate tree.
-heightTimeRateTreesLens :: Lens' I (Double, HeightTree Name, Tree Length Name)
+heightTimeRateTreesLens :: Lens' I (Double, Tree () Double, Tree Double ())
 heightTimeRateTreesLens = tripleLens timeHeight timeTree rateTree
 
 -- Proposals only activated when calibrations are available and absolute times
@@ -436,13 +354,13 @@ monStdOut = monitorStdOut (take 4 monParams) 2
 
 -- Get the height of the node at path. Useful to have a look at calibrated nodes.
 getTimeTreeNodeHeight :: Path -> I -> Double
-getTimeTreeNodeHeight p x = (* h) $ fromHeight $ t ^. subTreeAtL p . labelL . hasHeightL
+getTimeTreeNodeHeight p x = (* h) $ t ^. subTreeAtL p . labelL
   where
     t = x ^. timeTree
     h = x ^. timeHeight
 
 -- Monitor the height of calibrated nodes.
-monCalibratedNodes :: [Calibration] -> [MonitorParameter I]
+monCalibratedNodes :: [Calibration Double] -> [MonitorParameter I]
 monCalibratedNodes cb =
   [ getTimeTreeNodeHeight p >$< monitorDouble (name n l)
     | Calibration n p _ l <- cb
@@ -465,7 +383,7 @@ monConstrainedNodes cs =
     name s = "Constraint " ++ s
 
 -- The file monitor is more verbose.
-monFileParams :: [Calibration] -> [Constraint] -> MonitorFile I
+monFileParams :: [Calibration Double] -> [Constraint] -> MonitorFile I
 monFileParams cb cs =
   monitorFile
     "params"
@@ -478,23 +396,30 @@ monFileParams cb cs =
 
 -- Monitor the time tree with absolute branch lengths, because they are more
 -- informative.
-absoluteTimeTree :: I -> Tree Length Name
+absoluteTimeTree :: I -> Tree Double ()
 absoluteTimeTree s = first (* h) t
   where
-    h = either (error . (<>) "absoluteTimeTree: ") id $ toLength $ s ^. timeHeight
+    h = s ^. timeHeight
     t = fromHeightTree $ s ^. timeTree
 
 -- The time tree with absolute branch lengths is written to a separate file.
-monFileTimeTree :: MonitorFile I
-monFileTimeTree = monitorFile "timetree" [absoluteTimeTree >$< monitorTree "TimeTree"] 2
+monFileTimeTree :: [Name] -> MonitorFile I
+monFileTimeTree ns = monitorFile "timetree" [absoluteTimeTree >$< monitorTreeWith ns "TimeTree"] 2
 
 -- The rate tree with relative rates is written to a separate file.
-monFileRateTree :: MonitorFile I
-monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorTree "RateTree"] 2
+monFileRateTree :: [Name] -> MonitorFile I
+monFileRateTree ns = monitorFile "ratetree" [_rateTree >$< monitorTreeWith ns "RateTree"] 2
 
 -- | Monitor to standard output and files. Do not use any batch monitors for now.
-monitor :: [Calibration] -> [Constraint] -> Monitor I
-monitor cb cs = Monitor monStdOut [monFileParams cb cs, monFileTimeTree, monFileRateTree] []
+monitor :: [Name] -> [Calibration Double] -> [Constraint] -> Monitor I
+monitor ns cb cs =
+  Monitor
+    monStdOut
+    [ monFileParams cb cs,
+      monFileTimeTree ns,
+      monFileRateTree ns
+    ]
+    []
 
 -- | Number of burn in iterations and auto tuning period.
 burnIn :: BurnInSettings
