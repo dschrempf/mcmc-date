@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SERVER="meganeura"
-PATH_SERVER="/scratch/dominik/projects/mcmc-dating"
+PATH_SERVER="/scratch/dominik/projects/mcmc-date"
 EXCLUDE=$(cat <<EOF
 - .stack-work*/
 - .git/
