@@ -90,32 +90,33 @@ gammaDirichlet ::
 gammaDirichlet alphaMu betaMu alpha muMean xs = muPrior * dirichletDensitySymmetricG ddSym xs
   where
     muPrior = gamma alphaMu betaMu muMean
-    ddSym = either error id $ dirichletDistributionSymmetricG (length xs) alpha
+    ddSym = either error id $ dirichletDistributionSymmetric (length xs) alpha
+{-# SPECIALIZE gammaDirichlet :: Double -> Double -> Double -> Double -> PriorFunction [Double] #-}
 
-data DirichletDistributionSymmetricG a = DirichletDistributionSymmetricG
+data DirichletDistributionSymmetric a = DirichletDistributionSymmetric
   { ddSymGetParameter :: a,
     _symGetDimension :: Int,
     _symGetNormConst :: Log a
   }
   deriving (Eq, Show)
 
-invBetaSymG :: RealFloat a => Int -> a -> Log a
-invBetaSymG k a = Exp $ logDenominator - logNominator
+invBetaSym :: RealFloat a => Int -> a -> Log a
+invBetaSym k a = Exp $ logDenominator - logNominator
   where
     logNominator = fromIntegral k * logGammaG a
     logDenominator = logGammaG (fromIntegral k * a)
 
-dirichletDistributionSymmetricG ::
+dirichletDistributionSymmetric ::
   RealFloat a =>
   Int ->
   a ->
-  Either String (DirichletDistributionSymmetricG a)
-dirichletDistributionSymmetricG k a
+  Either String (DirichletDistributionSymmetric a)
+dirichletDistributionSymmetric k a
   | k < 2 =
     Left "dirichletDistributionSymmetric: The dimension is smaller than two."
   | a <= 0 =
     Left "dirichletDistributionSymmetric: The parameter is negative or zero."
-  | otherwise = Right $ DirichletDistributionSymmetricG a k (invBetaSymG k a)
+  | otherwise = Right $ DirichletDistributionSymmetric a k (invBetaSym k a)
 
 eps :: RealFloat a => a
 eps = 1e-14
@@ -126,8 +127,8 @@ isNormalized v
   | abs (sum v - 1.0) > eps = False
   | otherwise = True
 
-dirichletDensitySymmetricG :: RealFloat a => DirichletDistributionSymmetricG a -> [a] -> Log a
-dirichletDensitySymmetricG (DirichletDistributionSymmetricG a k c) xs
+dirichletDensitySymmetricG :: RealFloat a => DirichletDistributionSymmetric a -> [a] -> Log a
+dirichletDensitySymmetricG (DirichletDistributionSymmetric a k c) xs
   | k /= length xs = 0.0
   | any (<= 0) xs = 0.0
   | not (isNormalized xs) = 0.0
@@ -143,26 +144,21 @@ dirichletDensitySymmetricG (DirichletDistributionSymmetricG a k c) xs
 -- NOTE: For convenience, the mean and variance are used as parameters for this
 -- relaxed molecular clock model. They are used to calculate the shape and the
 -- scale of the underlying gamma distribution.
-
--- TODO. This is causing the trouble (among other things I guess).
-
--- uncorrelatedGamma ::
---   RealFloat a =>
---   HandleStem ->
---   MeanG a ->
---   VarianceG a ->
---   PriorFunctionG (Tree a b) a
--- uncorrelatedGamma hs m v = branchesWith hs (gammaG k th)
---   where
---     (k, th) = gammaMeanVarianceToShapeScale m v
 uncorrelatedGamma ::
+  RealFloat a =>
   HandleStem ->
-  Mean Double ->
-  Variance Double ->
-  PriorFunction (Tree Double b)
+  Mean a ->
+  Variance a ->
+  PriorFunctionG (Tree a b) a
 uncorrelatedGamma hs m v = branchesWith hs (gamma k th)
   where
     (k, th) = gammaMeanVarianceToShapeScale m v
+{-# SPECIALIZE uncorrelatedGamma ::
+  HandleStem ->
+  Double ->
+  Double ->
+  PriorFunction (Tree Double b)
+  #-}
 
 -- A variant of the log normal distribution. See Yang 2006, equation (7.23).
 logNormalG' :: RealFloat a => Mean a -> Variance a -> a -> Log a
@@ -186,6 +182,12 @@ uncorrelatedLogNormal ::
   Variance a ->
   PriorFunctionG (Tree a e) a
 uncorrelatedLogNormal hs mu var = branchesWith hs (logNormalG' mu var)
+{-# SPECIALIZE uncorrelatedLogNormal ::
+  HandleStem ->
+  Double ->
+  Double ->
+  PriorFunction (Tree Double a)
+  #-}
 
 -- | White noise model.
 --
@@ -212,7 +214,12 @@ uncorrelatedLogNormal hs mu var = branchesWith hs (logNormalG' mu var)
 -- 2669–2680 (2007). http://dx.doi.org/10.1093/molbev/msm193
 --
 -- Call 'error' if the topologies of the time and rate trees do not match.
-whiteNoise :: RealFloat a => HandleStem -> Variance a -> Tree a b -> PriorFunctionG (Tree a b) a
+whiteNoise ::
+  RealFloat a =>
+  HandleStem ->
+  Variance a ->
+  Tree a b ->
+  PriorFunctionG (Tree a c) a
 whiteNoise hs v tTr rTr = branchesWith hs f zTr
   where
     zTr =
@@ -222,6 +229,12 @@ whiteNoise hs v tTr rTr = branchesWith hs f zTr
     -- This is correct. The mean of b=tr is t, the variance of b is
     -- Var(tr) = t^2Var(r) = t^2 v/t = vt, as required in Lepage, 2006.
     f (t, r) = let k = t / v in gamma k (recip k) r
+{-# SPECIALIZE whiteNoise ::
+  HandleStem ->
+  Double ->
+  Tree Double b ->
+  PriorFunction (Tree Double c)
+  #-}
 
 -- | Auto-correlated gamma model.
 --
@@ -250,8 +263,8 @@ autocorrelatedGamma ::
   HandleStem ->
   Mean a ->
   Variance a ->
-  Tree a c ->
-  PriorFunctionG (Tree a b) a
+  Tree a b ->
+  PriorFunctionG (Tree a c) a
 autocorrelatedGamma hs mu var tTr rTr = branchesWith hs f zTr
   where
     zTr =
@@ -262,6 +275,13 @@ autocorrelatedGamma hs mu var tTr rTr = branchesWith hs f zTr
       let var' = t * var
           (shape, scale) = gammaMeanVarianceToShapeScale mu var'
        in gamma shape scale r
+{-# SPECIALIZE autocorrelatedGamma ::
+  HandleStem ->
+  Double ->
+  Double ->
+  Tree Double b ->
+  PriorFunction (Tree Double c)
+  #-}
 
 -- autocorrelatedGamma WithStem mu var tTr rTr =
 --   gamma shape scale r * autocorrelatedGamma WithoutStem r var tTr rTr
@@ -299,8 +319,8 @@ autocorrelatedLogNormal ::
   HandleStem ->
   Mean a ->
   Variance a ->
-  Tree a c ->
-  PriorFunctionG (Tree a b) a
+  Tree a b ->
+  PriorFunctionG (Tree a c) a
 autocorrelatedLogNormal hs mu var tTr rTr = branchesWith hs f zTr
   where
     zTr =
@@ -308,6 +328,13 @@ autocorrelatedLogNormal hs mu var tTr rTr = branchesWith hs f zTr
         (error "autocorrelatedLogNormal: Topologies of time and rate trees do not match.")
         (zipTrees tTr rTr)
     f (t, r) = let var' = t * var in logNormalG' mu var' r
+{-# SPECIALIZE autocorrelatedLogNormal ::
+  HandleStem ->
+  Double ->
+  Double ->
+  Tree Double b ->
+  PriorFunction (Tree Double c)
+  #-}
 
 -- autocorrelatedLogNormal WithStem mu var tTr rTr =
 --   logNormal' mu var' r * autocorrelatedLogNormal WithoutStem r var tTr rTr
