@@ -403,11 +403,11 @@ absoluteTimeTree s = first (* h) t
 
 -- The time tree with absolute branch lengths is written to a separate file.
 monFileTimeTree :: MonitorFile I
-monFileTimeTree = monitorFile "timetree" [absoluteTimeTree >$< monitorTree' "TimeTree"] 2
+monFileTimeTree = monitorFile "timetree" [absoluteTimeTree >$< monitorTree "TimeTree"] 2
 
 -- The rate tree with relative rates is written to a separate file.
 monFileRateTree :: MonitorFile I
-monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorTree' "RateTree"] 2
+monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorTree "RateTree"] 2
 
 -- | Monitor to standard output and files. Do not use any batch monitors for now.
 monitor :: [Calibration Double] -> [Constraint] -> Monitor I

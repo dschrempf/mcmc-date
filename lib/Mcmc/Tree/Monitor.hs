@@ -11,7 +11,7 @@
 -- Creation date: Sat Jul 25 14:06:14 2020.
 module Mcmc.Tree.Monitor
   ( monitorTree,
-    monitorTree',
+    monitorTreeG,
   )
 where
 
@@ -21,20 +21,23 @@ import Mcmc
 
 -- | Monitor a tree in Newick format.
 monitorTree ::
-  (HasLength e, HasName a) =>
-  -- | Name.
-  String ->
-  MonitorParameter (Tree e a)
-monitorTree n = MonitorParameter n (toNewickBuilder . lengthToPhyloTree)
-
--- | Monitor a tree in Newick format.
-monitorTree' ::
   -- | Name.
   String ->
   MonitorParameter (Tree Double Name)
-monitorTree' n =
+monitorTree n =
   MonitorParameter
     n
     (toNewickBuilder . lengthToPhyloTree . setLengths)
   where
-    setLengths = first (toLengthUnsafe)
+    setLengths = first toLengthUnsafe
+
+-- | See 'monitorTree'.
+--
+-- Slower but more general.
+monitorTreeG ::
+  (HasLength e, HasName a) =>
+  -- | Name.
+  String ->
+  MonitorParameter (Tree e a)
+monitorTreeG n = MonitorParameter n (toNewickBuilder . lengthToPhyloTree)
+
