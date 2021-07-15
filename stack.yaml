@@ -47,7 +47,6 @@ extra-deps:
   - ../elynx/elynx-tools
   - ../elynx/elynx-tree
   - ../mcmc/mcmc
-  - ../mcmc/mcmc-tree
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

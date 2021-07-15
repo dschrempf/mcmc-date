@@ -1,0 +1,126 @@
+cabal-version:  2.4
+name:           mcmc-date
+version:        0.1.0.0
+synopsis:       Phylogenetic dating using Markov chain Monte Carlo algorithms
+description:    Please see the README at <https://github.com/dschrempf/mcmc-date#readme>
+category:       Math, Statistics
+homepage:       https://github.com/dschrempf/mcmc-date#readme
+bug-reports:    https://github.com/dschrempf/mcmc-date/issues
+author:         Dominik Schrempf
+maintainer:     dominik.schrempf@gmail.com
+copyright:      Dominik Schrempf (2021)
+license:        GPL-3.0-or-later
+license-file:   LICENSE
+build-type:     Simple
+
+extra-source-files:
+  README.md
+  ChangeLog.md
+  bench/bench.tree
+
+source-repository head
+  type: git
+  location: https://github.com/dschrempf/mcmc-date
+
+common lib
+  ghc-options: -Wall -Wunused-packages
+  default-language: Haskell2010
+
+common test
+  ghc-options: -Wall -Werror -Wunused-packages
+  default-language: Haskell2010
+
+common bench
+  ghc-options: -Wall -Werror -Wunused-packages
+  default-language: Haskell2010
+
+common exec
+  ghc-options: -Wall -Wunused-packages -threaded -rtsopts -with-rtsopts=-N
+  default-language: Haskell2010
+
+library
+  import: lib
+  exposed-modules:
+      Mcmc.Tree
+      Mcmc.Tree.Import
+      Mcmc.Tree.Lens
+      Mcmc.Tree.Monitor
+      Mcmc.Tree.Mrca
+      Mcmc.Tree.Prior.BirthDeath
+      Mcmc.Tree.Prior.Branch
+      Mcmc.Tree.Prior.Branch.RelaxedClock
+      Mcmc.Tree.Prior.Node.Calibration
+      Mcmc.Tree.Prior.Node.Combined
+      Mcmc.Tree.Prior.Node.Constraint
+      Mcmc.Tree.Proposal.Contrary
+      Mcmc.Tree.Proposal.Ultrametric
+      Mcmc.Tree.Proposal.Unconstrained
+      Mcmc.Tree.Types
+  other-modules:
+      Mcmc.Tree.Proposal.Common
+      Statistics.Distribution.TruncatedNormal
+      Paths_mcmc_dating
+  autogen-modules:
+      Paths_mcmc_dating
+  hs-source-dirs: lib
+  build-depends:
+      aeson
+    , attoparsec
+    , base >=4.7 && <5
+    , bytestring
+    , cassava
+    , containers
+    , elynx-tree
+    , lens
+    , log-domain
+    , math-functions
+    , mcmc
+    , mwc-random
+    , statistics
+    , vector
+    , zlib
+
+benchmark mcmc-date-bench
+  import: bench
+  type: exitcode-stdio-1.0
+  main-is: Bench.hs
+  other-modules:
+      Paths_mcmc_dating
+  hs-source-dirs: bench
+  build-depends:
+      base >=4.7 && <5
+    , criterion
+    , elynx-tree
+    , lens
+    , mcmc-date
+
+executable mcmc-date
+  import: exec
+  main-is: Main.hs
+  other-modules:
+      Definitions
+      Options
+      Probability
+      State
+      Tools
+      Paths_mcmc_dating
+  autogen-modules:
+      Paths_mcmc_dating
+  hs-source-dirs: app
+  build-depends:
+      ad
+    , aeson
+    , base >=4.7 && <5
+    , bytestring
+    , deepseq
+    , elynx-tree
+    , hmatrix
+    , lens
+    , log-domain
+    , math-functions
+    , mcmc
+    , mcmc-date
+    , mwc-random
+    , optparse-applicative
+    , vector
+  default-language: Haskell2010

@@ -1,0 +1,11 @@
+cradle:
+  stack:
+    # mcmc-date
+    - path: "."
+      component: "mcmc-dating:exe:mcmc-date"
+
+    # mcmc-tree
+    - path: "mcmc-tree/src"
+      component: "mcmc-tree:lib"
+    - path: "mcmc-tree/bench"
+      component: "mcmc-tree:bench:tree-bench"
