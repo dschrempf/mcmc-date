@@ -37,7 +37,7 @@ import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Csv hiding (Name)
 import Data.Function
 import Data.List
-import qualified Data.Vector as V
+import qualified Data.Vector as VB
 import ELynx.Tree hiding (partition)
 import GHC.Generics
 import Mcmc.Prior hiding (positive)
@@ -240,15 +240,15 @@ findDupsBy eq (x : xs) = case partition (eq x) xs of
 --
 -- - Redundant or conflicting calibrations are found (i.e., multiple
 --   calibrations affect single nodes).
-loadCalibrations :: Tree e Name -> FilePath -> IO (V.Vector (Calibration Double))
+loadCalibrations :: Tree e Name -> FilePath -> IO (VB.Vector (Calibration Double))
 loadCalibrations t f = do
   d <- BL.readFile f
-  let mr = decode NoHeader d :: Either String (V.Vector (CalibrationData Double))
+  let mr = decode NoHeader d :: Either String (VB.Vector (CalibrationData Double))
       cds = either error id mr
-  when (V.null cds) $ error $ "loadCalibrations: No calibrations found in file: " <> f <> "."
-  let calsAll = V.map (calibrationDataToCalibration t) cds
+  when (VB.null cds) $ error $ "loadCalibrations: No calibrations found in file: " <> f <> "."
+  let calsAll = VB.map (calibrationDataToCalibration t) cds
   -- Check for duplicates and conflicts.
-  let calsDupl = findDupsBy ((==) `on` calibrationNodePath) $ V.toList calsAll
+  let calsDupl = findDupsBy ((==) `on` calibrationNodePath) $ VB.toList calsAll
   if null calsDupl
     then putStrLn "No duplicates and no conflicting calibrations have been detected."
     else do
@@ -281,6 +281,7 @@ calibrateHard c (HeightTree t)
     h = t ^. subTreeAtL p . branchL
     (Interval a b) = calibrationInterval c
     p = calibrationNodePath c
+{-# SPECIALIZE calibrateHard :: Calibration Double -> PriorFunction (HeightTree Double) #-}
 
 -- | Calibrate height of a node with given path.
 --
@@ -307,6 +308,7 @@ calibrateSoft s c (HeightTree t) = calibrateSoftF s l h
     p = calibrationNodePath c
     h = t ^. subTreeAtL p . branchL
     l = calibrationInterval c
+{-# SPECIALIZE calibrateSoft :: Double -> Calibration Double -> PriorFunction (HeightTree Double) #-}
 
 -- | See 'calibrateSoft'.
 calibrateSoftF :: RealFloat a => StandardDeviation a -> Interval a -> PriorFunctionG a a
@@ -319,6 +321,7 @@ calibrateSoftF s (Interval a' b) h
   where
     a = fromNonNegative a'
     d = normal 0 s
+{-# SPECIALIZE calibrateSoftF :: Double -> Interval Double -> PriorFunction Double #-}
 
 -- | Calibrate nodes of a tree using 'calibrateSoft'.
 --
@@ -336,19 +339,25 @@ calibrateSoftF s (Interval a' b) h
 -- - The height multiplier is zero or negative.
 calibrate ::
   RealFloat a =>
+  VB.Vector (Calibration a) ->
   -- | Standard deviation of the calibrations before scaling with the height
   -- multiplier.
   --
   -- NOTE: The same standard deviation is used for all calibrations.
   StandardDeviation a ->
-  V.Vector (Calibration a) ->
   -- | Height multiplier of tree. Useful when working on normalized trees.
   a ->
   PriorFunctionG (HeightTree a) a
-calibrate sd cs h t
+calibrate cs sd h t
   | h <= 0 = error "calibrate: Height multiplier is zero or negative."
-  | otherwise = V.product $ V.map f cs
+  | otherwise = VB.product $ VB.map f cs
   where
     f (Calibration n x i l) =
       let l' = if h == 1.0 then l else transformInterval (recip h) l
        in calibrateSoft sd (Calibration n x i l') t
+{-# SPECIALIZE calibrate ::
+  VB.Vector (Calibration Double) ->
+  Double ->
+  Double ->
+  PriorFunction (HeightTree Double)
+  #-}

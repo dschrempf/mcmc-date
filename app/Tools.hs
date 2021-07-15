@@ -23,17 +23,17 @@ where
 import Control.Lens
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
-import qualified Data.Vector.Storable as V
+import qualified Data.Vector.Storable as VS
 import qualified ELynx.Topology as T
 import ELynx.Tree
 
 -- | Get all branches of a rooted tree. Store the branches in a vector such that
 -- the two branches leading to the root are the first two entries of the vector.
 -- Ignore the root branch.
-getBranches :: Tree Double a -> V.Vector Double
+getBranches :: Tree Double a -> VS.Vector Double
 getBranches (Node _ _ [l, r]) =
   {-# SCC getBranches #-}
-  V.fromList $ head ls : head rs : tail ls ++ tail rs
+  VS.fromList $ head ls : head rs : tail ls ++ tail rs
   where
     ls = branches l
     rs = branches r
@@ -41,8 +41,8 @@ getBranches _ = error "getBranches: Root node is not bifurcating."
 
 -- | Sum the first two elements of a vector. Needed to merge the two branches
 -- leading to the root.
-sumFirstTwo :: V.Vector Double -> V.Vector Double
-sumFirstTwo v = (v V.! 0 + v V.! 1) `V.cons` V.drop 2 v
+sumFirstTwo :: VS.Vector Double -> VS.Vector Double
+sumFirstTwo v = (v VS.! 0 + v VS.! 1) `VS.cons` VS.drop 2 v
 
 -- | Convert a topology to Newick format.
 toNewickTopology :: T.Topology Name -> BL.ByteString

@@ -122,7 +122,7 @@ initWith t =
 priorFunction :: VB.Vector (Calibration Double) -> VB.Vector Constraint -> PriorFunction I
 priorFunction cb cs (IG l m h t mu va r) =
   product' $
-    calibrateAndConstrain 1e-4 cb h 1e-4 cs t :
+    calibrateAndConstrain cb 1e-4 h cs 1e-4 t :
     -- -- Usually, the combined treatment is faster.
     -- calibrate 1e-4 cb h t :
     -- constrain 1e-4 cs t :

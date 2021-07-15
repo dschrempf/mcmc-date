@@ -333,6 +333,7 @@ constrainHard c (HeightTree t)
   where
     y = constraintYoungNodePath c
     o = constraintOldNodePath c
+{-# SPECIALIZE constrainHard :: Constraint -> PriorFunction (HeightTree Double) #-}
 
 -- | Soft constrain order of nodes with given paths.
 --
@@ -356,6 +357,7 @@ constrainSoft s c (HeightTree t) = constrainSoftF s (hY, hO)
     hO = t ^. subTreeAtL o . branchL
     y = constraintYoungNodePath c
     o = constraintOldNodePath c
+{-# SPECIALIZE constrainSoft :: Double -> Constraint -> PriorFunction (HeightTree Double) #-}
 
 -- | See 'constrainSoft'.
 constrainSoftF ::
@@ -368,6 +370,7 @@ constrainSoftF s' (hY, hO)
   where
     s = realToFrac s'
     d = normal 0 s
+{-# SPECIALIZE constrainSoftF :: Double -> PriorFunction (Double, Double) #-}
 
 -- | Constrain nodes of a tree using 'constrainSoft'.
 --
@@ -387,3 +390,4 @@ constrain ::
 constrain sd cs t = VB.product $ VB.map f cs
   where
     f x = constrainSoft sd x t
+{-# SPECIALIZE constrain :: Double -> VB.Vector Constraint -> PriorFunction (HeightTree Double) #-}
