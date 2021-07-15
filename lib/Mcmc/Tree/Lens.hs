@@ -12,18 +12,18 @@
 --
 -- Creation date: Wed Aug 19 08:55:42 2020.
 module Mcmc.Tree.Lens
-  ( -- ** Tree lenses
+  ( -- ** Trees
+    branchL,
     labelL,
     forestL,
-    branchL,
     subTreeAtL,
 
-    -- ** Tree zippers
-    currentL,
+    -- -- ** Tree zippers
+    -- currentL,
 
-    -- ** Length lenses
-    hasLengthL,
-    lengthL,
+    -- -- ** Length lenses
+    -- hasLengthL,
+    -- lengthL,
   )
 where
 
@@ -85,20 +85,27 @@ subTreeAtL pth f s = go s pth
 --     (getSubTreeUnsafe p)
 --     (\t t' -> let pos = goPathUnsafe p $ fromTree t in toTree $ pos {current = t'})
 
--- | Current focus of a zipper.
-currentL :: Lens' (TreePos e a) (Tree e a)
-currentL = lens current (\x t -> x {current = t})
+-- -- Somehow this is not used.
+-- --
+-- -- | Current focus of a zipper.
+-- currentL :: Lens' (TreePos e a) (Tree e a)
+-- currentL = lens current (\x t -> x {current = t})
 
--- | Length of measurable types.
-hasLengthL :: HasLength a => Lens' a Length
-hasLengthL = lens getLength (flip setLength)
 
--- | Length.
---
--- Call 'error' if branch length is zero or negative.
-lengthL :: Lens' Length Double
-lengthL f l = g <$> f (fromLength l)
-  where
-    g x
-      | x <= 0 = error $ "lengthL: Branch length is zero or negative: " <> show x <> "."
-      | otherwise = toLengthUnsafe x
+-- -- Somehow this is not used.
+-- --
+-- -- | Length of measurable types.
+-- hasLengthL :: HasLength a => Lens' a Length
+-- hasLengthL = lens getLength (flip setLength)
+
+-- -- Somehow this is not used.
+-- --
+-- -- | Length.
+-- --
+-- -- Call 'error' if branch length is zero or negative.
+-- lengthL :: Lens' Length Double
+-- lengthL f l = g <$> f (fromLength l)
+--   where
+--     g x
+--       | x <= 0 = error $ "lengthL: Branch length is zero or negative: " <> show x <> "."
+--       | otherwise = toLengthUnsafe x
