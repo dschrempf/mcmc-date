@@ -25,6 +25,7 @@ cabal.project.local~
 
 # Personal.
 **/results/
+**/results-*/
 # *.batch
 # *.data
 # *.log
