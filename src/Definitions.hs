@@ -114,9 +114,9 @@ initWith t =
     -- Set the stem length to 0.
     tPositiveBranchesStemZero = setStem 0 tPositiveBranches
     initialTimeTree =
-        toHeightTreeUltrametric $
-          normalizeHeight $
-            makeUltrametric tPositiveBranchesStemZero
+      toHeightTreeUltrametric $
+        normalizeHeight $
+          makeUltrametric tPositiveBranchesStemZero
 
 -- | Prior function.
 priorFunction :: VB.Vector (Calibration Double) -> VB.Vector Constraint -> PriorFunction I
@@ -412,14 +412,16 @@ monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorTree' "RateTree"]
 -- | Monitor to standard output and files. Do not use any batch monitors for now.
 monitor :: [Calibration Double] -> [Constraint] -> Monitor I
 monitor cb cs =
-  Monitor monStdOut [ monFileParams cb cs, monFileTimeTree, monFileRateTree] []
+  Monitor monStdOut [monFileParams cb cs, monFileTimeTree, monFileRateTree] []
 
 -- | Number of burn in iterations and auto tuning period.
 burnIn :: BurnInSettings
+-- burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : 20 : [20]
 burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 300]
 
 -- | Number of iterations after burn in.
 iterations :: Iterations
+-- iterations = Iterations 100
 iterations = Iterations 15000
 
 -- | Number of points of the stepping stone sampler.
