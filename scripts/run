@@ -64,7 +64,6 @@ fi
 
 outdir="results"
 c_flags=()
-p_flags=()
 if [[ $calibrations_activated -eq 1 ]]
 then
     if [[ -z $calibrations ]]
@@ -91,12 +90,13 @@ then
     fi
 fi
 
+p_flags_stack=()
+p_flags_prog=()
 if [[ $profiling_activated -eq 1 ]]
 then
-    p_flags+=(--profile)
+    p_flags_stack+=(--profile)
+    p_flags_prog+=(-p)
     outdir="${outdir}-profile"
-else
-    p_flags=()
 fi
 
 echo "Results directory: ${outdir}."
@@ -104,23 +104,23 @@ mkdir -p $outdir; cd $outdir
 
 if [[ "$command" == "p" ]]
 then
-    stack exec "${p_flags[@]}" -- mcmc-date prepare \
+    stack exec "${p_flags_stack[@]}" -- mcmc-date prepare \
           -a "$analysis_name" -t "../$rooted_tree" -d "../$trees"
 elif [[ "$command" == "r" ]]
 then
-    stack exec "${p_flags[@]}" -- mcmc-date run \
+    stack exec "${p_flags_stack[@]}" -- mcmc-date run \
            -a "$analysis_name" "${c_flags[@]}" \
-           +RTS -N5
+           +RTS -N5 "${p_flags_prog[@]}"
 elif [[ "$command" == "c" ]]
 then
-    stack exec "${p_flags[@]}" -- mcmc-date continue \
+    stack exec "${p_flags_stack[@]}" -- mcmc-date continue \
           -a "$analysis_name" "${c_flags[@]}" \
-          +RTS -N5
+          +RTS -N5 "${p_flags_prog[@]}"
 elif [[ "$command" == "m" ]]
 then
-    stack exec "${p_flags[@]}" -- mcmc-date marginal-likelihood \
+    stack exec "${p_flags_stack[@]}" -- mcmc-date marginal-likelihood \
           -a "$analysis_name" "${c_flags[@]}" \
-          +RTS -N5
+          +RTS -N5 "${p_flags_prog[@]}"
 else
     usage
     exit 1
