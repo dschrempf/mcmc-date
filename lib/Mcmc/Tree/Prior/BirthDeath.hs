@@ -25,13 +25,13 @@ import ELynx.Tree
 import Mcmc.Prior
 import Numeric.Log
 
--- | Type synonym to indicate a birth rate.
+-- | Birth rate.
 type BirthRate a = a
 
--- | Type synonym to indicate a death rate.
+-- | Death rate.
 type DeathRate a = a
 
--- | Type synonym to indicate a sampling rate.
+-- | Sampling rate.
 type SamplingRate a = a
 
 -- Compute probabilities D and E at the top of the branch.
@@ -120,8 +120,8 @@ data ConditionOn = ConditionOnTimeOfOrigin | ConditionOnTimeOfMrca
 -- shifts, Proceedings of the National Academy of Sciences, 108(15), 6187–6192
 -- (2011). http://dx.doi.org/10.1073/pnas.1016876108.
 --
--- NOTE: The prior __does not calculate the multiplicative combinatorial
--- factor__ relating the number of oriented labeled trees to the number of
+-- NOTE: The prior __does not calculate__ the multiplicative __combinatorial__
+-- __factor__ relating the number of oriented labeled trees to the number of
 -- labeled trees without orientation. This is an issue if the prior is
 -- calculated for trees with different topologies!
 --

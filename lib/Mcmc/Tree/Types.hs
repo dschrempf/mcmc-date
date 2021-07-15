@@ -76,7 +76,7 @@ instance FromJSON a => FromJSON (HeightTree a)
 
 -- | Calculate node heights for a given tree.
 --
--- The __node labels__ and the __stem length__ are __removed__.
+-- The __stem length__ is __removed__.
 --
 -- This function is expensive and has not been optimized yet. The run time is
 -- @O(n^2)@ where @n@ is the number of inner nodes.
@@ -101,7 +101,7 @@ toHeightTreeUltrametric' t@(Node _ lb ts) =
   Node (assertNonNegative "toHeightTreeUltrametric'" $ (realToFrac . rootHeight) t) lb $
     map toHeightTreeUltrametric' ts
 
--- | Remove information about node height from node label.
+-- | Calculate branch lengths and remove node heights.
 heightTreeToLengthTree :: HeightTree Double -> Tree Double Name
 heightTreeToLengthTree t' = go (branch t) t
   where

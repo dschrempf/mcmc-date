@@ -9,8 +9,6 @@
 -- Portability :  portable
 --
 -- Creation date: Mon Jul 27 10:49:11 2020.
---
--- Branch wise priors.
 module Mcmc.Tree.Prior.Branch
   ( branchesWith,
   )
