@@ -177,7 +177,6 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
-  let names = labels meanTree
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -193,9 +192,9 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
       -- Proposal cycle.
       cc' = proposals (isJust cals) meanTree
       -- Monitor.
-      mon' = monitor names (VB.toList cb) (VB.toList cs)
+      mon' = monitor (VB.toList cb) (VB.toList cs)
       -- Starting state.
-      start' = initWith $ second (const ()) meanTree
+      start' = initWith meanTree
 
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For
@@ -229,7 +228,6 @@ continueMetropolisHastingsGreen (Spec an cals cons) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
-  let names = labels meanTree
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -245,7 +243,7 @@ continueMetropolisHastingsGreen (Spec an cals cons) = do
       -- Proposal cycle.
       cc' = proposals (isJust cals) meanTree
       -- Monitor.
-      mon' = monitor names (VB.toList cb) (VB.toList cs)
+      mon' = monitor (VB.toList cb) (VB.toList cs)
 
   -- Load the MCMC settings and the algorithm.
   let an' = AnalysisName an
@@ -258,7 +256,6 @@ runMarginalLikelihood (Spec an cals cons) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
-  let names = labels meanTree
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -274,9 +271,9 @@ runMarginalLikelihood (Spec an cals cons) = do
       -- Proposal cycle.
       cc' = proposals (isJust cals) meanTree
       -- Monitor.
-      mon' = monitor names (VB.toList cb) (VB.toList cs)
+      mon' = monitor (VB.toList cb) (VB.toList cs)
       -- Starting state.
-      start' = initWith $ second (const ()) meanTree
+      start' = initWith meanTree
 
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For

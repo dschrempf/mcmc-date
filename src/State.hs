@@ -18,6 +18,7 @@ import Control.Lens
 import Data.Aeson
 import ELynx.Tree
 import GHC.Generics
+import Mcmc.Tree
 
 -- | State space containing all parameters.
 --
@@ -75,15 +76,14 @@ data IG a = IG
     -- calibrations.
     _timeHeight :: a,
     -- | Normalized time tree of height 1.0. Branch labels denote relative
-    -- times. Node labels store relative node heights and names.
-    _timeTree :: Tree () a,
+    -- node heights.
+    _timeTree :: HeightTree a,
     -- | Mean of the absolute rates. Normalization factor of relative rates.
     _rateMean :: a,
     -- | Hyper-parameter. The variance of the relative rates.
     _rateVariance :: a,
     -- | Relative rate tree. Branch labels denote relative rates with mean 1.0.
-    -- Node labels store names.
-    _rateTree :: Tree a ()
+    _rateTree :: Tree a Name
   }
   deriving (Generic)
 

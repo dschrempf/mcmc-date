@@ -89,7 +89,7 @@ import Tools
 -- tree, the terminal branches are elongated such that the tree becomes
 -- ultrametric ('makeUltrametric'). For the rate tree, we just use the topology
 -- and set all rates to 1.0.
-initWith :: Tree Length () -> I
+initWith :: Tree Length Name -> I
 initWith t =
   IG
     { _timeBirthRate = 1.0,
@@ -114,7 +114,6 @@ initWith t =
     -- Set the stem length to 0.
     tPositiveBranchesStemZero = setStem 0 tPositiveBranches
     initialTimeTree =
-      either error id $
         toHeightTreeUltrametric $
           normalizeHeight $
             makeUltrametric tPositiveBranchesStemZero
@@ -147,7 +146,7 @@ priorFunction cb cs (IG l m h t mu va r) =
       uncorrelatedGamma WithoutStem 1 va r
     ]
   where
-    t' = fromHeightTree t
+    t' = heightTreeToLengthTree t
 
 -- Log of density of multivariate normal distribution with given parameters.
 -- https://en.wikipedia.org/wiki/Multivariate_normal_distribution.
@@ -181,7 +180,7 @@ likelihoodFunction ::
 likelihoodFunction mu sigmaInv logSigmaDet x =
   logDensityMultivariateNormal mu sigmaInv logSigmaDet distances
   where
-    times = getBranches (fromHeightTree $ x ^. timeTree)
+    times = getBranches (heightTreeToLengthTree $ x ^. timeTree)
     rates = getBranches (x ^. rateTree)
     tH = x ^. timeHeight
     rMu = x ^. rateMean
@@ -193,7 +192,7 @@ likelihoodFunction mu sigmaInv logSigmaDet x =
 rootBranch :: I -> Double
 rootBranch x = tH * rM * (t1 * r1 + t2 * r2)
   where
-    (t1, t2) = case fromHeightTree $ x ^. timeTree of
+    (t1, t2) = case heightTreeToLengthTree $ x ^. timeTree of
       Node _ _ [l, r] -> (branch l, branch r)
       _ -> error "rootBranch: Time tree is not bifurcating."
     (r1, r2) = case x ^. rateTree of
@@ -245,11 +244,11 @@ proposalsTimeTree t =
     psOthers = ps otherNodes nO
 
 -- Lens for proposals on the rate mean and rate tree.
-rateMeanRateTreeL :: Lens' I (Double, Tree Double ())
+rateMeanRateTreeL :: Lens' I (Double, Tree Double Name)
 rateMeanRateTreeL = tupleLens rateMean rateTree
 
 -- Lens for proposals on the rate variance and rate tree.
-rateVarianceRateTreeL :: Lens' I (Double, Tree Double ())
+rateVarianceRateTreeL :: Lens' I (Double, Tree Double Name)
 rateVarianceRateTreeL = tupleLens rateVariance rateTree
 
 -- Proposals on the rate tree.
@@ -281,7 +280,7 @@ proposalsTimeRateTreeContra t =
     ++ map (liftProposal timeRateTreesL) psOthers
   where
     -- Lens for the contrary proposal on the trees.
-    timeRateTreesL :: Lens' I (Tree () Double, Tree Double ())
+    timeRateTreesL :: Lens' I (HeightTree Double, Tree Double Name)
     timeRateTreesL = tupleLens timeTree rateTree
     ps hn n =
       slideNodesContrarily t hn 0.1 n (pWeight 3) (pWeight 8) Tune
@@ -296,12 +295,12 @@ timeHeightRateMeanL :: Lens' I (Double, Double)
 timeHeightRateMeanL = tupleLens timeHeight rateMean
 
 -- Lens for proposals on the rate mean and rate tree.
-timeHeightRateTreeL :: Lens' I (Double, Tree Double ())
+timeHeightRateTreeL :: Lens' I (Double, Tree Double Name)
 timeHeightRateTreeL = tupleLens timeHeight rateTree
 
 -- Lens for proposals on the triple (1) absolute time height, (2) relative time
 -- tree, and (3) relative rate tree.
-heightTimeRateTreesLens :: Lens' I (Double, Tree () Double, Tree Double ())
+heightTimeRateTreesLens :: Lens' I (Double, HeightTree Double, Tree Double Name)
 heightTimeRateTreesLens = tripleLens timeHeight timeTree rateTree
 
 -- Proposals only activated when calibrations are available and absolute times
@@ -354,9 +353,9 @@ monStdOut = monitorStdOut (take 4 monParams) 2
 
 -- Get the height of the node at path. Useful to have a look at calibrated nodes.
 getTimeTreeNodeHeight :: Path -> I -> Double
-getTimeTreeNodeHeight p x = (* h) $ t ^. subTreeAtL p . labelL
+getTimeTreeNodeHeight p x = (* h) $ t ^. subTreeAtL p . branchL
   where
-    t = x ^. timeTree
+    t = fromHeightTree $ x ^. timeTree
     h = x ^. timeHeight
 
 -- Monitor the height of calibrated nodes.
@@ -396,30 +395,24 @@ monFileParams cb cs =
 
 -- Monitor the time tree with absolute branch lengths, because they are more
 -- informative.
-absoluteTimeTree :: I -> Tree Double ()
+absoluteTimeTree :: I -> Tree Double Name
 absoluteTimeTree s = first (* h) t
   where
     h = s ^. timeHeight
-    t = fromHeightTree $ s ^. timeTree
+    t = heightTreeToLengthTree $ s ^. timeTree
 
 -- The time tree with absolute branch lengths is written to a separate file.
-monFileTimeTree :: [Name] -> MonitorFile I
-monFileTimeTree ns = monitorFile "timetree" [absoluteTimeTree >$< monitorTreeWith ns "TimeTree"] 2
+monFileTimeTree :: MonitorFile I
+monFileTimeTree = monitorFile "timetree" [absoluteTimeTree >$< monitorTree' "TimeTree"] 2
 
 -- The rate tree with relative rates is written to a separate file.
-monFileRateTree :: [Name] -> MonitorFile I
-monFileRateTree ns = monitorFile "ratetree" [_rateTree >$< monitorTreeWith ns "RateTree"] 2
+monFileRateTree :: MonitorFile I
+monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorTree' "RateTree"] 2
 
 -- | Monitor to standard output and files. Do not use any batch monitors for now.
-monitor :: [Name] -> [Calibration Double] -> [Constraint] -> Monitor I
-monitor ns cb cs =
-  Monitor
-    monStdOut
-    [ monFileParams cb cs,
-      monFileTimeTree ns,
-      monFileRateTree ns
-    ]
-    []
+monitor :: [Calibration Double] -> [Constraint] -> Monitor I
+monitor cb cs =
+  Monitor monStdOut [ monFileParams cb cs, monFileTimeTree, monFileRateTree] []
 
 -- | Number of burn in iterations and auto tuning period.
 burnIn :: BurnInSettings
