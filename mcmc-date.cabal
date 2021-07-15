@@ -59,9 +59,9 @@ library
   other-modules:
       Mcmc.Tree.Proposal.Common
       Statistics.Distribution.TruncatedNormal
-      Paths_mcmc_dating
+      Paths_mcmc_date
   autogen-modules:
-      Paths_mcmc_dating
+      Paths_mcmc_date
   hs-source-dirs: lib
   build-depends:
       aeson
@@ -85,7 +85,7 @@ benchmark mcmc-date-bench
   type: exitcode-stdio-1.0
   main-is: Bench.hs
   other-modules:
-      Paths_mcmc_dating
+      Paths_mcmc_date
   hs-source-dirs: bench
   build-depends:
       base >=4.7 && <5
@@ -103,9 +103,9 @@ executable mcmc-date
       Probability
       State
       Tools
-      Paths_mcmc_dating
+      Paths_mcmc_date
   autogen-modules:
-      Paths_mcmc_dating
+      Paths_mcmc_date
   hs-source-dirs: app
   build-depends:
       ad

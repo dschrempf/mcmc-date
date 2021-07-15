@@ -62,7 +62,7 @@ getPath x t = fst $ fromMaybe err $ ifind (\_ n -> n == x) t
 
 main :: IO ()
 main = do
-  tr <- oneTree Standard "data/bench.tree"
+  tr <- oneTree Standard "bench/bench.tree"
   let nameGn = "Gnetum_montanum"
       pthGn = getPath nameGn tr
   let nameBr = "Brachypodium_distachyon"

@@ -19,7 +19,7 @@ where
 
 import Data.Version (showVersion)
 import Options.Applicative
-import Paths_mcmc_dating (version)
+import Paths_mcmc_date (version)
 
 data Spec = Spec
   { analysisName :: String,
