@@ -1,0 +1,8 @@
+cradle:
+  stack:
+    - path: "app"
+      component: "mcmc-date:exe:mcmc-date"
+    - path: "lib"
+      component: "mcmc-date:lib"
+    - path: "bench"
+      component: "mcmc-date:bench:mcmc-date-bench"

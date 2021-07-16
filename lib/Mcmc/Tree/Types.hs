@@ -75,6 +75,15 @@ newtype LengthTree a = LengthTree {fromLengthTree :: Tree a Name}
 instance Functor LengthTree where
   fmap f = LengthTree . first f . fromLengthTree
 
+instance Foldable LengthTree where
+  foldMap f (LengthTree t) = foldMap f (ZipBranchTree t)
+
+instance Traversable LengthTree where
+  traverse f (LengthTree t) = LengthTree . getZipBranchTree <$> traverse f (ZipBranchTree t)
+
+-- TODO: For the applicative instance, we need to ignore the names.
+-- instance Applicative LengthTree where
+
 instance ToJSON a => ToJSON (LengthTree a)
 
 instance FromJSON a => FromJSON (LengthTree a)
@@ -85,6 +94,15 @@ newtype HeightTree a = HeightTree {fromHeightTree :: Tree a Name}
 
 instance Functor HeightTree where
   fmap f = HeightTree . first f . fromHeightTree
+
+instance Foldable HeightTree where
+  foldMap f (HeightTree t) = foldMap f (ZipBranchTree t)
+
+instance Traversable HeightTree where
+  traverse f (HeightTree t) = HeightTree . getZipBranchTree <$> traverse f (ZipBranchTree t)
+
+-- TODO: For the applicative instance, we need to ignore the names.
+-- instance Applicative HeightTree where
 
 instance ToJSON a => ToJSON (HeightTree a)
 
