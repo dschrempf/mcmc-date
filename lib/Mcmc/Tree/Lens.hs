@@ -18,6 +18,9 @@ module Mcmc.Tree.Lens
     forestL,
     subTreeAtL,
 
+    -- ** Special tree
+    heightTreeL,
+    lengthTreeL,
     -- -- ** Tree zippers
     -- currentL,
 
@@ -29,6 +32,7 @@ where
 
 import Control.Lens
 import ELynx.Tree
+import Mcmc.Tree.Types
 
 -- | Branch attached to the root node.
 branchL :: Lens' (Tree e a) e
@@ -72,6 +76,12 @@ subTreeAtL pth f s = go s pth
     assemble :: e -> a -> Forest e a -> Forest e a -> Tree e a -> Tree e a
     assemble br lb ls rs c = Node br lb $ ls ++ (c : rs)
 
+heightTreeL :: Lens' (HeightTree a) (Tree a Name)
+heightTreeL f s = HeightTree <$> f (fromHeightTree s)
+
+lengthTreeL :: Lens' (LengthTree a) (Tree a Name)
+lengthTreeL f s = LengthTree <$> f (fromLengthTree s)
+
 -- -- The following function is left here for reference.
 -- --
 -- -- Around 10 percent slower for trees with five to ten levels, because they
@@ -90,7 +100,6 @@ subTreeAtL pth f s = go s pth
 -- -- | Current focus of a zipper.
 -- currentL :: Lens' (TreePos e a) (Tree e a)
 -- currentL = lens current (\x t -> x {current = t})
-
 
 -- -- Somehow this is not used.
 -- --

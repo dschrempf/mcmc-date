@@ -28,6 +28,7 @@ module Mcmc.Tree.Types
     withoutRootNode,
 
     -- ** Ultrametric trees
+    LengthTree (..),
     HeightTree (..),
     toHeightTreeUltrametric,
     heightTreeToLengthTree,
@@ -35,6 +36,7 @@ module Mcmc.Tree.Types
 where
 
 import Data.Aeson
+import Data.Bifunctor
 import ELynx.Tree
 import GHC.Generics
 
@@ -66,9 +68,23 @@ allNodes = const True
 withoutRootNode :: HandleNode
 withoutRootNode = not . null
 
+-- | Tree with branch lengths.
+newtype LengthTree a = LengthTree {fromLengthTree :: Tree a Name}
+  deriving (Generic)
+
+instance Functor LengthTree where
+  fmap f = LengthTree . first f . fromLengthTree
+
+instance ToJSON a => ToJSON (LengthTree a)
+
+instance FromJSON a => FromJSON (LengthTree a)
+
 -- | Tree with node heights.
 newtype HeightTree a = HeightTree {fromHeightTree :: Tree a Name}
   deriving (Generic)
+
+instance Functor HeightTree where
+  fmap f = HeightTree . first f . fromHeightTree
 
 instance ToJSON a => ToJSON (HeightTree a)
 
@@ -92,22 +108,23 @@ toHeightTreeUltrametric ::
   HeightTree Double
 -- A leaf.
 toHeightTreeUltrametric t
-  | ultrametric t = HeightTree $ toHeightTreeUltrametric' t
+  | ultrametric t = toHeightTreeUltrametric' t
   | otherwise = error "toHeightTreeUltrametric: Tree is not ultrametric."
 
 -- Assume the tree is ultrametric.
-toHeightTreeUltrametric' :: HasLength a => Tree a Name -> Tree Double Name
-toHeightTreeUltrametric' t@(Node _ lb ts) =
+toHeightTreeUltrametric' :: HasLength a => Tree a Name -> HeightTree Double
+toHeightTreeUltrametric' t@(Node _ lb ts) = HeightTree $
   Node (assertNonNegative "toHeightTreeUltrametric'" $ (realToFrac . rootHeight) t) lb $
-    map toHeightTreeUltrametric' ts
+    map (fromHeightTree . toHeightTreeUltrametric') ts
 
 -- | Calculate branch lengths and remove node heights.
-heightTreeToLengthTree :: HeightTree Double -> Tree Double Name
-heightTreeToLengthTree t' = go (branch t) t
+heightTreeToLengthTree :: (Ord a, Num a, Show a) => HeightTree a -> LengthTree a
+heightTreeToLengthTree t' = LengthTree $ go (branch t) t
   where
     t = fromHeightTree t'
     go hParent (Node hNode lb ts) =
       Node (assertNonNegative "heightTreeToLengthTree" (hParent - hNode)) lb $ map (go hNode) ts
+{-# SPECIALIZE heightTreeToLengthTree :: HeightTree Double -> LengthTree Double #-}
 
 assertNonNegative :: (Ord a, Num a, Show a) => String -> a -> a
 assertNonNegative n val

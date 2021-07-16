@@ -149,15 +149,15 @@ uncorrelatedGamma ::
   HandleStem ->
   Mean a ->
   Variance a ->
-  PriorFunctionG (Tree a b) a
-uncorrelatedGamma hs m v = branchesWith hs (gamma k th)
+  PriorFunctionG (LengthTree a) a
+uncorrelatedGamma hs m v = branchesWith hs (gamma k th) . fromLengthTree
   where
     (k, th) = gammaMeanVarianceToShapeScale m v
 {-# SPECIALIZE uncorrelatedGamma ::
   HandleStem ->
   Double ->
   Double ->
-  PriorFunction (Tree Double b)
+  PriorFunction (LengthTree Double)
   #-}
 
 -- A variant of the log normal distribution. See Yang 2006, equation (7.23).
@@ -180,13 +180,13 @@ uncorrelatedLogNormal ::
   HandleStem ->
   Mean a ->
   Variance a ->
-  PriorFunctionG (Tree a e) a
-uncorrelatedLogNormal hs mu var = branchesWith hs (logNormalG' mu var)
+  PriorFunctionG (LengthTree a) a
+uncorrelatedLogNormal hs mu var = branchesWith hs (logNormalG' mu var) . fromLengthTree
 {-# SPECIALIZE uncorrelatedLogNormal ::
   HandleStem ->
   Double ->
   Double ->
-  PriorFunction (Tree Double a)
+  PriorFunction (LengthTree Double)
   #-}
 
 -- | White noise model.
@@ -218,9 +218,9 @@ whiteNoise ::
   RealFloat a =>
   HandleStem ->
   Variance a ->
-  Tree a b ->
-  PriorFunctionG (Tree a c) a
-whiteNoise hs v tTr rTr = branchesWith hs f zTr
+  LengthTree a ->
+  PriorFunctionG (LengthTree a) a
+whiteNoise hs v (LengthTree tTr) (LengthTree rTr) = branchesWith hs f zTr
   where
     zTr =
       fromMaybe
@@ -232,8 +232,8 @@ whiteNoise hs v tTr rTr = branchesWith hs f zTr
 {-# SPECIALIZE whiteNoise ::
   HandleStem ->
   Double ->
-  Tree Double b ->
-  PriorFunction (Tree Double c)
+  LengthTree Double ->
+  PriorFunction (LengthTree Double)
   #-}
 
 -- | Auto-correlated gamma model.
@@ -263,9 +263,9 @@ autocorrelatedGamma ::
   HandleStem ->
   Mean a ->
   Variance a ->
-  Tree a b ->
-  PriorFunctionG (Tree a c) a
-autocorrelatedGamma hs mu var tTr rTr = branchesWith hs f zTr
+  LengthTree a ->
+  PriorFunctionG (LengthTree a) a
+autocorrelatedGamma hs mu var (LengthTree tTr) (LengthTree rTr) = branchesWith hs f zTr
   where
     zTr =
       fromMaybe
@@ -279,8 +279,8 @@ autocorrelatedGamma hs mu var tTr rTr = branchesWith hs f zTr
   HandleStem ->
   Double ->
   Double ->
-  Tree Double b ->
-  PriorFunction (Tree Double c)
+  LengthTree Double ->
+  PriorFunction (LengthTree Double)
   #-}
 
 -- autocorrelatedGamma WithStem mu var tTr rTr =
@@ -319,9 +319,9 @@ autocorrelatedLogNormal ::
   HandleStem ->
   Mean a ->
   Variance a ->
-  Tree a b ->
-  PriorFunctionG (Tree a c) a
-autocorrelatedLogNormal hs mu var tTr rTr = branchesWith hs f zTr
+  LengthTree a ->
+  PriorFunctionG (LengthTree a) a
+autocorrelatedLogNormal hs mu var (LengthTree tTr) (LengthTree rTr) = branchesWith hs f zTr
   where
     zTr =
       fromMaybe
@@ -332,8 +332,8 @@ autocorrelatedLogNormal hs mu var tTr rTr = branchesWith hs f zTr
   HandleStem ->
   Double ->
   Double ->
-  Tree Double b ->
-  PriorFunction (Tree Double c)
+  LengthTree Double ->
+  PriorFunction (LengthTree Double)
   #-}
 
 -- autocorrelatedLogNormal WithStem mu var tTr rTr =

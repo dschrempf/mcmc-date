@@ -11,33 +11,33 @@
 -- Creation date: Sat Jul 25 14:06:14 2020.
 module Mcmc.Tree.Monitor
   ( monitorTree,
-    monitorTreeG,
+    monitorLengthTree,
   )
 where
 
 import Data.Bifunctor
 import ELynx.Tree
 import Mcmc
-
--- | Monitor a tree in Newick format.
-monitorTree ::
-  -- | Name.
-  String ->
-  MonitorParameter (Tree Double Name)
-monitorTree n =
-  MonitorParameter
-    n
-    (toNewickBuilder . lengthToPhyloTree . setLengths)
-  where
-    setLengths = first toLengthUnsafe
+import Mcmc.Tree.Types
 
 -- | See 'monitorTree'.
 --
 -- Slower but more general.
-monitorTreeG ::
+monitorTree ::
   (HasLength e, HasName a) =>
   -- | Name.
   String ->
   MonitorParameter (Tree e a)
-monitorTreeG n = MonitorParameter n (toNewickBuilder . lengthToPhyloTree)
+monitorTree n = MonitorParameter n (toNewickBuilder . lengthToPhyloTree)
 
+-- | Monitor a tree in Newick format.
+monitorLengthTree ::
+  -- | Name.
+  String ->
+  MonitorParameter (LengthTree Double)
+monitorLengthTree n =
+  MonitorParameter
+    n
+    (toNewickBuilder . lengthToPhyloTree . setLengths . fromLengthTree)
+  where
+    setLengths = first toLengthUnsafe

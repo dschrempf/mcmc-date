@@ -61,7 +61,7 @@ constrainV s k hs = constrainSoftF s (hY, hO)
 -- Do not use, if only a few calibrations and constraints have to be checked.
 calibrateAndConstrain ::
   (RealFloat a) =>
-  VB.Vector (Calibration a) ->
+  VB.Vector (Calibration Double) ->
   -- | Standard deviation of calibrations.
   StandardDeviation a ->
   -- | Height multiplier of tree for calibrations.
@@ -70,10 +70,11 @@ calibrateAndConstrain ::
   -- | Standard deviation of constraints.
   StandardDeviation a ->
   PriorFunctionG (HeightTree a) a
-calibrateAndConstrain cs sdC h ks sdK t
+calibrateAndConstrain cs' sdC h ks sdK t
   | h <= 0 = error "calibrate: Height multiplier is zero or negative."
   | otherwise = VB.product csPr * VB.product ksPr
   where
+    cs = VB.map realToFracC cs'
     hs = getAllHeights t
     transform (Calibration n x i l) =
       let l' = if h == 1.0 then l else transformInterval (recip h) l

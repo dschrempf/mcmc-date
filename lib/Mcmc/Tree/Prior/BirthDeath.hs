@@ -23,6 +23,7 @@ where
 
 import ELynx.Tree
 import Mcmc.Prior
+import Mcmc.Tree.Types
 import Numeric.Log
 
 -- | Birth rate.
@@ -138,16 +139,18 @@ birthDeath ::
   BirthRate a ->
   DeathRate a ->
   SamplingRate a ->
-  PriorFunctionG (Tree a b) a
+  PriorFunctionG (LengthTree a) a
 birthDeath ConditionOnTimeOfOrigin la mu rho t
   | la < 0.0 = error "birthDeath: Birth rate is negative."
   | mu < 0.0 = error "birthDeath: Death rate is negative."
   | rho <= 0.0 = error "birthDeath: Sampling rate is zero or negative."
   | rho > 1.0 = error "birthDeath: Sampling rate is larger than 1.0."
-  | epsNearCritical > abs (la - mu) = fst $ birthDeathWith computeDENearCritical la mu rho t
-  | otherwise = fst $ birthDeathWith computeDE la mu rho t
-birthDeath ConditionOnTimeOfMrca la mu rho (Node _ _ [l, r]) =
-  birthDeath ConditionOnTimeOfOrigin la mu rho l * birthDeath ConditionOnTimeOfOrigin la mu rho r
+  | epsNearCritical > abs (la - mu) =
+      fst $ birthDeathWith computeDENearCritical la mu rho $ fromLengthTree t
+  | otherwise = fst $ birthDeathWith computeDE la mu rho $ fromLengthTree t
+birthDeath ConditionOnTimeOfMrca la mu rho (LengthTree (Node _ _ [l, r])) =
+  birthDeath ConditionOnTimeOfOrigin la mu rho (LengthTree l)
+  * birthDeath ConditionOnTimeOfOrigin la mu rho (LengthTree r)
 birthDeath ConditionOnTimeOfMrca _ _ _ _ =
   error "birthDeath: Tree is not bifurcating."
 {-# SPECIALIZE birthDeath ::
@@ -155,7 +158,7 @@ birthDeath ConditionOnTimeOfMrca _ _ _ _ =
   Double ->
   Double ->
   Double ->
-  PriorFunction (Tree Double b)
+  PriorFunction (LengthTree Double)
   #-}
 
 birthDeathWith ::

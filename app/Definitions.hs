@@ -48,7 +48,6 @@
 --   finally improved mixing for the root node and the daughters.
 module Definitions
   ( initWith,
-    priorFunction,
     likelihoodFunction,
     proposals,
     monitor,
@@ -61,7 +60,6 @@ where
 
 import Control.Lens
 import Data.Bifunctor
-import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
 import qualified Numeric.LinearAlgebra as L
 import Numeric.Log hiding (sum)
@@ -98,7 +96,7 @@ initWith t =
       _timeTree = initialTimeTree,
       _rateMean = 1.0,
       _rateVariance = 1.0,
-      _rateTree = setStem 0 $ first (const 1.0) t
+      _rateTree = LengthTree $ setStem 0 $ first (const 1.0) t
     }
   where
     -- Treat a pathological case when branch lengths (excluding the stem) are
@@ -117,36 +115,6 @@ initWith t =
       toHeightTreeUltrametric $
         normalizeHeight $
           makeUltrametric tPositiveBranchesStemZero
-
--- | Prior function.
-priorFunction :: VB.Vector (Calibration Double) -> VB.Vector Constraint -> PriorFunction I
-priorFunction cb cs (IG l m h t mu va r) =
-  product' $
-    calibrateAndConstrain cb 1e-4 h cs 1e-4 t :
-    -- -- Usually, the combined treatment is faster.
-    -- calibrate 1e-4 cb h t :
-    -- constrain 1e-4 cs t :
-    [ -- Birth and death rates of the relative time tree.
-      exponential 1 l,
-      exponential 1 m,
-      -- No explicit prior on the height of the time tree. However, the height
-      -- is calibrated (see above). If no calibrations are given, the height is
-      -- set to 1.0.
-      --
-      -- Relative time tree.
-      birthDeath ConditionOnTimeOfMrca l m 1.0 t',
-      -- Mean rate.
-      --
-      -- IDEA: Use gamma distribution with mean calculated using the number of
-      -- branches and the total length of the substitution-like tree.
-      exponential 1 mu,
-      -- Variance of the relative rates.
-      exponential 1 va,
-      -- Relative rate tree.
-      uncorrelatedGamma WithoutStem 1 va r
-    ]
-  where
-    t' = heightTreeToLengthTree t
 
 -- Log of density of multivariate normal distribution with given parameters.
 -- https://en.wikipedia.org/wiki/Multivariate_normal_distribution.
@@ -180,8 +148,8 @@ likelihoodFunction ::
 likelihoodFunction mu sigmaInv logSigmaDet x =
   logDensityMultivariateNormal mu sigmaInv logSigmaDet distances
   where
-    times = getBranches (heightTreeToLengthTree $ x ^. timeTree)
-    rates = getBranches (x ^. rateTree)
+    times = getBranches (fromLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
+    rates = getBranches (fromLengthTree $ x ^. rateTree)
     tH = x ^. timeHeight
     rMu = x ^. rateMean
     distances = VS.map (* (tH * rMu)) $ sumFirstTwo $ VS.zipWith (*) times rates
@@ -193,10 +161,10 @@ rootBranch :: I -> Double
 rootBranch x = tH * rM * (t1 * r1 + t2 * r2)
   where
     (t1, t2) = case heightTreeToLengthTree $ x ^. timeTree of
-      Node _ _ [l, r] -> (branch l, branch r)
+      LengthTree (Node _ _ [l, r]) -> (branch l, branch r)
       _ -> error "rootBranch: Time tree is not bifurcating."
     (r1, r2) = case x ^. rateTree of
-      Node _ _ [l, r] -> (branch l, branch r)
+      LengthTree (Node _ _ [l, r]) -> (branch l, branch r)
       _ -> error "rootBranch: Rate tree is not bifurcating."
     tH = x ^. timeHeight
     rM = x ^. rateMean
@@ -244,11 +212,11 @@ proposalsTimeTree t =
     psOthers = ps otherNodes nO
 
 -- Lens for proposals on the rate mean and rate tree.
-rateMeanRateTreeL :: Lens' I (Double, Tree Double Name)
+rateMeanRateTreeL :: Lens' I (Double, LengthTree Double)
 rateMeanRateTreeL = tupleLens rateMean rateTree
 
 -- Lens for proposals on the rate variance and rate tree.
-rateVarianceRateTreeL :: Lens' I (Double, Tree Double Name)
+rateVarianceRateTreeL :: Lens' I (Double, LengthTree Double)
 rateVarianceRateTreeL = tupleLens rateVariance rateTree
 
 -- Proposals on the rate tree.
@@ -280,7 +248,7 @@ proposalsTimeRateTreeContra t =
     ++ map (liftProposal timeRateTreesL) psOthers
   where
     -- Lens for the contrary proposal on the trees.
-    timeRateTreesL :: Lens' I (HeightTree Double, Tree Double Name)
+    timeRateTreesL :: Lens' I (HeightTree Double, LengthTree Double)
     timeRateTreesL = tupleLens timeTree rateTree
     ps hn n =
       slideNodesContrarily t hn 0.1 n (pWeight 3) (pWeight 8) Tune
@@ -295,12 +263,12 @@ timeHeightRateMeanL :: Lens' I (Double, Double)
 timeHeightRateMeanL = tupleLens timeHeight rateMean
 
 -- Lens for proposals on the rate mean and rate tree.
-timeHeightRateTreeL :: Lens' I (Double, Tree Double Name)
+timeHeightRateTreeL :: Lens' I (Double, LengthTree Double)
 timeHeightRateTreeL = tupleLens timeHeight rateTree
 
 -- Lens for proposals on the triple (1) absolute time height, (2) relative time
 -- tree, and (3) relative rate tree.
-heightTimeRateTreesLens :: Lens' I (Double, HeightTree Double, Tree Double Name)
+heightTimeRateTreesLens :: Lens' I (Double, HeightTree Double, LengthTree Double)
 heightTimeRateTreesLens = tripleLens timeHeight timeTree rateTree
 
 -- Proposals only activated when calibrations are available and absolute times
@@ -395,19 +363,19 @@ monFileParams cb cs =
 
 -- Monitor the time tree with absolute branch lengths, because they are more
 -- informative.
-absoluteTimeTree :: I -> Tree Double Name
-absoluteTimeTree s = first (* h) t
+absoluteTimeTree :: I -> LengthTree Double
+absoluteTimeTree s = fmap (* h) t
   where
     h = s ^. timeHeight
     t = heightTreeToLengthTree $ s ^. timeTree
 
 -- The time tree with absolute branch lengths is written to a separate file.
 monFileTimeTree :: MonitorFile I
-monFileTimeTree = monitorFile "timetree" [absoluteTimeTree >$< monitorTree "TimeTree"] 2
+monFileTimeTree = monitorFile "timetree" [absoluteTimeTree >$< monitorLengthTree "TimeTree"] 2
 
 -- The rate tree with relative rates is written to a separate file.
 monFileRateTree :: MonitorFile I
-monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorTree "RateTree"] 2
+monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorLengthTree "RateTree"] 2
 
 -- | Monitor to standard output and files. Do not use any batch monitors for now.
 monitor :: [Calibration Double] -> [Constraint] -> Monitor I

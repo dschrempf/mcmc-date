@@ -28,6 +28,9 @@ module Mcmc.Tree.Prior.Node.Calibration
     calibrateSoft,
     calibrateSoftF,
     calibrate,
+
+    -- * Misc
+    realToFracC
   )
 where
 
@@ -339,7 +342,7 @@ calibrateSoftF s (Interval a' b) h
 -- - The height multiplier is zero or negative.
 calibrate ::
   RealFloat a =>
-  VB.Vector (Calibration a) ->
+  VB.Vector (Calibration Double) ->
   -- | Standard deviation of the calibrations before scaling with the height
   -- multiplier.
   --
@@ -348,10 +351,11 @@ calibrate ::
   -- | Height multiplier of tree. Useful when working on normalized trees.
   a ->
   PriorFunctionG (HeightTree a) a
-calibrate cs sd h t
+calibrate cs' sd h t
   | h <= 0 = error "calibrate: Height multiplier is zero or negative."
   | otherwise = VB.product $ VB.map f cs
   where
+    cs = VB.map realToFracC cs'
     f (Calibration n x i l) =
       let l' = if h == 1.0 then l else transformInterval (recip h) l
        in calibrateSoft sd (Calibration n x i l') t
@@ -361,3 +365,17 @@ calibrate cs sd h t
   Double ->
   PriorFunction (HeightTree Double)
   #-}
+
+realToFracI :: Fractional a => Interval Double -> Interval a
+realToFracI (Interval (NonNegative a) (Positive b)) =
+  Interval (NonNegative $ realToFrac a) (Positive $ realToFrac b)
+realToFracI (Interval (NonNegative a) Infinity) =
+  Interval (NonNegative $ realToFrac a) Infinity
+
+-- | Convert a calibration on 'Double' to a more general one.
+--
+-- Useful for automatic differentiation.
+realToFracC :: Fractional a => Calibration Double -> Calibration a
+realToFracC c = c {calibrationInterval = i'}
+  where i' = realToFracI $ calibrationInterval c
+{-# SPECIALIZE realToFracC :: Calibration Double -> Calibration Double #-}

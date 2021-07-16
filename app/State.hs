@@ -1,4 +1,6 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -- |
@@ -16,7 +18,6 @@ module State where
 
 import Control.Lens
 import Data.Aeson
-import ELynx.Tree
 import GHC.Generics
 import Mcmc.Tree
 
@@ -83,7 +84,7 @@ data IG a = IG
     -- | Hyper-parameter. The variance of the relative rates.
     _rateVariance :: a,
     -- | Relative rate tree. Branch labels denote relative rates with mean 1.0.
-    _rateTree :: Tree a Name
+    _rateTree :: LengthTree a
   }
   deriving (Generic)
 
@@ -91,6 +92,12 @@ type I = IG Double
 
 -- Create accessors (lenses) to the parameters in the state space.
 makeLenses ''IG
+
+-- instance Functor IG where
+--   fmap f (IG l m h t mu va r) =
+--     IG (f l) (f m) (f h) (fmap f t) (f mu) (f va) (first f r)
+
+deriving instance Functor IG
 
 -- Allow storage of the trace as JSON.
 instance ToJSON a => ToJSON (IG a)

@@ -12,9 +12,9 @@
 --
 -- For proposals on ultrametric trees, see "Mcmc.Tree.Proposal.Ultrametric".
 module Mcmc.Tree.Proposal.Unconstrained
-  ( scaleBranch,
+  ( scaleBranchAt,
     scaleBranches,
-    scaleTree,
+    scaleSubTreeAt,
     scaleSubTrees,
     pulley,
     scaleNormAndTreeContrarily,
@@ -42,14 +42,6 @@ import Numeric.Log hiding (sum)
 import Statistics.Distribution.Gamma
 import System.Random.MWC
 
--- | Scale branch.
---
--- This proposal scales the stem of the given tree. To slide inner branches, use
--- 'subTreeAtL' or 'scaleBranches'. For example,
---
--- @subTreeAtL path @~ scaleBranch ...@.
---
--- See 'scaleUnbiased'.
 scaleBranch ::
   Shape Double ->
   PName ->
@@ -58,9 +50,21 @@ scaleBranch ::
   Proposal (Tree Double a)
 scaleBranch s n w t = branchL @~ scaleUnbiased s n w t
 
+-- | Scale branch at given node.
+--
+-- See 'scaleUnbiased'.
+scaleBranchAt ::
+  Path ->
+  Shape Double ->
+  PName ->
+  PWeight ->
+  Tune ->
+  Proposal (LengthTree Double)
+scaleBranchAt pth s n w t = lengthTreeL . subTreeAtL pth @~ scaleBranch s n w t
+
 -- | Scale the branches of a given tree.
 --
--- See 'scaleBranch'.
+-- See 'scaleBranchAt'.
 scaleBranches ::
   Tree e a ->
   HandleNode ->
@@ -69,9 +73,9 @@ scaleBranches ::
   PName ->
   PWeight ->
   Tune ->
-  [Proposal (Tree Double b)]
+  [Proposal (LengthTree Double)]
 scaleBranches tr hn s n w t =
-  [ subTreeAtL pth
+  [ lengthTreeL . subTreeAtL pth
       @~ scaleBranch s (name lb) w t
     | (pth, lb) <- itoList $ identify tr,
       -- Filter nodes.
@@ -101,20 +105,7 @@ scaleTreeSimple n k t =
     (Just recip)
     (Just $ scaleTreeJacobian n)
 
--- | Scale all branches including the stem.
---
--- A gamma distributed kernel of given shape is used. The scale is set such that
--- the mean is 1.0.
---
--- NOTE: Because the determinant of the Jacobian matrix depends on the number of
--- branches scaled, this proposal is only valid if all branch lengths including
--- the stem are unconstrained and strictly positive.
---
--- Call 'error' if:
---
--- - A branch length is zero or negative.
 scaleTree ::
-  -- | The topology of the tree is used to precompute the number of inner nodes.
   Tree e a ->
   Shape Double ->
   PName ->
@@ -126,9 +117,32 @@ scaleTree tr k = createProposal description (scaleTreeSimple n k) (PDimension n)
     description = PDescription $ "Scale tree; shape: " ++ show k
     n = length tr
 
+-- | Scale all branches including the stem at given node.
+--
+-- A gamma distributed kernel of given shape is used. The scale is set such that
+-- the mean is 1.0.
+--
+-- NOTE: Because the determinant of the Jacobian matrix depends on the number of
+-- branches scaled, this proposal is only valid if all branch lengths including
+-- the stem are unconstrained and strictly positive.
+--
+-- Call 'error' if:
+--
+-- - A branch length is zero or negative.
+scaleSubTreeAt ::
+  Path ->
+  -- | The topology of the tree is used to precompute the number of inner nodes.
+  Tree e a ->
+  Shape Double ->
+  PName ->
+  PWeight ->
+  Tune ->
+  Proposal (LengthTree Double)
+scaleSubTreeAt pth tr k n w t = lengthTreeL . subTreeAtL pth @~ scaleTree tr k n w t
+
 -- | Scale the sub trees of a given tree.
 --
--- See 'scaleTree'.
+-- See 'scaleTreeAt'.
 --
 -- The weights are assigned as described in
 -- 'Mcmc.Tree.Proposal.Ultrametric.scaleSubTreesUltrametric'.
@@ -145,9 +159,9 @@ scaleSubTrees ::
   -- | Maximum weight.
   PWeight ->
   Tune ->
-  [Proposal (Tree Double b)]
+  [Proposal (LengthTree Double)]
 scaleSubTrees tr hn s n wMin wMax t =
-  [ subTreeAtL pth
+  [ lengthTreeL . subTreeAtL pth
       @~ scaleTree focus s (name lb) w t
     | (pth, lb) <- itoList $ identify tr,
       let focus = tr ^. subTreeAtL pth,
@@ -185,8 +199,8 @@ pulleyTruncatedNormalSample s t (Node _ _ [l, r])
     b = brR
 pulleyTruncatedNormalSample _ _ _ = error "pulleyTruncatedNormalSample: Node is not bifurcating."
 
-pulleySimple :: StandardDeviation Double -> TuningParameter -> ProposalSimple (Tree Double a)
-pulleySimple s t tr@(Node br lb [l, r]) g = do
+pulleySimple :: StandardDeviation Double -> TuningParameter -> ProposalSimple (LengthTree Double)
+pulleySimple s t (LengthTree tr@(Node br lb [l, r])) g = do
   (u, q) <- pulleyTruncatedNormalSample s t tr g
   let tr' =
         Node
@@ -196,7 +210,7 @@ pulleySimple s t tr@(Node br lb [l, r]) g = do
             r & branchL -~ u
           ]
   -- The determinant of the Jacobian matrix is (-1).
-  return (tr', q, 1.0)
+  return (LengthTree tr', q, 1.0)
 pulleySimple _ _ _ _ = error "pulleySimple: Node is not bifurcating."
 
 -- | Use a node as a pulley.
@@ -214,25 +228,26 @@ pulley ::
   PName ->
   PWeight ->
   Tune ->
-  Proposal (Tree Double a)
+  Proposal (LengthTree Double )
 pulley s = createProposal description (pulleySimple s) (PDimension 2)
   where
     description = PDescription $ "Pulley; sd: " ++ show s
 
 scaleNormAndTreeContrarilyFunction ::
-  (Double, Tree Double a) ->
+  (Double, LengthTree Double) ->
   Double ->
-  (Double, Tree Double a)
+  (Double, LengthTree Double)
 -- Do not touch the stem, because this leads to problems with negative stem
 -- lengths (or NaNs).
-scaleNormAndTreeContrarilyFunction (x, tr) u = (x / u, scaleUnconstrainedTreeWithoutStemF u tr)
+scaleNormAndTreeContrarilyFunction (x, LengthTree tr) u =
+  (x / u, LengthTree $ scaleUnconstrainedTreeWithoutStemF u tr)
 
 scaleNormAndTreeContrarilySimple ::
   -- Number of branches.
   Int ->
   Shape Double ->
   TuningParameter ->
-  ProposalSimple (Double, Tree Double a)
+  ProposalSimple (Double, LengthTree Double)
 scaleNormAndTreeContrarilySimple n k t =
   genericContinuous
     (gammaDistr (k / t) (t / k))
@@ -262,7 +277,7 @@ scaleNormAndTreeContrarily ::
   PName ->
   PWeight ->
   Tune ->
-  Proposal (Double, Tree Double b)
+  Proposal (Double, LengthTree Double)
 scaleNormAndTreeContrarily tr sd =
   createProposal
     description
@@ -275,13 +290,13 @@ scaleNormAndTreeContrarily tr sd =
 
 scaleVarianceAndTreeFunction ::
   Int ->
-  (Double, Tree Double a) ->
+  (Double, LengthTree Double) ->
   Double ->
-  (Double, Tree Double a)
+  (Double, LengthTree Double)
 -- Do not touch the stem, this leads to problems with negative stem lengths (or
 -- NaNs).
-scaleVarianceAndTreeFunction n (x, tr) u =
-  (x * u * u, tr & forestL %~ map (first f))
+scaleVarianceAndTreeFunction n (x, LengthTree tr) u =
+  (x * u * u, LengthTree $ tr & forestL %~ map (first f))
   where
     -- The calculation of sample mean requires a separate traversal of the tree.
     -- This may be slow.
@@ -299,7 +314,7 @@ scaleVarianceAndTreeSimple ::
   Int ->
   Shape Double ->
   TuningParameter ->
-  ProposalSimple (Double, Tree Double a)
+  ProposalSimple (Double, LengthTree Double)
 scaleVarianceAndTreeSimple n k t =
   genericContinuous
     (gammaDistr (k / t) (t / k))
@@ -340,7 +355,7 @@ scaleVarianceAndTree ::
   PName ->
   PWeight ->
   Tune ->
-  Proposal (Double, Tree Double b)
+  Proposal (Double, LengthTree Double)
 scaleVarianceAndTree tr sd =
   createProposal
     description

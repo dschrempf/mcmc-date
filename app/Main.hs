@@ -42,6 +42,7 @@ import Mcmc.Tree
 
 -- Local modules (see comment above).
 import Definitions
+import Probability
 import Tools
 {- ORMOLU_ENABLE -}
 

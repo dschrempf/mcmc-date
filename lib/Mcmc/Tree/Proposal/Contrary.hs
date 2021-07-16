@@ -36,8 +36,8 @@ slideNodesAtContrarilySimple ::
   Path ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (HeightTree Double, Tree Double b)
-slideNodesAtContrarilySimple pth sd t (tTr, rTr) g
+  ProposalSimple (HeightTree Double, LengthTree Double)
+slideNodesAtContrarilySimple pth sd t (HeightTree tTr, LengthTree rTr) g
   | null tTrChildren =
     error "slideNodesAtContrarilySimple: Sub tree of ultrametric tree is a leaf."
   | null rTrChildren =
@@ -62,7 +62,7 @@ slideNodesAtContrarilySimple pth sd t (tTr, rTr) g
             else scaleUnconstrainedStem xiStemR . scaleDaughterBranches
         rTr' = toTree $ modifyTree f rTrPos
     -- New state.
-    let x' = (HeightTree tTr', rTr')
+    let x' = (HeightTree tTr', LengthTree rTr')
         -- jacobianTimeTree = Exp $ fromIntegral (nNodes - 1) * log xi
         -- jacobianRateTree = Exp $ fromIntegral (nBranches -1) * log xi' + log xiStem
         jacobian = Exp $ sum (map log xisR) + log xiStemR
@@ -70,7 +70,7 @@ slideNodesAtContrarilySimple pth sd t (tTr, rTr) g
     return (x', q, jacobian)
   where
     -- Time tree.
-    tTrPos = goPathUnsafe pth $ fromTree $ fromHeightTree tTr
+    tTrPos = goPathUnsafe pth $ fromTree tTr
     tTrFocus = current tTrPos
     tTrParent = current $ goParentUnsafe tTrPos
     hTTrNode = branch tTrFocus
@@ -127,7 +127,7 @@ slideNodesAtContrarily ::
   PName ->
   PWeight ->
   Tune ->
-  Proposal (HeightTree Double, Tree Double c)
+  Proposal (HeightTree Double, LengthTree Double)
 slideNodesAtContrarily tr pth sd
   | not $ isValidPath tr pth = error $ "slideNodesAtContrarily: Path is invalid: " <> show pth <> "."
   | isLeafPath tr pth = error $ "slideNodesAtContrarily: Path leads to a leaf: " <> show pth <> "."
@@ -161,7 +161,7 @@ slideNodesContrarily ::
   -- | Maximum weight.
   PWeight ->
   Tune ->
-  [Proposal (HeightTree Double, Tree Double c)]
+  [Proposal (HeightTree Double, LengthTree Double)]
 slideNodesContrarily tr hn s n wMin wMax t =
   [ slideNodesAtContrarily tr pth s (name lb) w t
     | (pth, lb) <- itoList $ identify tr,
@@ -198,8 +198,8 @@ slideRootSimple ::
   Int ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (Double, HeightTree Double, Tree Double b)
-slideRootSimple n s t (ht, HeightTree tTr, rTr) g = do
+  ProposalSimple (Double, HeightTree Double, LengthTree Double)
+slideRootSimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
   let tTrHeight = branch tTr
   when
     (tTrHeight /= 1.0)
@@ -221,7 +221,7 @@ slideRootSimple n s t (ht, HeightTree tTr, rTr) g = do
   let tTr' = tTr & forestL %~ map (first (/ u))
       rTr' = rTr & forestL %~ zipWith scaleUnconstrainedStem xis
       j = slideRootContrarilyJacobian n u xis
-      x' = (ht', HeightTree tTr', rTr')
+      x' = (ht', HeightTree tTr', LengthTree rTr')
   return (x', q, j)
   where
     htsChildren = map branch $ forest tTr
@@ -256,7 +256,7 @@ slideRootContrarily ::
   PName ->
   PWeight ->
   Tune ->
-  Proposal (Double, HeightTree Double, Tree Double c)
+  Proposal (Double, HeightTree Double, LengthTree Double)
 slideRootContrarily tr s =
   createProposal
     description
@@ -279,8 +279,8 @@ scaleSubTreeAtContrarilySimple ::
   Path ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (HeightTree Double, Tree Double b)
-scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, rTr) g
+  ProposalSimple (HeightTree Double, LengthTree Double)
+scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, LengthTree rTr) g
   | null tTrChildren =
     error "scaleSubTreeAtContrarilySimple: Sub tree of ultrametric tree is a leaf."
   | null rTrChildren =
@@ -303,7 +303,7 @@ scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, rTr) g
             else scaleUnconstrainedStem xiStemR . scaleUnconstrainedTreeWithoutStemF xiR
         rTr' = toTree $ modifyTree f rTrPos
     -- New state.
-    let x' = (HeightTree tTr', rTr')
+    let x' = (HeightTree tTr', LengthTree rTr')
         -- jacobianTimeTree = Exp $ fromIntegral (nNodes - 1) * log xi
         -- jacobianRateTree = Exp $ fromIntegral (nBranches -1) * log xi' + log xiStem
         jacobian = Exp $ fromIntegral (nNodes - nBranches) * log xiT + log xiStemR
@@ -367,7 +367,7 @@ scaleSubTreesAtContrarily ::
   PName ->
   PWeight ->
   Tune ->
-  Proposal (HeightTree Double, Tree Double c)
+  Proposal (HeightTree Double, LengthTree Double)
 scaleSubTreesAtContrarily tr pth sd
   | not $ isValidPath tr pth = error $ "scaleSubTreesAtContrarily: Path is invalid: " <> show pth <> "."
   | isLeafPath tr pth = error $ "scaleSubTreesAtContrarily: Path leads to a leaf: " <> show pth <> "."
@@ -399,7 +399,7 @@ scaleSubTreesContrarily ::
   -- | Maximum weight.
   PWeight ->
   Tune ->
-  [Proposal (HeightTree Double, Tree Double c)]
+  [Proposal (HeightTree Double, LengthTree Double)]
 scaleSubTreesContrarily tr hn s n wMin wMax t =
   [ scaleSubTreesAtContrarily tr pth s (name lb) w t
     | (pth, lb) <- itoList $ identify tr,
