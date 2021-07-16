@@ -342,7 +342,7 @@ calibrateSoftF s (Interval a' b) h
 -- - The height multiplier is zero or negative.
 calibrate ::
   RealFloat a =>
-  VB.Vector (Calibration Double) ->
+  VB.Vector (Calibration a) ->
   -- | Standard deviation of the calibrations before scaling with the height
   -- multiplier.
   --
@@ -351,11 +351,10 @@ calibrate ::
   -- | Height multiplier of tree. Useful when working on normalized trees.
   a ->
   PriorFunctionG (HeightTree a) a
-calibrate cs' sd h t
+calibrate cs sd h t
   | h <= 0 = error "calibrate: Height multiplier is zero or negative."
   | otherwise = VB.product $ VB.map f cs
   where
-    cs = VB.map realToFracC cs'
     f (Calibration n x i l) =
       let l' = if h == 1.0 then l else transformInterval (recip h) l
        in calibrateSoft sd (Calibration n x i l') t

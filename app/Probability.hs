@@ -13,6 +13,8 @@ module Probability
   ( priorFunction,
     likelihoodFunction,
     gradLogPosteriorFunc,
+    -- -- NOTE: Test automatic differentiation.
+    -- numDiffLogPosteriorFunc,
   )
 where
 
@@ -37,7 +39,7 @@ priorFunction ::
   VB.Vector (Calibration Double) ->
   VB.Vector Constraint ->
   PriorFunctionG (IG a) a
-priorFunction cb cs (IG l m h t mu va r) =
+priorFunction cb' cs (IG l m h t mu va r) =
   product' $
     calibrateAndConstrain cb 1e-4 h cs 1e-4 t :
     -- -- Usually, the combined treatment is faster.
@@ -63,6 +65,7 @@ priorFunction cb cs (IG l m h t mu va r) =
       uncorrelatedGamma WithoutStem 1 va r
     ]
   where
+    cb = VB.map realToFracC cb'
     t' = heightTreeToLengthTree t
 {-# SPECIALIZE priorFunction ::
   VB.Vector (Calibration Double) ->
@@ -220,4 +223,28 @@ gradLogPosteriorFunc ::
   IG a ->
   IG a
 gradLogPosteriorFunc cs ks mu sigmaInv logSigmaDet =
+  -- grad (ln . priorFunction cs ks)
+  -- grad (ln . likelihoodFunction mu sigmaInv logSigmaDet)
   grad (ln . posteriorFunction cs ks mu sigmaInv logSigmaDet)
+
+-- -- NOTE: Test automatic differentiation.
+-- numDiffLogPosteriorFunc ::
+--   (RealFloat a, Show a) =>
+--   VB.Vector (Calibration Double) ->
+--   VB.Vector Constraint ->
+--   -- | Mean  vector.
+--   VB.Vector Double ->
+--   -- | Inverted covariance matrix.
+--   MB.Matrix Double ->
+--   -- | Log of determinant of covariance matrix.
+--   Double ->
+--   IG a ->
+--   IG a ->
+--   a ->
+--   a
+-- numDiffLogPosteriorFunc cs ks mu sigmaInv logSigmaDet xs ys h =
+--   (f ys - f xs) / h
+--   where
+--     -- f = ln . priorFunction cs ks
+--     -- f = ln . likelihoodFunction mu sigmaInv logSigmaDet
+--     f = ln . posteriorFunction cs ks mu sigmaInv logSigmaDet

@@ -348,6 +348,7 @@ burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 300]
 -- | Number of iterations after burn in.
 iterations :: Iterations
 -- iterations = Iterations 100
+-- iterations = Iterations 1000
 iterations = Iterations 15000
 
 -- | Number of points of the stepping stone sampler.

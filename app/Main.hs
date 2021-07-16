@@ -41,6 +41,14 @@ import ELynx.Tree
 import Mcmc hiding (Continue)
 import Mcmc.Tree
 
+-- -- NOTE: Test automatic differentiation.
+--
+-- import Control.Lens
+-- import Mcmc.Chain.Chain hiding (priorFunction, likelihoodFunction, monitor)
+-- import Mcmc.Chain.Link
+-- import Mcmc.Chain.Trace
+-- import State
+
 -- Local modules (see comment above).
 import Definitions
 import Probability
@@ -175,7 +183,7 @@ getConstraints t (Just f) = loadConstraints t f
 
 -- Run the Metropolis-Hastings-Green algorithm.
 runMetropolisHastingsGreen :: Spec -> IO ()
-runMetropolisHastingsGreen (Spec an cals cons) = do
+runMetropolisHastingsGreen (Spec an cls cns) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
@@ -186,15 +194,15 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
   -- various objects.
   --
   -- Calibrations.
-  cb <- getCalibrations meanTree cals
+  cb <- getCalibrations meanTree cls
   -- Constraints.
-  cs <- getConstraints meanTree cons
+  cs <- getConstraints meanTree cns
   let -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
       lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       -- Proposal cycle.
-      cc' = proposals (isJust cals) meanTree
+      cc' = proposals (isJust cls) meanTree
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
       -- Starting state.
@@ -211,7 +219,8 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
           (AnalysisName an)
           burnIn
           iterations
-          TraceAuto
+          -- TraceAuto
+          (TraceMinimum 100)
           Overwrite
           Parallel
           Save
@@ -227,8 +236,21 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
   -- Run the Markov chain.
   void $ mcmc mcmcS a
 
+  -- -- NOTE: Test automatic differentiation.
+  --
+  -- chain' <- fromMHG <$> mcmc mcmcS a
+  -- trace' <- VB.map state <$> takeT 100 (trace chain')
+  -- let x = VB.head trace'
+  --     gAd = _rateMean $ gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet x
+  --     startX = x & rateMean -~ 0.002
+  --     startY = x & rateMean +~ 0.002
+  --     dNm = numDiffLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet startX startY 0.004
+  -- putStrLn $ "GRAD: " <> show gAd
+  -- putStrLn $ "NUM: " <> show dNm
+  -- error "Debug."
+
 continueMetropolisHastingsGreen :: Spec -> IO ()
-continueMetropolisHastingsGreen (Spec an cals cons) = do
+continueMetropolisHastingsGreen (Spec an cls cns) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
@@ -239,15 +261,15 @@ continueMetropolisHastingsGreen (Spec an cals cons) = do
   -- various objects.
   --
   -- Calibrations.
-  cb <- getCalibrations meanTree cals
+  cb <- getCalibrations meanTree cls
   -- Constraints.
-  cs <- getConstraints meanTree cons
+  cs <- getConstraints meanTree cns
   let -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
       lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       -- Proposal cycle.
-      cc' = proposals (isJust cals) meanTree
+      cc' = proposals (isJust cls) meanTree
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
 
@@ -258,7 +280,7 @@ continueMetropolisHastingsGreen (Spec an cals cons) = do
   void $ mcmcContinue iterations s a
 
 runMarginalLikelihood :: Spec -> IO ()
-runMarginalLikelihood (Spec an cals cons) = do
+runMarginalLikelihood (Spec an cls cns) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
@@ -269,15 +291,15 @@ runMarginalLikelihood (Spec an cals cons) = do
   -- various objects.
   --
   -- Calibrations.
-  cb <- getCalibrations meanTree cals
+  cb <- getCalibrations meanTree cls
   -- Constraints.
-  cs <- getConstraints meanTree cons
+  cs <- getConstraints meanTree cns
   let -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
       lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       -- Proposal cycle.
-      cc' = proposals (isJust cals) meanTree
+      cc' = proposals (isJust cls) meanTree
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
       -- Starting state.
