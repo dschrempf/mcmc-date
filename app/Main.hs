@@ -23,6 +23,7 @@ import Data.Aeson
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.List
+import qualified Data.Matrix as MB
 import Data.Maybe
 import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
@@ -178,6 +179,8 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
+  let muBoxed = VB.convert mu
+      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -189,7 +192,7 @@ runMetropolisHastingsGreen (Spec an cals cons) = do
   let -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
-      lh' = likelihoodFunction mu sigmaInv logSigmaDet
+      lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       -- Proposal cycle.
       cc' = proposals (isJust cals) meanTree
       -- Monitor.
@@ -229,6 +232,8 @@ continueMetropolisHastingsGreen (Spec an cals cons) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
+  let muBoxed = VB.convert mu
+      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -240,7 +245,7 @@ continueMetropolisHastingsGreen (Spec an cals cons) = do
   let -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
-      lh' = likelihoodFunction mu sigmaInv logSigmaDet
+      lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       -- Proposal cycle.
       cc' = proposals (isJust cals) meanTree
       -- Monitor.
@@ -257,6 +262,8 @@ runMarginalLikelihood (Spec an cals cons) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
+  let muBoxed = VB.convert mu
+      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -268,7 +275,7 @@ runMarginalLikelihood (Spec an cals cons) = do
   let -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
-      lh' = likelihoodFunction mu sigmaInv logSigmaDet
+      lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       -- Proposal cycle.
       cc' = proposals (isJust cals) meanTree
       -- Monitor.
