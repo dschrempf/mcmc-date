@@ -48,7 +48,6 @@
 --   finally improved mixing for the root node and the daughters.
 module Definitions
   ( initWith,
-    likelihoodFunction,
     proposals,
     monitor,
     burnIn,
@@ -60,23 +59,20 @@ where
 
 import Control.Lens
 import Data.Bifunctor
-import qualified Data.Vector.Storable as VS
-import qualified Numeric.LinearAlgebra as L
 import Numeric.Log hiding (sum)
-import Numeric.MathFunctions.Constants
 
 -- import Debug.Trace
 
 -- Disable the syntax formatter Ormolu to highlight relevant module imports.
 {- ORMOLU_DISABLE -}
--- The ELynx library includes functions to work on trees.
+-- ELynx tree library.
 import ELynx.Tree
 
--- The Mcmc library includes the Metropolis-Hastings-Green algorithm.
+-- Mcmc library.
 import Mcmc
-import Mcmc.Tree
 
--- Local modules.
+-- Local Modules.
+import Mcmc.Tree
 import State
 import Tools
 {- ORMOLU_ENABLE -}
@@ -115,44 +111,6 @@ initWith t =
       toHeightTreeUltrametric $
         normalizeHeight $
           makeUltrametric tPositiveBranchesStemZero
-
--- Log of density of multivariate normal distribution with given parameters.
--- https://en.wikipedia.org/wiki/Multivariate_normal_distribution.
-logDensityMultivariateNormal ::
-  -- Mean vector.
-  VS.Vector Double ->
-  -- Inverted covariance matrix.
-  L.Matrix Double ->
-  -- Log of determinant of covariance matrix.
-  Double ->
-  -- Value vector.
-  VS.Vector Double ->
-  Log Double
-logDensityMultivariateNormal mu sigmaInv logSigmaDet xs =
-  Exp $ c + (-0.5) * (logSigmaDet + ((dxs L.<# sigmaInv) L.<.> dxs))
-  where
-    dxs = xs - mu
-    k = fromIntegral $ VS.length mu
-    c = negate $ m_ln_sqrt_2_pi * k
-
--- | Approximation of the phylogenetic likelihood using a multivariate normal
--- distribution.
-likelihoodFunction ::
-  -- | Mean vector.
-  VS.Vector Double ->
-  -- | Inverted covariance matrix.
-  L.Matrix Double ->
-  -- | Log of determinant of covariance matrix.
-  Double ->
-  LikelihoodFunction I
-likelihoodFunction mu sigmaInv logSigmaDet x =
-  logDensityMultivariateNormal mu sigmaInv logSigmaDet distances
-  where
-    times = getBranches (fromLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
-    rates = getBranches (fromLengthTree $ x ^. rateTree)
-    tH = x ^. timeHeight
-    rMu = x ^. rateMean
-    distances = VS.map (* (tH * rMu)) $ sumFirstTwo $ VS.zipWith (*) times rates
 
 -- The root splits the branch of the unrooted tree into two branches. This
 -- function retrieves the root branch measured in expected number of

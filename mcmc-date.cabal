@@ -118,6 +118,7 @@ executable mcmc-date
     , lens
     , log-domain
     , math-functions
+    , matrices
     , mcmc
     , mcmc-date
     , mwc-random
