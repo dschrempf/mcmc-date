@@ -11,10 +11,13 @@
 -- Creation date: Tue Jul 13 11:02:03 2021.
 module Probability
   ( priorFunction,
+    gradLogPriorFunction,
   )
 where
 
 import qualified Data.Vector as VB
+import Numeric.AD
+import Numeric.Log
 
 {- ORMOLU_DISABLE -}
 import Mcmc
@@ -60,3 +63,6 @@ priorFunction cb cs (IG l m h t mu va r) =
   VB.Vector Constraint ->
   PriorFunction I
   #-}
+
+gradLogPriorFunction :: (RealFloat a, Show a) => VB.Vector (Calibration Double) -> VB.Vector Constraint -> IG a -> IG a
+gradLogPriorFunction cs ks = grad (ln . priorFunction cs ks)
