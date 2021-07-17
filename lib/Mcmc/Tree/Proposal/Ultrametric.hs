@@ -66,7 +66,7 @@ slideNodeAtUltrametricSimple pth s t tr g
     -- The absolute value of the determinant of the Jacobian is 1.0.
     return (HeightTree $ toTree $ modifyTree setNodeHeight trPos, q, 1.0)
   where
-    trPos = goPathUnsafe pth $ fromTree $ fromHeightTree tr
+    trPos = goPathUnsafe pth $ fromTree $ getHeightTree tr
     focus = current trPos
     children = forest focus
     hNode = branch focus
@@ -154,7 +154,7 @@ scaleSubTreeAtUltrametricSimple n pth sd t tr g
         jacobian = Exp $ fromIntegral (n - 1) * log xi
     return (HeightTree $ toTree $ modifyTree (scaleUltrametricTreeF hNode' xi) trPos, q, jacobian)
   where
-    trPos = goPathUnsafe pth $ fromTree $ fromHeightTree tr
+    trPos = goPathUnsafe pth $ fromTree $ getHeightTree tr
     focus = current trPos
     children = forest focus
     hNode = branch focus

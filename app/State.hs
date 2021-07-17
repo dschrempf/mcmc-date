@@ -99,6 +99,11 @@ deriving instance Foldable IG
 
 deriving instance Traversable IG
 
+instance Applicative IG where
+  pure x = IG x x x (pure x) x x (pure x)
+  (IG lL mL hL tL muL vaL rL) <*> (IG lR mR hR tR muR vaR rR) =
+    IG (lL lR) (mL mR) (hL hR) (tL <*> tR) (muL muR) (vaL vaR) (rL <*> rR)
+
 -- Allow storage of the trace as JSON.
 instance ToJSON a => ToJSON (IG a)
 

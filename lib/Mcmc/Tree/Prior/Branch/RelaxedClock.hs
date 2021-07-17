@@ -150,7 +150,7 @@ uncorrelatedGamma ::
   Mean a ->
   Variance a ->
   PriorFunctionG (LengthTree a) a
-uncorrelatedGamma hs m v = branchesWith hs (gamma k th) . fromLengthTree
+uncorrelatedGamma hs m v = branchesWith hs (gamma k th) . getLengthTree
   where
     (k, th) = gammaMeanVarianceToShapeScale m v
 {-# SPECIALIZE uncorrelatedGamma ::
@@ -181,7 +181,7 @@ uncorrelatedLogNormal ::
   Mean a ->
   Variance a ->
   PriorFunctionG (LengthTree a) a
-uncorrelatedLogNormal hs mu var = branchesWith hs (logNormalG' mu var) . fromLengthTree
+uncorrelatedLogNormal hs mu var = branchesWith hs (logNormalG' mu var) . getLengthTree
 {-# SPECIALIZE uncorrelatedLogNormal ::
   HandleStem ->
   Double ->

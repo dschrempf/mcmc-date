@@ -38,6 +38,6 @@ monitorLengthTree ::
 monitorLengthTree n =
   MonitorParameter
     n
-    (toNewickBuilder . lengthToPhyloTree . setLengths . fromLengthTree)
+    (toNewickBuilder . lengthToPhyloTree . setLengths . getLengthTree)
   where
     setLengths = first toLengthUnsafe

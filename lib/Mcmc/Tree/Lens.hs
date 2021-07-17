@@ -77,10 +77,10 @@ subTreeAtL pth f s = go s pth
     assemble br lb ls rs c = Node br lb $ ls ++ (c : rs)
 
 heightTreeL :: Lens' (HeightTree a) (Tree a Name)
-heightTreeL f s = HeightTree <$> f (fromHeightTree s)
+heightTreeL f s = HeightTree <$> f (getHeightTree s)
 
 lengthTreeL :: Lens' (LengthTree a) (Tree a Name)
-lengthTreeL f s = LengthTree <$> f (fromLengthTree s)
+lengthTreeL f s = LengthTree <$> f (getLengthTree s)
 
 -- -- The following function is left here for reference.
 -- --

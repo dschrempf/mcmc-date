@@ -146,8 +146,8 @@ birthDeath ConditionOnTimeOfOrigin la mu rho t
   | rho <= 0.0 = error "birthDeath: Sampling rate is zero or negative."
   | rho > 1.0 = error "birthDeath: Sampling rate is larger than 1.0."
   | epsNearCritical > abs (la - mu) =
-      fst $ birthDeathWith computeDENearCritical la mu rho $ fromLengthTree t
-  | otherwise = fst $ birthDeathWith computeDE la mu rho $ fromLengthTree t
+      fst $ birthDeathWith computeDENearCritical la mu rho $ getLengthTree t
+  | otherwise = fst $ birthDeathWith computeDE la mu rho $ getLengthTree t
 birthDeath ConditionOnTimeOfMrca la mu rho (LengthTree (Node _ _ [l, r])) =
   birthDeath ConditionOnTimeOfOrigin la mu rho (LengthTree l)
   * birthDeath ConditionOnTimeOfOrigin la mu rho (LengthTree r)

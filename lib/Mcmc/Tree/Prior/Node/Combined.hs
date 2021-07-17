@@ -24,7 +24,7 @@ import Mcmc.Tree.Types
 
 -- Get the heights of all nodes and store them in a vector.
 getAllHeights :: HeightTree a -> VB.Vector a
-getAllHeights = VB.fromList . branches . fromHeightTree
+getAllHeights = VB.fromList . branches . getHeightTree
 
 calibrateV ::
   (RealFloat a) =>

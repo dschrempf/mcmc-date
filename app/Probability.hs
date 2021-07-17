@@ -108,8 +108,8 @@ priorFunction cb' cs (IG l m h t mu va r) =
 -- likelihoodFunction mu sigmaInv logSigmaDet x =
 --   logDensityMultivariateNormal mu sigmaInv logSigmaDet distances
 --   where
---     times = getBranches (fromLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
---     rates = getBranches (fromLengthTree $ x ^. rateTree)
+--     times = getBranches (getLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
+--     rates = getBranches (getLengthTree $ x ^. rateTree)
 --     tH = x ^. timeHeight
 --     rMu = x ^. rateMean
 --     distances = VS.map (* (tH * rMu)) $ sumFirstTwo $ VS.zipWith (*) times rates
@@ -181,8 +181,8 @@ likelihoodFunction mu' sigmaInv' logSigmaDet' x =
     sigmaInv = MB.map realToFrac sigmaInv'
     logSigmaDet = realToFrac logSigmaDet'
     -- Actual computation.
-    times = getBranches (fromLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
-    rates = getBranches (fromLengthTree $ x ^. rateTree)
+    times = getBranches (getLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
+    rates = getBranches (getLengthTree $ x ^. rateTree)
     tH = x ^. timeHeight
     rMu = x ^. rateMean
     distances = VB.map (* (tH * rMu)) $ sumFirstTwo $ VB.zipWith (*) times rates

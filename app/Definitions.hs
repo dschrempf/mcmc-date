@@ -281,7 +281,7 @@ monStdOut = monitorStdOut (take 4 monParams) 2
 getTimeTreeNodeHeight :: Path -> I -> Double
 getTimeTreeNodeHeight p x = (* h) $ t ^. subTreeAtL p . branchL
   where
-    t = fromHeightTree $ x ^. timeTree
+    t = getHeightTree $ x ^. timeTree
     h = x ^. timeHeight
 
 -- Monitor the height of calibrated nodes.

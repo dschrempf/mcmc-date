@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -35,6 +36,7 @@ module Mcmc.Tree.Types
   )
 where
 
+import Control.Applicative
 import Data.Aeson
 import Data.Bifunctor
 import ELynx.Tree
@@ -69,11 +71,11 @@ withoutRootNode :: HandleNode
 withoutRootNode = not . null
 
 -- | Tree with branch lengths.
-newtype LengthTree a = LengthTree {fromLengthTree :: Tree a Name}
+newtype LengthTree a = LengthTree {getLengthTree :: Tree a Name}
   deriving (Generic)
 
 instance Functor LengthTree where
-  fmap f = LengthTree . first f . fromLengthTree
+  fmap f = LengthTree . first f . getLengthTree
 
 instance Foldable LengthTree where
   foldMap f (LengthTree t) = foldMap f (ZipBranchTree t)
@@ -81,19 +83,46 @@ instance Foldable LengthTree where
 instance Traversable LengthTree where
   traverse f (LengthTree t) = LengthTree . getZipBranchTree <$> traverse f (ZipBranchTree t)
 
--- TODO: For the applicative instance, we need to ignore the names.
--- instance Applicative LengthTree where
+-- | Zip-like applicative instance.
+--
+-- - The right node labels are ignored. Strictly speaking, this violates the
+-- - laws of functors with application. In our case, this is not important,
+-- - because the names are the same across all trees anyways.
+--
+-- - The empty label is used for 'pure'.
+--
+-- We could use the applicative instance of 'ZipBranchTree'. However, the
+-- 'Monoid' instance of 'Name' is not really what we want. We don't want to
+-- concatenate the names, but just ignore one or the other.
+instance Applicative LengthTree where
+  pure br = LengthTree $ Node br "" $ repeat (getLengthTree $ pure br)
+  (LengthTree ~(Node brF lbF tsF)) <*> (LengthTree ~(Node brX _ tsX)) =
+    LengthTree $ Node (brF brX) lbF (getLengthTree <$> zipWith f tsF tsX)
+    where
+      f x y = LengthTree x <*> LengthTree y
+  liftA2 f (LengthTree ~(Node brX lbX tsX)) (LengthTree ~(Node brY _ tsY)) =
+    LengthTree $ Node (f brX brY) lbX (getLengthTree <$> zipWith f' tsX tsY)
+    where
+      f' x y = liftA2 f (LengthTree x) (LengthTree y)
+  (LengthTree ~(Node _ lbX tsX)) *> (LengthTree ~(Node brY _ tsY)) =
+    LengthTree $ Node brY lbX (getLengthTree <$> zipWith f tsX tsY)
+    where
+      f x y = LengthTree x *> LengthTree y
+  (LengthTree ~(Node brX lbX tsX)) <* (LengthTree ~(Node _ _ tsY)) =
+    LengthTree $ Node brX lbX (getLengthTree <$> zipWith f tsX tsY)
+    where
+      f x y = LengthTree x <* LengthTree y
 
 instance ToJSON a => ToJSON (LengthTree a)
 
 instance FromJSON a => FromJSON (LengthTree a)
 
 -- | Tree with node heights.
-newtype HeightTree a = HeightTree {fromHeightTree :: Tree a Name}
+newtype HeightTree a = HeightTree {getHeightTree :: Tree a Name}
   deriving (Generic)
 
 instance Functor HeightTree where
-  fmap f = HeightTree . first f . fromHeightTree
+  fmap f = HeightTree . first f . getHeightTree
 
 instance Foldable HeightTree where
   foldMap f (HeightTree t) = foldMap f (ZipBranchTree t)
@@ -101,8 +130,25 @@ instance Foldable HeightTree where
 instance Traversable HeightTree where
   traverse f (HeightTree t) = HeightTree . getZipBranchTree <$> traverse f (ZipBranchTree t)
 
--- TODO: For the applicative instance, we need to ignore the names.
--- instance Applicative HeightTree where
+-- | See the 'Applicative' instance of 'LengthTree'.
+instance Applicative HeightTree where
+  pure br = HeightTree $ Node br "" $ repeat (getHeightTree $ pure br)
+  (HeightTree ~(Node brF lbF tsF)) <*> (HeightTree ~(Node brX _ tsX)) =
+    HeightTree $ Node (brF brX) lbF (getHeightTree <$> zipWith f tsF tsX)
+    where
+      f x y = HeightTree x <*> HeightTree y
+  liftA2 f (HeightTree ~(Node brX lbX tsX)) (HeightTree ~(Node brY _ tsY)) =
+    HeightTree $ Node (f brX brY) lbX (getHeightTree <$> zipWith f' tsX tsY)
+    where
+      f' x y = liftA2 f (HeightTree x) (HeightTree y)
+  (HeightTree ~(Node _ lbX tsX)) *> (HeightTree ~(Node brY _ tsY)) =
+    HeightTree $ Node brY lbX (getHeightTree <$> zipWith f tsX tsY)
+    where
+      f x y = HeightTree x *> HeightTree y
+  (HeightTree ~(Node brX lbX tsX)) <* (HeightTree ~(Node _ _ tsY)) =
+    HeightTree $ Node brX lbX (getHeightTree <$> zipWith f tsX tsY)
+    where
+      f x y = HeightTree x <* HeightTree y
 
 instance ToJSON a => ToJSON (HeightTree a)
 
@@ -131,15 +177,16 @@ toHeightTreeUltrametric t
 
 -- Assume the tree is ultrametric.
 toHeightTreeUltrametric' :: HasLength a => Tree a Name -> HeightTree Double
-toHeightTreeUltrametric' t@(Node _ lb ts) = HeightTree $
-  Node (assertNonNegative "toHeightTreeUltrametric'" $ (realToFrac . rootHeight) t) lb $
-    map (fromHeightTree . toHeightTreeUltrametric') ts
+toHeightTreeUltrametric' t@(Node _ lb ts) =
+  HeightTree $
+    Node (assertNonNegative "toHeightTreeUltrametric'" $ (realToFrac . rootHeight) t) lb $
+      map (getHeightTree . toHeightTreeUltrametric') ts
 
 -- | Calculate branch lengths and remove node heights.
 heightTreeToLengthTree :: (Ord a, Num a, Show a) => HeightTree a -> LengthTree a
 heightTreeToLengthTree t' = LengthTree $ go (branch t) t
   where
-    t = fromHeightTree t'
+    t = getHeightTree t'
     go hParent (Node hNode lb ts) =
       Node (assertNonNegative "heightTreeToLengthTree" (hParent - hNode)) lb $ map (go hNode) ts
 {-# SPECIALIZE heightTreeToLengthTree :: HeightTree Double -> LengthTree Double #-}
