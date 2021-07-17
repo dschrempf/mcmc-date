@@ -197,16 +197,17 @@ runMetropolisHastingsGreen (Spec an cls cns) = do
   cb <- getCalibrations meanTree cls
   -- Constraints.
   cs <- getConstraints meanTree cns
-  let -- Prior function.
+  let -- Starting state.
+      start' = initWith meanTree
+      -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
       lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       -- Proposal cycle.
-      cc' = proposals (isJust cls) meanTree
+      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
+      cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
-      -- Starting state.
-      start' = initWith meanTree
 
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For
@@ -264,12 +265,15 @@ continueMetropolisHastingsGreen (Spec an cls cns) = do
   cb <- getCalibrations meanTree cls
   -- Constraints.
   cs <- getConstraints meanTree cns
-  let -- Prior function.
+  let -- Starting state.
+      start' = initWith meanTree
+      -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
       lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       -- Proposal cycle.
-      cc' = proposals (isJust cls) meanTree
+      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
+      cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
 
@@ -294,16 +298,17 @@ runMarginalLikelihood (Spec an cls cns) = do
   cb <- getCalibrations meanTree cls
   -- Constraints.
   cs <- getConstraints meanTree cns
-  let -- Prior function.
+  let -- Starting state.
+      start' = initWith meanTree
+      -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
       lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       -- Proposal cycle.
-      cc' = proposals (isJust cls) meanTree
+      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
+      cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
-      -- Starting state.
-      start' = initWith meanTree
 
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For

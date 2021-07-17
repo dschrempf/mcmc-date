@@ -245,22 +245,49 @@ proposalsChangingTimeHeight t =
     nRC = PName "Trees [R]"
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
+-- -- | The proposal cycle includes proposals for the other parameters.
+-- proposals :: Show a => Bool -> Tree e a -> Cycle I
+-- proposals calibrationsAvailable t =
+--   cycleFromList $
+--     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
+--       timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
+--       rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
+--       rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
+--     ]
+--       ++ proposalsTimeTree t
+--       ++ proposalsRateTree t
+--       ++ proposalsTimeRateTreeContra t
+--       -- Only add proposals on time tree height when calibrations are available.
+--       ++ if calibrationsAvailable then proposalsChangingTimeHeight t else []
+--   where
+--     w = weightNBranches $ length t
+
 -- | The proposal cycle includes proposals for the other parameters.
-proposals :: Show a => Bool -> Tree e a -> Cycle I
-proposals calibrationsAvailable t =
-  cycleFromList $
-    [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
-      timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
-      rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
-      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
+proposals :: Bool -> I -> (I -> I) -> Cycle I
+proposals calibrationsAvailable x gradient =
+  cycleFromList
+    [ liftProposalWith jacobianRootBranch id $
+      hmc x s (PName "All parameters") (pWeight 3)
     ]
-      ++ proposalsTimeTree t
-      ++ proposalsRateTree t
-      ++ proposalsTimeRateTreeContra t
-      -- Only add proposals on time tree height when calibrations are available.
-      ++ if calibrationsAvailable then proposalsChangingTimeHeight t else []
   where
-    w = weightNBranches $ length t
+    s = HmcSettings gradient masses'' 10 0.01 HmcTuneMassesAndLeapfrog
+    masses = fmap (const (Just 1)) x  :: IG (Maybe Double)
+    masses' =
+      masses
+        -- Do not change the height of the relative time tree.
+        & timeTree . heightTreeL . branchL .~ Nothing
+        -- Do not change the height of the relative time tree leaves.
+        & timeTree . heightTreeL %~ setLeaves
+        -- Do not change the root branch of the relative rate tree.
+        & rateTree .lengthTreeL . branchL .~ Nothing
+    setLeaves (Node _ lb []) = Node Nothing lb []
+    setLeaves (Node br lb ts) = Node br lb (map setLeaves ts)
+    masses'' =
+      if calibrationsAvailable
+        then masses'
+        else
+          masses'
+            & timeHeight .~ Nothing
 
 -- Monitor parameters.
 monParams :: [MonitorParameter I]
@@ -343,7 +370,7 @@ monitor cb cs =
 -- | Number of burn in iterations and auto tuning period.
 burnIn :: BurnInSettings
 -- burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : 20 : [20]
-burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 300]
+burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 400]
 
 -- | Number of iterations after burn in.
 iterations :: Iterations

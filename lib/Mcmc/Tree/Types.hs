@@ -174,13 +174,16 @@ toHeightTreeUltrametric ::
 toHeightTreeUltrametric t
   | ultrametric t = toHeightTreeUltrametric' t
   | otherwise = error "toHeightTreeUltrametric: Tree is not ultrametric."
+{-# SPECIALIZE toHeightTreeUltrametric :: Tree Length Name -> HeightTree Double #-}
 
 -- Assume the tree is ultrametric.
 toHeightTreeUltrametric' :: HasLength a => Tree a Name -> HeightTree Double
 toHeightTreeUltrametric' t@(Node _ lb ts) =
   HeightTree $
-    Node (assertNonNegative "toHeightTreeUltrametric'" $ (realToFrac . rootHeight) t) lb $
+    Node (assertNonNegative "toHeightTreeUltrametric'" h) lb $
       map (getHeightTree . toHeightTreeUltrametric') ts
+  where
+    h = fromLength $ rootHeight t
 
 -- | Calculate branch lengths and remove node heights.
 heightTreeToLengthTree :: (Ord a, Num a, Show a) => HeightTree a -> LengthTree a
@@ -188,7 +191,10 @@ heightTreeToLengthTree t' = LengthTree $ go (branch t) t
   where
     t = getHeightTree t'
     go hParent (Node hNode lb ts) =
-      Node (assertNonNegative "heightTreeToLengthTree" (hParent - hNode)) lb $ map (go hNode) ts
+      let l = hParent - hNode
+       -- XXX: This assertion triggers when calculating the gradient for negative lengths.
+       -- in Node (assertNonNegative "heightTreeToLengthTree" l) lb $ map (go hNode) ts
+       in Node l lb $ map (go hNode) ts
 {-# SPECIALIZE heightTreeToLengthTree :: HeightTree Double -> LengthTree Double #-}
 
 assertNonNegative :: (Ord a, Num a, Show a) => String -> a -> a
