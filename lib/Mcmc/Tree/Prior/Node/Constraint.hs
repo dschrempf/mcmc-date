@@ -351,7 +351,9 @@ constrainSoft ::
   StandardDeviation a ->
   Constraint ->
   PriorFunctionG (HeightTree a) a
-constrainSoft s c (HeightTree t) = constrainSoftF s (hY, hO)
+constrainSoft s c (HeightTree t)
+  | s <= 0 = error "constrainSfot: Standard deviation is zero or negative."
+  | otherwise = constrainSoftF s (hY, hO)
   where
     hY = t ^. subTreeAtL y . branchL
     hO = t ^. subTreeAtL o . branchL

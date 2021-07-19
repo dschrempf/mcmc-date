@@ -71,7 +71,9 @@ calibrateAndConstrain ::
   StandardDeviation a ->
   PriorFunctionG (HeightTree a) a
 calibrateAndConstrain cs sdC h ks sdK t
-  | h <= 0 = error "calibrate: Height multiplier is zero or negative."
+  | sdC <= 0 = error "calibrateAndConstrain: Standard deviation of calibrations is zero or negative."
+  | sdK <= 0 = error "calibrateAndConstrain: Standard deviation of constraints is zero or negative."
+  | h <= 0 = error "calibrateAndConstrain: Height multiplier is zero or negative."
   | otherwise = VB.product csPr * VB.product ksPr
   where
     hs = getAllHeights t

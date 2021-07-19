@@ -101,7 +101,7 @@ instance Show a => Show (Interval a) where
 properInterval :: (Ord a, Num a) => LowerBoundary a -> UpperBoundary a -> Interval a
 properInterval a b
   | a < b = Interval (nonNegative a) (positive b)
-  | otherwise = error "properInterval: Left bound equal or larger right bound."
+  | otherwise = error "properInterval: Left boundary equal or greater than right boundary."
 {-# SPECIALIZE properInterval :: Double -> Double -> Interval Double #-}
 
 -- | Specify a lower bound only. The upper bound is set to infinity.
@@ -124,7 +124,7 @@ transformInterval x (Interval a b)
       Infinity -> Infinity
 {-# SPECIALIZE transformInterval :: Double -> Interval Double -> Interval Double #-}
 
--- No number is bigger than a non-existing upper bound..
+-- No number is greater than a non-existing upper bound..
 (>*) :: (Ord a, Fractional a) => a -> ExtendedPositive a -> Bool
 _ >* Infinity = False
 h >* Positive b = h > b
@@ -306,7 +306,9 @@ calibrateSoft ::
   StandardDeviation a ->
   Calibration a ->
   PriorFunctionG (HeightTree a) a
-calibrateSoft s c (HeightTree t) = calibrateSoftF s l h
+calibrateSoft s c (HeightTree t)
+  | s <= 0 = error "calibrateSoft: Standard deviation is zero or negative."
+  | otherwise = calibrateSoftF s l h
   where
     p = calibrationNodePath c
     h = t ^. subTreeAtL p . branchL
