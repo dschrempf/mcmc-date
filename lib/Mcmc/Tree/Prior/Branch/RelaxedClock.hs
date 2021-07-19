@@ -103,13 +103,17 @@ gammaDirichlet alphaMu betaMu alpha muMean xs = muPrior * dirichletDensitySymmet
 -- NOTE: For convenience, the mean and variance are used as parameters for this
 -- relaxed molecular clock model. They are used to calculate the shape and the
 -- scale of the underlying gamma distribution.
+--
+-- Call 'error' if the variance is zero or negative.
 uncorrelatedGamma ::
   RealFloat a =>
   HandleStem ->
   Mean a ->
   Variance a ->
   PriorFunctionG (LengthTree a) a
-uncorrelatedGamma hs m v = branchesWith hs (gamma k th) . getLengthTree
+uncorrelatedGamma hs m v
+  | v <= 0 = error "uncorrelatedGamma: Variance is zero or negative."
+  | otherwise = branchesWith hs (gamma k th) . getLengthTree
   where
     (k, th) = gammaMeanVarianceToShapeScale m v
 {-# SPECIALIZE uncorrelatedGamma ::
@@ -120,8 +124,10 @@ uncorrelatedGamma hs m v = branchesWith hs (gamma k th) . getLengthTree
   #-}
 
 -- A variant of the log normal distribution. See Yang 2006, equation (7.23).
-logNormalG' :: RealFloat a => Mean a -> Variance a -> a -> Log a
-logNormalG' mu var r = Exp $ negate t - e
+logNormal' :: RealFloat a => Mean a -> Variance a -> a -> Log a
+logNormal' mu var r
+  | var <= 0 = error "logNormal': Variance is zero or negative."
+  | otherwise = Exp $ negate t - e
   where
     t = realToFrac m_ln_sqrt_2_pi + log (r * sqrt var)
     a = recip $ 2 * var
@@ -134,13 +140,15 @@ logNormalG' mu var r = Exp $ negate t - e
 -- mean and variance.
 --
 -- See Computational Molecular Evolution (Yang, 2006), Section 7.4.
+--
+-- Call 'error' if the variance is zero or negative.
 uncorrelatedLogNormal ::
   RealFloat a =>
   HandleStem ->
   Mean a ->
   Variance a ->
   PriorFunctionG (LengthTree a) a
-uncorrelatedLogNormal hs mu var = branchesWith hs (logNormalG' mu var) . getLengthTree
+uncorrelatedLogNormal hs mu var = branchesWith hs (logNormal' mu var) . getLengthTree
 {-# SPECIALIZE uncorrelatedLogNormal ::
   HandleStem ->
   Double ->
@@ -172,14 +180,20 @@ uncorrelatedLogNormal hs mu var = branchesWith hs (logNormalG' mu var) . getLeng
 -- of relaxed molecular clock models, Molecular Biology and Evolution, 24(12),
 -- 2669–2680 (2007). http://dx.doi.org/10.1093/molbev/msm193
 --
--- Call 'error' if the topologies of the time and rate trees do not match.
+-- Call 'error' if
+--
+-- - the topologies of the time and rate trees do not match;
+--
+-- - the variance is zero or negative.
 whiteNoise ::
   RealFloat a =>
   HandleStem ->
   Variance a ->
   LengthTree a ->
   PriorFunctionG (LengthTree a) a
-whiteNoise hs v (LengthTree tTr) (LengthTree rTr) = branchesWith hs f zTr
+whiteNoise hs v (LengthTree tTr) (LengthTree rTr)
+  | v <= 0 = error "whiteNoise: Variance is zero or negative."
+  | otherwise = branchesWith hs f zTr
   where
     zTr =
       fromMaybe
@@ -216,7 +230,11 @@ whiteNoise hs v (LengthTree tTr) (LengthTree rTr) = branchesWith hs f zTr
 -- prior = autocorrelatedGamma initialMean variance timeTree rateTree
 -- @
 --
--- Call 'error' if the topologies of the time and rate trees do not match.
+-- Call 'error' if
+--
+-- - the topologies of the time and rate trees do not match;
+--
+-- - the variance is zero or negative.
 autocorrelatedGamma ::
   RealFloat a =>
   HandleStem ->
@@ -224,7 +242,9 @@ autocorrelatedGamma ::
   Variance a ->
   LengthTree a ->
   PriorFunctionG (LengthTree a) a
-autocorrelatedGamma hs mu var (LengthTree tTr) (LengthTree rTr) = branchesWith hs f zTr
+autocorrelatedGamma hs mu var (LengthTree tTr) (LengthTree rTr)
+  | var <= 0 = error "autocorrelatedGamma: Variance is zero or negative."
+  | otherwise = branchesWith hs f zTr
   where
     zTr =
       fromMaybe
@@ -241,16 +261,6 @@ autocorrelatedGamma hs mu var (LengthTree tTr) (LengthTree rTr) = branchesWith h
   LengthTree Double ->
   PriorFunction (LengthTree Double)
   #-}
-
--- autocorrelatedGamma WithStem mu var tTr rTr =
---   gamma shape scale r * autocorrelatedGamma WithoutStem r var tTr rTr
---   where
---     t = fromLength (branch tTr)
---     r = fromLength (branch rTr)
---     var' = t * var
---     (shape, scale) = gammaMeanVarianceToShapeScale mu var'
--- autocorrelatedGamma WithoutStem mu var tTr rTr =
---   product $ zipWith (autocorrelatedGamma WithStem mu var) (forest tTr) (forest rTr)
 
 -- | Auto-correlated log normal model.
 --
@@ -272,7 +282,11 @@ autocorrelatedGamma hs mu var (LengthTree tTr) (LengthTree rTr) = branchesWith h
 -- prior = autocorrelatedLogNormal initialRate variance timeTree rateTree
 -- @
 --
--- Call 'error' if the topologies of the time and rate trees do not match.
+-- Call 'error' if
+--
+-- - the topologies of the time and rate trees do not match;
+--
+-- - the variance is zero or negative.
 autocorrelatedLogNormal ::
   RealFloat a =>
   HandleStem ->
@@ -280,13 +294,15 @@ autocorrelatedLogNormal ::
   Variance a ->
   LengthTree a ->
   PriorFunctionG (LengthTree a) a
-autocorrelatedLogNormal hs mu var (LengthTree tTr) (LengthTree rTr) = branchesWith hs f zTr
+autocorrelatedLogNormal hs mu var (LengthTree tTr) (LengthTree rTr)
+  | var <= 0 = error "autocorrelatedLogNormal: Variance is zero or negative."
+  | otherwise = branchesWith hs f zTr
   where
     zTr =
       fromMaybe
         (error "autocorrelatedLogNormal: Topologies of time and rate trees do not match.")
         (zipTrees tTr rTr)
-    f (t, r) = let var' = t * var in logNormalG' mu var' r
+    f (t, r) = let var' = t * var in logNormal' mu var' r
 {-# SPECIALIZE autocorrelatedLogNormal ::
   HandleStem ->
   Double ->
@@ -294,12 +310,3 @@ autocorrelatedLogNormal hs mu var (LengthTree tTr) (LengthTree rTr) = branchesWi
   LengthTree Double ->
   PriorFunction (LengthTree Double)
   #-}
-
--- autocorrelatedLogNormal WithStem mu var tTr rTr =
---   logNormal' mu var' r * autocorrelatedLogNormal WithoutStem r var tTr rTr
---   where
---     t = fromLength (branch tTr)
---     r = fromLength (branch rTr)
---     var' = t * var
--- autocorrelatedLogNormal WithoutStem mu var tTr rTr =
---   product $ zipWith (autocorrelatedLogNormal WithStem mu var) (forest tTr) (forest rTr)
