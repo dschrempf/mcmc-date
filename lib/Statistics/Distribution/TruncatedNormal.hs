@@ -59,12 +59,12 @@ truncatedNormalDistr ::
   UpperBoundary Double ->
   TruncatedNormalDistribution
 truncatedNormalDistr m s a b
-  | s <= 0 = error "truncatedNormalDistr: Standard deviation must be positive."
+  | s <= 0 = error "truncatedNormalDistr: Standard deviation is zero or negative."
   | a >= b =
     error $
       "truncatedNormalDistr: Lower bound "
         <> show a
-        <> " is equal or larger upper bound "
+        <> " is equal or greater than upper bound "
         <> show b
         <> "."
   | a > m || b < m =

@@ -40,4 +40,5 @@ monitorLengthTree n =
     n
     (toNewickBuilder . lengthToPhyloTree . setLengths . getLengthTree)
   where
-    setLengths = first toLengthUnsafe
+    setLengths = first (errF . toLength)
+    errF = either (error . ("monitorLengthTree: " <>)) id
