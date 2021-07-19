@@ -141,14 +141,10 @@ birthDeath ::
   SamplingRate a ->
   PriorFunctionG (LengthTree a) a
 birthDeath ConditionOnTimeOfOrigin la mu rho t
-  -- -- | la < 0.0 = error "birthDeath: Birth rate is negative."
-  -- -- | mu < 0.0 = error "birthDeath: Death rate is negative."
-  -- -- | rho <= 0.0 = error "birthDeath: Sampling rate is zero or negative."
-  -- -- | rho > 1.0 = error "birthDeath: Sampling rate is larger than 1.0."
-  | la < 0.0 = 0.0
-  | mu < 0.0 = 0.0
-  | rho <= 0.0 = 0.0
-  | rho > 1.0 = 0.0
+  | la < 0.0 = error "birthDeath: Birth rate is negative."
+  | mu < 0.0 = error "birthDeath: Death rate is negative."
+  | rho <= 0.0 = error "birthDeath: Sampling rate is zero or negative."
+  | rho > 1.0 = error "birthDeath: Sampling rate is larger than 1.0."
   | epsNearCritical > abs (la - mu) =
       fst $ birthDeathWith computeDENearCritical la mu rho $ getLengthTree t
   | otherwise = fst $ birthDeathWith computeDE la mu rho $ getLengthTree t
@@ -176,7 +172,7 @@ birthDeathWith ::
   -- Return (log D, E).
   (Log a, a)
 -- First case of the boundary conditions given after Eq. [4].
-birthDeathWith f la mu rho (Node br _ [l, r]) = (Exp (log (dT * la)) * dL + dR, eT)
+birthDeathWith f la mu rho (Node br _ [l, r]) = (Exp (log (dT * la)) * dL * dR, eT)
   where
     (dL, eL) = birthDeathWith f la mu rho l
     -- (dR, eR) = birthDeathWith f la mu rho r
