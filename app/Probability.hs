@@ -13,8 +13,6 @@ module Probability
   ( priorFunction,
     likelihoodFunction,
     gradLogPosteriorFunc,
-    -- -- NOTE: Test automatic differentiation.
-    -- numDiffLogPosteriorFunc,
   )
 where
 
@@ -75,6 +73,9 @@ priorFunction cb' cs (IG l m h t mu va r) =
 
 -- NOTE: The generalized likelihood function with boxed vectors seems to be
 -- equally fast, but the specialized one is left in place for future reference.
+
+-- TODO: The specialized function could be improved using the reduceVMV
+-- equivalent for unboxed vectors.
 
 -- -- Log of density of multivariate normal distribution with given parameters.
 -- -- https://en.wikipedia.org/wiki/Multivariate_normal_distribution.
@@ -227,7 +228,6 @@ gradLogPosteriorFunc cs ks mu sigmaInv logSigmaDet =
   -- grad (ln . likelihoodFunction mu sigmaInv logSigmaDet)
   grad (ln . posteriorFunction cs ks mu sigmaInv logSigmaDet)
 
--- -- NOTE: Test automatic differentiation.
 -- numDiffLogPosteriorFunc ::
 --   (RealFloat a, Show a) =>
 --   VB.Vector (Calibration Double) ->
