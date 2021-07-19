@@ -57,6 +57,7 @@ library
       Mcmc.Tree.Proposal.Unconstrained
       Mcmc.Tree.Types
   other-modules:
+      Mcmc.Internal.Dirichlet
       Mcmc.Tree.Proposal.Common
       Statistics.Distribution.TruncatedNormal
       Paths_mcmc_date

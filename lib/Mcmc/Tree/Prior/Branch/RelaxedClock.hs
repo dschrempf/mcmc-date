@@ -36,12 +36,12 @@ where
 
 import Data.Maybe
 import ELynx.Tree
-import Mcmc.Internal.Gamma
+import Mcmc.Internal.Dirichlet
 import Mcmc.Prior
 import Mcmc.Statistics.Types
 import Mcmc.Tree.Prior.Branch
 import Mcmc.Tree.Types
-import Numeric.Log hiding (sum)
+import Numeric.Log
 import Numeric.MathFunctions.Constants
 
 -- | Gamma Dirichlet prior.
@@ -76,7 +76,7 @@ import Numeric.MathFunctions.Constants
 --
 -- Call 'error' if:
 --
--- - The \(\alpha\) parameter is negative or zero.
+-- - Any parameter is negative or zero.
 --
 -- - The number of partitions is smaller than two.
 gammaDirichlet ::
@@ -87,54 +87,13 @@ gammaDirichlet ::
   a ->
   Mean a ->
   PriorFunctionG [a] a
-gammaDirichlet alphaMu betaMu alpha muMean xs = muPrior * dirichletDensitySymmetricG ddSym xs
+gammaDirichlet alphaMu betaMu alpha muMean xs = muPrior * dirichletDensitySymmetric ddSym xs
   where
+    -- Call 'error' when 'alphaMu' or 'betaMu' are zero or negative.
     muPrior = gamma alphaMu betaMu muMean
+    -- Call 'error' when 'alpha' is zero or negative.
     ddSym = either error id $ dirichletDistributionSymmetric (length xs) alpha
 {-# SPECIALIZE gammaDirichlet :: Double -> Double -> Double -> Double -> PriorFunction [Double] #-}
-
-data DirichletDistributionSymmetric a = DirichletDistributionSymmetric
-  { ddSymGetParameter :: a,
-    _symGetDimension :: Int,
-    _symGetNormConst :: Log a
-  }
-  deriving (Eq, Show)
-
-invBetaSym :: RealFloat a => Int -> a -> Log a
-invBetaSym k a = Exp $ logDenominator - logNominator
-  where
-    logNominator = fromIntegral k * logGammaG a
-    logDenominator = logGammaG (fromIntegral k * a)
-
-dirichletDistributionSymmetric ::
-  RealFloat a =>
-  Int ->
-  a ->
-  Either String (DirichletDistributionSymmetric a)
-dirichletDistributionSymmetric k a
-  | k < 2 =
-    Left "dirichletDistributionSymmetric: The dimension is smaller than two."
-  | a <= 0 =
-    Left "dirichletDistributionSymmetric: The parameter is negative or zero."
-  | otherwise = Right $ DirichletDistributionSymmetric a k (invBetaSym k a)
-
-eps :: RealFloat a => a
-eps = 1e-14
-
--- Check if vector is normalized with tolerance 'eps'.
-isNormalized :: RealFloat a => [a] -> Bool
-isNormalized v
-  | abs (sum v - 1.0) > eps = False
-  | otherwise = True
-
-dirichletDensitySymmetricG :: RealFloat a => DirichletDistributionSymmetric a -> [a] -> Log a
-dirichletDensitySymmetricG (DirichletDistributionSymmetric a k c) xs
-  | k /= length xs = 0.0
-  | any (<= 0) xs = 0.0
-  | not (isNormalized xs) = 0.0
-  | otherwise = c * Exp logXsPow
-  where
-    logXsPow = sum $ map (\x -> log $ x ** (a - 1.0)) xs
 
 -- | Uncorrelated gamma model.
 --

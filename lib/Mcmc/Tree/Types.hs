@@ -196,9 +196,9 @@ heightTreeToLengthTree t' = LengthTree $ go (branch t) t
     t = getHeightTree t'
     go hParent (Node hNode lb ts) =
       let l = hParent - hNode
-       -- XXX: This assertion triggers when calculating the gradient for negative lengths.
-       -- in Node (assertNonNegative "heightTreeToLengthTree" l) lb $ map (go hNode) ts
-       in Node l lb $ map (go hNode) ts
+       in -- XXX: This assertion triggers when calculating the gradient for negative lengths.
+          -- in Node (assertNonNegative "heightTreeToLengthTree" l) lb $ map (go hNode) ts
+          Node l lb $ map (go hNode) ts
 {-# SPECIALIZE heightTreeToLengthTree :: HeightTree Double -> LengthTree Double #-}
 
 assertNonNegative :: (Ord a, Num a, Show a) => String -> a -> a

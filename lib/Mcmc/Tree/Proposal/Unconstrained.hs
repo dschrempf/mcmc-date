@@ -228,7 +228,7 @@ pulley ::
   PName ->
   PWeight ->
   Tune ->
-  Proposal (LengthTree Double )
+  Proposal (LengthTree Double)
 pulley s = createProposal description (pulleySimple s) (PDimension 2)
   where
     description = PDescription $ "Pulley; sd: " ++ show s

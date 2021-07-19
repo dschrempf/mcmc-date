@@ -30,7 +30,7 @@ module Mcmc.Tree.Prior.Node.Calibration
     calibrate,
 
     -- * Misc
-    realToFracC
+    realToFracC,
   )
 where
 
@@ -378,5 +378,6 @@ realToFracI (Interval (NonNegative a) Infinity) =
 -- Useful for automatic differentiation.
 realToFracC :: Fractional a => Calibration Double -> Calibration a
 realToFracC c = c {calibrationInterval = i'}
-  where i' = realToFracI $ calibrationInterval c
+  where
+    i' = realToFracI $ calibrationInterval c
 {-# SPECIALIZE realToFracC :: Calibration Double -> Calibration Double #-}

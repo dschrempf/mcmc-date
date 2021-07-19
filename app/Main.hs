@@ -322,12 +322,11 @@ runMarginalLikelihood (Spec an cls cns prof) = do
   g <- create
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
-  let
-    nPoints' = if prof then nPointsProf else nPoints
-    burnIn' = if prof then burnInProf else burnIn
-    repetitiveBurnIn' = if prof then repetitiveBurnInProf else repetitiveBurnIn
-    iterations' = if prof then iterationsProf else iterations
-    mlS =
+  let nPoints' = if prof then nPointsProf else nPoints
+      burnIn' = if prof then burnInProf else burnIn
+      repetitiveBurnIn' = if prof then repetitiveBurnInProf else repetitiveBurnIn
+      iterations' = if prof then iterationsProf else iterations
+      mlS =
         MLSettings
           (AnalysisName an)
           SteppingStoneSampling
