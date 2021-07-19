@@ -25,7 +25,7 @@ import ELynx.Tree
 import Mcmc.Proposal
 import Mcmc.Statistics.Types
 import Mcmc.Tree.Lens
-import Mcmc.Tree.Proposal.Common
+import Mcmc.Tree.Proposal.Internal
 import Mcmc.Tree.Proposal.Ultrametric
 import Mcmc.Tree.Proposal.Unconstrained
 import Mcmc.Tree.Types

@@ -36,7 +36,7 @@ import Mcmc.Proposal.Scale
 import Mcmc.Statistics.Types
 import Mcmc.Tree.Import ()
 import Mcmc.Tree.Lens
-import Mcmc.Tree.Proposal.Common
+import Mcmc.Tree.Proposal.Internal
 import Mcmc.Tree.Types
 import Numeric.Log hiding (sum)
 import Statistics.Distribution.Gamma

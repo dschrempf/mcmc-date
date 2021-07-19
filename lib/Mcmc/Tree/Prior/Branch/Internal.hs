@@ -1,5 +1,5 @@
 -- |
--- Module      :  Mcmc.Internal.Dirichlet
+-- Module      :  Mcmc.Tree.Prior.Branch.Internal
 -- Description :  Generalized Dirichlet distribution
 -- Copyright   :  (c) 2021 Dominik Schrempf
 -- License     :  GPL-3.0-or-later
@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Creation date: Mon Jul 19 22:51:22 2021.
-module Mcmc.Internal.Dirichlet
+module Mcmc.Tree.Prior.Branch.Internal
   ( DirichletDistributionSymmetric,
     dirichletDistributionSymmetric,
     dirichletDensitySymmetric,

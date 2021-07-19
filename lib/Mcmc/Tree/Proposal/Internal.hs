@@ -1,5 +1,5 @@
 -- |
--- Module      :  Mcmc.Tree.Proposal.Common
+-- Module      :  Mcmc.Tree.Proposal.Internal
 -- Description :  Common functions used by all tree proposals
 -- Copyright   :  (c) Dominik Schrempf, 2021
 -- License     :  GPL-3.0-or-later
@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Creation date: Wed Nov  4 11:53:16 2020.
-module Mcmc.Tree.Proposal.Common
+module Mcmc.Tree.Proposal.Internal
   ( truncatedNormalSample,
   )
 where
@@ -22,9 +22,9 @@ import Statistics.Distribution hiding (Mean)
 import Statistics.Distribution.TruncatedNormal
 import System.Random.MWC
 
--- | A very specific function that samples a delta value from the truncated
--- normal distribution with given bounds [a,b] and also computes the required
--- factor of the Metropolis-Hastings-Green (MHG) proposal ratio.
+-- A very specific function that samples a delta value from the truncated normal
+-- distribution with given bounds [a,b] and also computes the required factor of
+-- the Metropolis-Hastings-Green (MHG) proposal ratio.
 --
 -- NOTE: No Jacobian is computed, because it is not known how the proposal will
 -- be used.

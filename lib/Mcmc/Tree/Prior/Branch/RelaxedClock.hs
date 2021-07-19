@@ -36,10 +36,10 @@ where
 
 import Data.Maybe
 import ELynx.Tree
-import Mcmc.Internal.Dirichlet
 import Mcmc.Prior
 import Mcmc.Statistics.Types
 import Mcmc.Tree.Prior.Branch
+import Mcmc.Tree.Prior.Branch.Internal
 import Mcmc.Tree.Types
 import Numeric.Log
 import Numeric.MathFunctions.Constants

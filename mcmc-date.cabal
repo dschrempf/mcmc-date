@@ -57,8 +57,8 @@ library
       Mcmc.Tree.Proposal.Unconstrained
       Mcmc.Tree.Types
   other-modules:
-      Mcmc.Internal.Dirichlet
-      Mcmc.Tree.Proposal.Common
+      Mcmc.Tree.Prior.Branch.Internal
+      Mcmc.Tree.Proposal.Internal
       Statistics.Distribution.TruncatedNormal
       Paths_mcmc_date
   autogen-modules:
