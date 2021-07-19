@@ -70,10 +70,6 @@ allNodes = const True
 withoutRootNode :: HandleNode
 withoutRootNode = not . null
 
--- IDEA: Call these 'BTree a' and 'NTree a', and use 'LengthTree = BTree
--- Length', 'HeightTree = NTree Height'. This would ensure that the values are
--- non-negative.
-
 -- | Tree with branch lengths.
 newtype LengthTree a = LengthTree {getLengthTree :: Tree a Name}
   deriving (Generic)
