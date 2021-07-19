@@ -109,8 +109,7 @@ executable mcmc-date
       Paths_mcmc_date
   hs-source-dirs: app
   build-depends:
-      ad
-    , aeson
+      aeson
     , base >=4.7 && <5
     , bytestring
     , deepseq
