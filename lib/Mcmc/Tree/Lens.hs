@@ -76,9 +76,11 @@ subTreeAtL pth f s = go s pth
     assemble :: e -> a -> Forest e a -> Forest e a -> Tree e a -> Tree e a
     assemble br lb ls rs c = Node br lb $ ls ++ (c : rs)
 
+-- | Height tree.
 heightTreeL :: Lens' (HeightTree a) (Tree a Name)
 heightTreeL f s = HeightTree <$> f (getHeightTree s)
 
+-- | Length tree.
 lengthTreeL :: Lens' (LengthTree a) (Tree a Name)
 lengthTreeL f s = LengthTree <$> f (getLengthTree s)
 
