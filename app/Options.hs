@@ -26,7 +26,9 @@ data Spec = Spec
     -- | If no calibrations are given, a normalized tree with height 1.0 is
     -- inferred.
     calibrations :: Maybe FilePath,
-    constraints :: Maybe FilePath
+    constraints :: Maybe FilePath,
+    -- | Activate profiling (change the number of iterations).
+    profile :: Bool
   }
   deriving (Eq, Show, Read)
 
@@ -57,8 +59,21 @@ constraintsP =
         <> metavar "FILE"
     )
 
+profileP :: Parser Bool
+profileP =
+  switch
+    ( short 'p'
+        <> long "profile"
+        <> help "Activate profiling"
+    )
+
 specP :: Parser Spec
-specP = Spec <$> analysisNameP <*> optional calibrationsP <*> optional constraintsP
+specP =
+  Spec
+    <$> analysisNameP
+    <*> optional calibrationsP
+    <*> optional constraintsP
+    <*> profileP
 
 data PrepSpec = PrepSpec
   { prepAnalysisName :: String,

@@ -92,10 +92,12 @@ fi
 
 p_flags_stack=()
 p_flags_prog=()
+p_flags_rts=()
 if [[ $profiling_activated -eq 1 ]]
 then
     p_flags_stack+=(--profile)
     p_flags_prog+=(-p)
+    p_flags_rts+=(-p)
     outdir="${outdir}-profile"
 fi
 
@@ -109,18 +111,18 @@ then
 elif [[ "$command" == "r" ]]
 then
     stack exec "${p_flags_stack[@]}" -- mcmc-date run \
-           -a "$analysis_name" "${c_flags[@]}" \
-           +RTS -N5 "${p_flags_prog[@]}"
+          -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+           +RTS -N5 "${p_flags_rts[@]}"
 elif [[ "$command" == "c" ]]
 then
     stack exec "${p_flags_stack[@]}" -- mcmc-date continue \
-          -a "$analysis_name" "${c_flags[@]}" \
-          +RTS -N5 "${p_flags_prog[@]}"
+          -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          +RTS -N5 "${p_flags_rts[@]}"
 elif [[ "$command" == "m" ]]
 then
     stack exec "${p_flags_stack[@]}" -- mcmc-date marginal-likelihood \
-          -a "$analysis_name" "${c_flags[@]}" \
-          +RTS -N5 "${p_flags_prog[@]}"
+          -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          +RTS -N5 "${p_flags_rts[@]}"
 else
     usage
     exit 1

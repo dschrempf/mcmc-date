@@ -183,7 +183,7 @@ getConstraints t (Just f) = loadConstraints t f
 
 -- Run the Metropolis-Hastings-Green algorithm.
 runMetropolisHastingsGreen :: Spec -> IO ()
-runMetropolisHastingsGreen (Spec an cls cns) = do
+runMetropolisHastingsGreen (Spec an cls cns prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
@@ -215,11 +215,13 @@ runMetropolisHastingsGreen (Spec an cls cns) = do
   g <- create
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
-  let mcmcS =
+  let burnIn' = if prof then burnInProf else burnIn
+      iterations' = if prof then iterationsProf else iterations
+      mcmcS =
         Settings
           (AnalysisName an)
-          burnIn
-          iterations
+          burnIn'
+          iterations'
           -- TraceAuto
           (TraceMinimum 100)
           Overwrite
@@ -237,21 +239,21 @@ runMetropolisHastingsGreen (Spec an cls cns) = do
   -- Run the Markov chain.
   void $ mcmc mcmcS a
 
-  -- -- NOTE: Test automatic differentiation.
-  --
-  -- chain' <- fromMHG <$> mcmc mcmcS a
-  -- trace' <- VB.map state <$> takeT 100 (trace chain')
-  -- let x = VB.head trace'
-  --     gAd = _rateMean $ gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet x
-  --     startX = x & rateMean -~ 0.002
-  --     startY = x & rateMean +~ 0.002
-  --     dNm = numDiffLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet startX startY 0.004
-  -- putStrLn $ "GRAD: " <> show gAd
-  -- putStrLn $ "NUM: " <> show dNm
-  -- error "Debug."
+-- -- NOTE: Test automatic differentiation.
+--
+-- chain' <- fromMHG <$> mcmc mcmcS a
+-- trace' <- VB.map state <$> takeT 100 (trace chain')
+-- let x = VB.head trace'
+--     gAd = _rateMean $ gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet x
+--     startX = x & rateMean -~ 0.002
+--     startY = x & rateMean +~ 0.002
+--     dNm = numDiffLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet startX startY 0.004
+-- putStrLn $ "GRAD: " <> show gAd
+-- putStrLn $ "NUM: " <> show dNm
+-- error "Debug."
 
 continueMetropolisHastingsGreen :: Spec -> IO ()
-continueMetropolisHastingsGreen (Spec an cls cns) = do
+continueMetropolisHastingsGreen (Spec an cls cns prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
@@ -281,10 +283,11 @@ continueMetropolisHastingsGreen (Spec an cls cns) = do
   let an' = AnalysisName an
   s <- settingsLoad an'
   a <- mc3Load pr' lh' cc' mon' an'
-  void $ mcmcContinue iterations s a
+  let iterations' = if prof then iterationsProf else iterations
+  void $ mcmcContinue iterations' s a
 
 runMarginalLikelihood :: Spec -> IO ()
-runMarginalLikelihood (Spec an cls cns) = do
+runMarginalLikelihood (Spec an cls cns prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
@@ -316,14 +319,19 @@ runMarginalLikelihood (Spec an cls cns) = do
   g <- create
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
-  let mlS =
+  let
+    nPoints' = if prof then nPointsProf else nPoints
+    burnIn' = if prof then burnInProf else burnIn
+    repetitiveBurnIn' = if prof then repetitiveBurnInProf else repetitiveBurnIn
+    iterations' = if prof then iterationsProf else iterations
+    mlS =
         MLSettings
           (AnalysisName an)
           SteppingStoneSampling
-          nPoints
-          burnIn
-          repetitiveBurnIn
-          iterations
+          nPoints'
+          burnIn'
+          repetitiveBurnIn'
+          iterations'
           Overwrite
           LogStdOutAndFile
           Debug

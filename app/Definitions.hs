@@ -51,9 +51,13 @@ module Definitions
     proposals,
     monitor,
     burnIn,
+    burnInProf,
     iterations,
+    iterationsProf,
     nPoints,
+    nPointsProf,
     repetitiveBurnIn,
+    repetitiveBurnInProf,
   )
 where
 
@@ -267,11 +271,11 @@ proposals :: Bool -> I -> (I -> I) -> Cycle I
 proposals calibrationsAvailable x gradient =
   cycleFromList
     [ liftProposalWith jacobianRootBranch id $
-      hmc x s (PName "All parameters") (pWeight 3)
+        hmc x s (PName "All parameters") (pWeight 3)
     ]
   where
     s = HmcSettings gradient masses'' 10 0.01 HmcTuneMassesAndLeapfrog
-    masses = fmap (const (Just 1)) x  :: IG (Maybe Double)
+    masses = fmap (const (Just 1)) x :: IG (Maybe Double)
     masses' =
       masses
         -- Do not change the height of the relative time tree.
@@ -279,7 +283,7 @@ proposals calibrationsAvailable x gradient =
         -- Do not change the height of the relative time tree leaves.
         & timeTree . heightTreeL %~ setLeaves
         -- Do not change the root branch of the relative rate tree.
-        & rateTree .lengthTreeL . branchL .~ Nothing
+        & rateTree . lengthTreeL . branchL .~ Nothing
     setLeaves (Node _ lb []) = Node Nothing lb []
     setLeaves (Node br lb ts) = Node br lb (map setLeaves ts)
     masses'' =
@@ -369,19 +373,32 @@ monitor cb cs =
 
 -- | Number of burn in iterations and auto tuning period.
 burnIn :: BurnInSettings
--- burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : 20 : [20]
 burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 400]
+
+-- | Number of burn in iterations when profiling is enabled.
+burnInProf :: BurnInSettings
+burnInProf = BurnInWithCustomAutoTuning $ 10 : 10 : 20 : [20]
 
 -- | Number of iterations after burn in.
 iterations :: Iterations
--- iterations = Iterations 100
--- iterations = Iterations 1000
 iterations = Iterations 15000
+
+-- | Number of iterations after burn in when profiling is enabled.
+iterationsProf :: Iterations
+iterationsProf = Iterations 100
 
 -- | Number of points of the stepping stone sampler.
 nPoints :: NPoints
 nPoints = NPoints 128
 
+-- | Number of points of the stepping stone sampler.
+nPointsProf :: NPoints
+nPointsProf = NPoints 12
+
 -- | Repetitive burn in at each point on the path.
 repetitiveBurnIn :: BurnInSettings
 repetitiveBurnIn = BurnInWithCustomAutoTuning $ [20, 40, 60, 80] <> replicate 9 100
+
+-- | Repetitive burn in at each point on the path when profiling is enabled.
+repetitiveBurnInProf :: BurnInSettings
+repetitiveBurnInProf = BurnInWithCustomAutoTuning [10, 20, 40]
