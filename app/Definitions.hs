@@ -267,7 +267,7 @@ proposals calibrationsAvailable x =
     t = getLengthTree $ _rateTree x
     w = weightNBranches $ length t
 
--- -- NOTE: The Hamiltonian proposal is too slow.
+-- -- The Hamiltonian proposal is slow.
 --
 -- -- | The proposal cycle includes proposals for the other parameters.
 -- proposals :: Bool -> I -> (I -> I) -> Cycle I

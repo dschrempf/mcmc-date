@@ -23,7 +23,7 @@ import Data.Aeson
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.List
-import qualified Data.Matrix as MB
+-- import qualified Data.Matrix as MB
 import Data.Maybe
 import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
@@ -41,7 +41,7 @@ import ELynx.Tree
 import Mcmc hiding (Continue)
 import Mcmc.Tree
 
--- -- NOTE: Test automatic differentiation.
+-- -- Test automatic differentiation.
 --
 -- import Control.Lens
 -- import Mcmc.Chain.Chain hiding (priorFunction, likelihoodFunction, monitor)
@@ -240,7 +240,7 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
   -- Run the Markov chain.
   void $ mcmc mcmcS a
 
--- -- NOTE: Test automatic differentiation.
+-- -- Test automatic differentiation.
 --
 -- chain' <- fromMHG <$> mcmc mcmcS a
 -- trace' <- VB.map state <$> takeT 100 (trace chain')
