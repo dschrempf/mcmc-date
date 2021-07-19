@@ -142,7 +142,7 @@ scaleSubTreeAt pth tr k n w t = lengthTreeL . subTreeAtL pth @~ scaleTree tr k n
 
 -- | Scale the sub trees of a given tree.
 --
--- See 'scaleTreeAt'.
+-- See 'scaleSubTreeAt'.
 --
 -- The weights are assigned as described in
 -- 'Mcmc.Tree.Proposal.Ultrametric.scaleSubTreesUltrametric'.

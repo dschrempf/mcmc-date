@@ -342,7 +342,7 @@ scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, Length
 -- ultrametric tree and the leaves is used to determine the new height of the
 -- sub tree of the ultrametric tree.
 --
--- For reference, please see 'scaleSubTreeAtUltrametric', and 'scaleTree'.
+-- For reference, please see 'scaleSubTreeAtUltrametric', and 'scaleSubTreeAt'.
 --
 -- NOTE: When applying to the root node (1) the tree heights change contrarily,
 -- (2) no upper bound is used because no parent node exists, and (3) the stem of
