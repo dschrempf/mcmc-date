@@ -22,8 +22,15 @@ source-repository head
   type: git
   location: https://github.com/dschrempf/mcmc-date
 
+flag debug
+  description: Enable debug support (assertions)
+  default:     False
+  manual:      True
+
 common lib
   ghc-options: -Wall -Wunused-packages
+  if flag(debug)
+     ghc-options: -fno-ignore-asserts
   default-language: Haskell2010
 
 common test

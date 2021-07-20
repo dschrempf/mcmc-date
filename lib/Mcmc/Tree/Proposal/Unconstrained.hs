@@ -26,7 +26,6 @@ module Mcmc.Tree.Proposal.Unconstrained
   )
 where
 
-import Control.Exception
 import Control.Lens
 import Data.Bifunctor
 import ELynx.Tree
@@ -202,7 +201,6 @@ pulleySimple s t (LengthTree tr@(Node br lb [l, r])) g = do
         Node
           br
           lb
-          -- No assertion is necessary here, because u is in [-brL, brR].
           [ l & branchL +~ u,
             r & branchL -~ u
           ]
