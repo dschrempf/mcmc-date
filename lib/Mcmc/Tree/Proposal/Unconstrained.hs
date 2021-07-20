@@ -23,10 +23,10 @@ module Mcmc.Tree.Proposal.Unconstrained
     -- * Helper functions
     scaleUnconstrainedTreeF,
     scaleUnconstrainedTreeWithoutStemF,
-    scaleUnconstrainedStem,
   )
 where
 
+import Control.Exception
 import Control.Lens
 import Data.Bifunctor
 import ELynx.Tree
@@ -125,10 +125,6 @@ scaleTree tr k = createProposal description (scaleTreeSimple n k) (PDimension n)
 -- NOTE: Because the determinant of the Jacobian matrix depends on the number of
 -- branches scaled, this proposal is only valid if all branch lengths including
 -- the stem are unconstrained and strictly positive.
---
--- Call 'error' if:
---
--- - A branch length is zero or negative.
 scaleSubTreeAt ::
   Path ->
   -- | The topology of the tree is used to precompute the number of inner nodes.
@@ -206,6 +202,7 @@ pulleySimple s t (LengthTree tr@(Node br lb [l, r])) g = do
         Node
           br
           lb
+          -- No assertion is necessary here, because u is in [-brL, brR].
           [ l & branchL +~ u,
             r & branchL -~ u
           ]
@@ -268,8 +265,6 @@ scaleNormAndTreeContrarilySimple n k t =
 -- unconstrained and strictly positive. The stem is ignored.
 --
 -- See also 'scaleVarianceAndTree'.
---
--- Call 'error' if an inner branch length is zero or negative.
 scaleNormAndTreeContrarily ::
   -- | The topology of the tree is used to precompute the number of inner branches.
   Tree e a ->
@@ -342,12 +337,17 @@ scaleVarianceAndTreeSimple n k t =
 -- branches scaled, this proposal is only valid if all inner branch lengths are
 -- unconstrained and strictly positive. The stem is ignored.
 --
--- NOTE: The sample mean is used to scale the parameters. This has two
--- disadvantages: (1) It is slow, and (2) the sample mean may be off
--- considerably. However, the actual mean of the distribution is, in general,
--- unknown.
+-- NOTE: The sample mean is used to scale the parameters. This has some
+-- disadvantages:
 --
--- Call 'error' if an inner branch length is zero or negative.
+-- (1) It is slow.
+--
+-- (2) The sample mean may be off considerably. However, the actual mean of the
+--     distribution is, in general, unknown.
+--
+-- (3) Negative branch lengths may arise. If this is the case, the branch length
+--     are set to @NaN@, and the state will be rejected by the sampler if
+--     appropriate prior or likelihood functions are used.
 scaleVarianceAndTree ::
   -- | The topology of the tree is used to precompute the number of inner branches.
   Tree e a ->
@@ -373,7 +373,3 @@ scaleUnconstrainedTreeF u = first (* u)
 -- | Scale the branches of an unconstrained tree. Do not scale the stem.
 scaleUnconstrainedTreeWithoutStemF :: Double -> Tree Double a -> Tree Double a
 scaleUnconstrainedTreeWithoutStemF u tr = tr & forestL %~ map (scaleUnconstrainedTreeF u)
-
--- | Scale the stem of an unconstrained tree.
-scaleUnconstrainedStem :: Double -> Tree Double a -> Tree Double a
-scaleUnconstrainedStem u tr = tr & branchL *~ u

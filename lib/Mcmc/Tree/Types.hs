@@ -180,10 +180,15 @@ toHeightTreeUltrametric t
 toHeightTreeUltrametric' :: HasLength a => Tree a Name -> HeightTree Double
 toHeightTreeUltrametric' t@(Node _ lb ts) =
   HeightTree $
-    Node (assertNonNegative "toHeightTreeUltrametric'" h) lb $
+    Node (assureNonNegative "toHeightTreeUltrametric'" h) lb $
       map (getHeightTree . toHeightTreeUltrametric') ts
   where
     h = fromLength $ rootHeight t
+    -- We explicitly call 'error' here and do not use 'assert', because we want
+    -- to check if the initial tree is faulty in production.
+    assureNonNegative n val
+      | val < 0 = error $ n <> ": Negative value: " <> show val <> "."
+      | otherwise = val
 
 -- | Calculate branch lengths and remove node heights.
 heightTreeToLengthTree :: (Ord a, Num a, Show a) => HeightTree a -> LengthTree a
@@ -192,12 +197,7 @@ heightTreeToLengthTree t' = LengthTree $ go (branch t) t
     t = getHeightTree t'
     go hParent (Node hNode lb ts) =
       let l = hParent - hNode
-       in -- XXX: This assertion triggers when calculating the gradient for negative lengths.
-          -- in Node (assertNonNegative "heightTreeToLengthTree" l) lb $ map (go hNode) ts
+       in -- Do not check for negative values here, because the assertion may
+          -- trigger when calculating the gradient.
           Node l lb $ map (go hNode) ts
 {-# SPECIALIZE heightTreeToLengthTree :: HeightTree Double -> LengthTree Double #-}
-
-assertNonNegative :: (Ord a, Num a, Show a) => String -> a -> a
-assertNonNegative n val
-  | val < 0 = error $ n <> ": Negative value: " <> show val <> "."
-  | otherwise = val

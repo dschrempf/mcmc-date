@@ -41,4 +41,7 @@ monitorLengthTree n =
     (toNewickBuilder . lengthToPhyloTree . setLengths . getLengthTree)
   where
     setLengths = first (errF . toLength)
+    -- Call 'error' when branch lengths are negative. One could use 'assert'
+    -- here. But then, the checks are not too time intense, and provide some
+    -- security also in production.
     errF = either (error . ("monitorLengthTree: " <>)) id

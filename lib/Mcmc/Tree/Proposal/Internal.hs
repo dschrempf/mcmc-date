@@ -35,21 +35,25 @@ truncatedNormalSample ::
   LowerBoundary Double ->
   UpperBoundary Double ->
   GenIO ->
-  -- | (NewValue, MHGRatioWithoutJacobian)
+  -- (NewValue, MHGRatioWithoutJacobian)
   IO (Double, Log Double)
 truncatedNormalSample m s t a b g = do
   let s' = t * s
       d = truncatedNormalDistr m s' a b
   u <- genContinuous d g
-  let -- msgMeanLessThanZero = "Mean " <> show m <> " is negative."
-      msgOutOfBounds = "Value " <> show u <> " out of bounds [" <> show a <> "," <> show b <> "]."
+  let msgOutOfBounds = "Value " <> show u <> " out of bounds [" <> show a <> "," <> show b <> "]."
+      -- msgMeanLessThanZero = "Mean " <> show m <> " is negative."
       -- msgValueLessThanZero = "Value " <> show u <> " is negative."
       msgParams = "Mean, sd, and tuneparam: " <> show m <> " " <> show s <> " " <> show t <> "."
       errWith msg = error $ "truncatedNormalSample: " <> msg <> "\n" <> msgParams
-  -- -- NOTE: Pulleys allow negative values.
-  -- when (m < 0) $ errWith msgMeanLessThanZero
+  -- NOTE: With the following error check, we catch numerical errors. This check
+  -- is also required in production, and 'assert' is not used on purpose.
   when (a > u || b < u) $ errWith msgOutOfBounds
+  -- -- NOTE: Pulleys allow negative values.
+  --
+  -- when (m < 0) $ errWith msgMeanLessThanZero
   -- when (u < 0) $ errWith msgValueLessThanZero
+  --
   -- Compute Metropolis-Hastings-Green factor.
   let d' = truncatedNormalDistr u s' a b
       qXY = Exp $ logDensity d u

@@ -62,9 +62,9 @@ slideNodeAtUltrametricSimple pth s t tr g
   | null children = error "slideNodeAtUltrametricSimple: Cannot slide leaf."
   | otherwise = do
     (hNode', q) <- truncatedNormalSample hNode s t hChild hParent g
-    let setNodeHeight x = x & branchL .~ hNode'
+    let tr' = toTree $ trPos & currentTreeL . branchL .~ assert (hNode' > 0) hNode'
     -- The absolute value of the determinant of the Jacobian is 1.0.
-    return (HeightTree $ toTree $ modifyTree setNodeHeight trPos, q, 1.0)
+    return (HeightTree tr', q, 1.0)
   where
     trPos = goPathUnsafe pth $ fromTree $ getHeightTree tr
     focus = current trPos
@@ -149,10 +149,11 @@ scaleSubTreeAtUltrametricSimple n pth sd t tr g
   | otherwise = do
     (hNode', q) <- truncatedNormalSample hNode sd t 0 hParent g
     -- Scaling factor (xi, not x_i).
-    let xi = hNode' / hNode
+    let xi = let x = hNode' / hNode in assert (x > 0) x
         -- (-1) because the root height has an additive change.
         jacobian = Exp $ fromIntegral (n - 1) * log xi
-    return (HeightTree $ toTree $ modifyTree (scaleUltrametricTreeF hNode' xi) trPos, q, jacobian)
+        tr' = toTree $ trPos & currentTreeL %~ scaleUltrametricTreeF hNode' xi
+    return (HeightTree tr', q, jacobian)
   where
     trPos = goPathUnsafe pth $ fromTree $ getHeightTree tr
     focus = current trPos
@@ -277,14 +278,14 @@ pulleyUltrametricSimple nL nR s t tr@(HeightTree (Node br lb [l, r])) g = do
   (u, q) <- pulleyUltrametricTruncatedNormalSample s t tr g
   -- Left.
   let hL = branch l
-      hL' = hL - u
+      hL' = let x = hL - u in assert (x > 0) x
       -- Scaling factor left. (hL - u)/hL = (1.0 - u/hL).
-      xiL = hL' / hL
+      xiL = let x = hL' / hL in assert (x > 0) x
   -- Right.
   let hR = branch r
-      hR' = hR + u
+      hR' = let x = hR + u in assert (x > 0) x
       -- Scaling factor right. (hR + u)/hR = (1.0 + u/hR).
-      xiR = hR' / hR
+      xiR = let x = hR' / hR in assert (x > 0) x
   let tr' = Node br lb [scaleUltrametricTreeF hL' xiL l, scaleUltrametricTreeF hR' xiR r]
   -- The derivation of the Jacobian matrix is very lengthy. Similar to before,
   -- we parameterize the right and left trees into the heights of all other
@@ -342,7 +343,4 @@ scaleUltrametricTreeF ::
   Tree Double Name ->
   Tree Double Name
 scaleUltrametricTreeF h xi (Node _ lb ts) =
-  Node h' lb $ map (first (* xi')) ts
-  where
-    xi' = assert (xi > 0) xi
-    h' = assert (h > 0) h
+  Node h lb $ map (first (* xi)) ts

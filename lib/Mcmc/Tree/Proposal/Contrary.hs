@@ -18,6 +18,7 @@ module Mcmc.Tree.Proposal.Contrary
   )
 where
 
+import Control.Exception
 import Control.Lens
 import Control.Monad
 import Data.Bifunctor
@@ -45,21 +46,26 @@ slideNodesAtContrarilySimple pth sd t (HeightTree tTr, LengthTree rTr) g
   | otherwise = do
     (hTTrNode', q) <- truncatedNormalSample hTTrNode sd t hTTrOldestChild hTTrParent g
     -- Time tree.
-    let setNodeHeight x = x & branchL .~ hTTrNode'
-        tTr' = toTree $ modifyTree setNodeHeight tTrPos
+    let tTr' = toTree $ tTrPos & currentTreeL . branchL .~ assert (hTTrNode' > 0) hTTrNode'
     -- Rate tree.
     let -- Scaling factor of rate tree stem.
-        xiStemR = if null pth then 1.0 else (hTTrParent - hTTrNode) / (hTTrParent - hTTrNode')
+        xiStemR =
+          if null pth
+            then 1.0
+            else
+              let x = (hTTrParent - hTTrNode) / (hTTrParent - hTTrNode')
+               in assert (x > 0) x
         -- Scaling factors of rate tree daughter branches excluding the stem.
-        getXiR h = (hTTrNode - h) / (hTTrNode' - h)
+        getXiR h = let x = (hTTrNode - h) / (hTTrNode' - h) in assert (x > 0) x
         xisR = map getXiR hsTTrChildren
-        scaleDaughterBranches (Node br lb trs) = Node br lb $ zipWith scaleUnconstrainedStem xisR trs
+        scaleDaughterBranches (Node br lb trs) =
+          Node br lb $ zipWith (modifyStem . (*)) xisR trs
         -- If the root node is handled, do not scale the stem because no upper
         -- bound is set.
         f =
           if null pth
             then scaleDaughterBranches
-            else scaleUnconstrainedStem xiStemR . scaleDaughterBranches
+            else modifyStem (* xiStemR) . scaleDaughterBranches
         rTr' = toTree $ modifyTree f rTrPos
     -- New state.
     let x' = (HeightTree tTr', LengthTree rTr')
@@ -194,12 +200,12 @@ slideRootContrarilyJacobian n u xis =
       -- Scaling the rate branches.
       map log xis
 
-slideRootSimple ::
+slideRootContrarilySimple ::
   Int ->
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (Double, HeightTree Double, LengthTree Double)
-slideRootSimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
+slideRootContrarilySimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
   let tTrHeight = branch tTr
   when
     (tTrHeight /= 1.0)
@@ -213,13 +219,13 @@ slideRootSimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
   (ht', q) <- truncatedNormalSample ht s t htOldestChild (1 / 0) g
   -- Scaling factor of absolute time tree height. This is the reverse scaling
   -- factor of the time tree node heights.
-  let u = ht' / ht
+  let u = let x = ht' / ht in assert (x > 0) x
   -- Scaling factors for rates.
-  let getXi h = (1 - h) / (u - h)
+  let getXi h = let x = (1 - h) / (u - h) in assert (x > 0) x
       xis = map getXi htsChildren
   -- Compute new state.
   let tTr' = tTr & forestL %~ map (first (/ u))
-      rTr' = rTr & forestL %~ zipWith scaleUnconstrainedStem xis
+      rTr' = rTr & forestL %~ zipWith (modifyStem . (*)) xis
       j = slideRootContrarilyJacobian n u xis
       x' = (ht', HeightTree tTr', LengthTree rTr')
   return (x', q, j)
@@ -260,7 +266,7 @@ slideRootContrarily ::
 slideRootContrarily tr s =
   createProposal
     description
-    (slideRootSimple n s)
+    (slideRootContrarilySimple n s)
     -- 1: Slide absolute time height.
     -- n: Scale inner nodes of time tree.
     -- k: Scale the rate tree branches leading to the root.
@@ -288,20 +294,25 @@ scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, Length
   | otherwise = do
     (hTTrNode', q) <- truncatedNormalSample hTTrNode sd t 0 hTTrParent g
     let -- Scaling factor of time tree nodes heights (xi, not x_i).
-        xiT = hTTrNode' / hTTrNode
-        tTr' = toTree $ modifyTree (scaleUltrametricTreeF hTTrNode' xiT) tTrPos
+        xiT = let x = hTTrNode' / hTTrNode in assert (x > 0) x
+        tTr' = toTree $ tTrPos & currentTreeL %~ scaleUltrametricTreeF hTTrNode' xiT
     -- Rate tree.
     let -- Scaling factor of rate tree branches excluding the stem.
         xiR = recip xiT
         -- Scaling factor of rate tree stem.
-        xiStemR = if null pth then 1.0 else (hTTrParent - hTTrNode) / (hTTrParent - hTTrNode')
+        xiStemR =
+          if null pth
+            then 1.0
+            else
+              let x = (hTTrParent - hTTrNode) / (hTTrParent - hTTrNode')
+               in assert (x > 0) x
         -- If the root node is handled, do not scale the stem because no upper
         -- bound is set.
         f =
           if null pth
             then scaleUnconstrainedTreeWithoutStemF xiR
-            else scaleUnconstrainedStem xiStemR . scaleUnconstrainedTreeWithoutStemF xiR
-        rTr' = toTree $ modifyTree f rTrPos
+            else modifyStem (* xiStemR) . scaleUnconstrainedTreeWithoutStemF xiR
+        rTr' = toTree $ rTrPos & currentTreeL %~ f
     -- New state.
     let x' = (HeightTree tTr', LengthTree rTr')
         -- jacobianTimeTree = Exp $ fromIntegral (nNodes - 1) * log xi

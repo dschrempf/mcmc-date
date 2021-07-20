@@ -21,9 +21,9 @@ module Mcmc.Tree.Lens
     -- ** Special tree
     heightTreeL,
     lengthTreeL,
-    -- -- ** Tree zippers
-    -- currentL,
 
+    -- ** Tree zippers
+    currentTreeL,
     -- -- ** Length lenses
     -- hasLengthL,
     -- lengthL,
@@ -97,11 +97,10 @@ lengthTreeL f s = LengthTree <$> f (getLengthTree s)
 --     (getSubTreeUnsafe p)
 --     (\t t' -> let pos = goPathUnsafe p $ fromTree t in toTree $ pos {current = t'})
 
--- -- Somehow this is not used.
--- --
--- -- | Current focus of a zipper.
--- currentL :: Lens' (TreePos e a) (Tree e a)
--- currentL = lens current (\x t -> x {current = t})
+-- | Current focus of a zipper.
+currentTreeL :: Lens' (TreePos e a) (Tree e a)
+-- currentTreeL = lens current (\x t -> x {current = t})
+currentTreeL f (Pos c b a ps) = (\t -> Pos t b a ps) <$> f c
 
 -- -- Somehow this is not used.
 -- --
