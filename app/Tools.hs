@@ -21,7 +21,6 @@ module Tools
 where
 
 import Control.Lens
-import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Vector.Storable as VS
 import qualified ELynx.Topology as T
@@ -46,7 +45,7 @@ sumFirstTwo v = (v VS.! 0 + v VS.! 1) `VS.cons` VS.drop 2 v
 
 -- | Convert a topology to Newick format.
 toNewickTopology :: T.Topology Name -> BL.ByteString
-toNewickTopology = toNewick . first (const $ Phylo Nothing Nothing) . T.toBranchLabelTreeWith ""
+toNewickTopology = toNewick . T.toBranchLabelTreeWith ""
 
 -- | Create lenses for tuples.
 --
