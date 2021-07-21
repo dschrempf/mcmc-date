@@ -250,8 +250,8 @@ proposalsChangingTimeHeight t =
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
 -- | The proposal cycle includes proposals for the other parameters.
-proposals :: Bool -> I -> Cycle I
-proposals calibrationsAvailable x =
+proposals :: Bool -> I -> (I -> I) -> Cycle I
+proposals calibrationsAvailable x _ =
   cycleFromList $
     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
       timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
@@ -268,7 +268,7 @@ proposals calibrationsAvailable x =
     w = weightNBranches $ length t
 
 -- -- The Hamiltonian proposal is slow.
---
+
 -- -- | The proposal cycle includes proposals for the other parameters.
 -- proposals :: Bool -> I -> (I -> I) -> Cycle I
 -- proposals calibrationsAvailable x gradient =

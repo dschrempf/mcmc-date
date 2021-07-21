@@ -23,7 +23,7 @@ import Data.Aeson
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.List
--- import qualified Data.Matrix as MB
+import qualified Data.Matrix as MB
 import Data.Maybe
 import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
@@ -61,7 +61,7 @@ getMeanTreeFn s = s <> ".meantree"
 -- The rooted tree with posterior mean branch lengths will be stored in a file
 -- with this name.
 getMeanTree :: String -> IO (Tree Length Name)
-getMeanTree = oneTree RevBayes . getMeanTreeFn
+getMeanTree = oneTree Standard . getMeanTreeFn
 
 getDataFn :: String -> FilePath
 getDataFn s = s <> ".data"
@@ -88,7 +88,7 @@ getPosteriorMatrix = L.fromRows . map (VS.fromList . map fromLength . branches)
 prepare :: PrepSpec -> IO ()
 prepare (PrepSpec an rt ts) = do
   putStrLn "Read trees."
-  treesAll <- someTrees RevBayes ts
+  treesAll <- someTrees Standard ts
   let nTrees = length treesAll
   putStrLn $ show nTrees ++ " trees read."
 
@@ -102,7 +102,7 @@ prepare (PrepSpec an rt ts) = do
     else putStrLn "OK."
 
   putStrLn "Read rooted tree."
-  treeRooted <- oneTree RevBayes rt
+  treeRooted <- oneTree Standard rt
 
   putStrLn "Root the trees at the same point as the given rooted tree."
   let og = fst $ fromBipartition $ either error id $ bipartition treeRooted
@@ -187,8 +187,8 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
-  -- let muBoxed = VB.convert mu
-  --     sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
+  let muBoxed = VB.convert mu
+      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -205,8 +205,8 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
       -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       lh' = likelihoodFunction mu sigmaInv logSigmaDet
       -- Proposal cycle.
-      -- gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
-      cc' = proposals (isJust cls) start'
+      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
+      cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
 
@@ -230,12 +230,12 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
           Save
           LogStdOutAndFile
           Debug
-  -- Either use the MC3 algorithm.
-  let mc3S = MC3Settings (NChains 4) (SwapPeriod 2) (NSwaps 3)
-  a <- mc3 mc3S mcmcS pr' lh' cc' mon' start' g
+  -- -- Either use the MC3 algorithm.
+  -- let mc3S = MC3Settings (NChains 4) (SwapPeriod 2) (NSwaps 3)
+  -- a <- mc3 mc3S mcmcS pr' lh' cc' mon' start' g
 
-  -- -- Or the standard MHG algorithm.
-  -- a <- mhg mcmcS pr' lh' cc' mon' start' g
+  -- Or the standard MHG algorithm.
+  a <- mhg mcmcS pr' lh' cc' mon' start' g
 
   -- Run the Markov chain.
   void $ mcmc mcmcS a
@@ -258,8 +258,8 @@ continueMetropolisHastingsGreen (Spec an cls cns prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
-  -- let muBoxed = VB.convert mu
-  --     sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
+  let muBoxed = VB.convert mu
+      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -276,15 +276,16 @@ continueMetropolisHastingsGreen (Spec an cls cns prof) = do
       -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       lh' = likelihoodFunction mu sigmaInv logSigmaDet
       -- Proposal cycle.
-      -- gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
-      cc' = proposals (isJust cls) start'
+      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
+      cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
 
   -- Load the MCMC settings and the algorithm.
   let an' = AnalysisName an
   s <- settingsLoad an'
-  a <- mc3Load pr' lh' cc' mon' an'
+  -- a <- mc3Load pr' lh' cc' mon' an'
+  a <- mhgLoad pr' lh' cc' mon' an'
   let iterations' = if prof then iterationsProf else iterations
   void $ mcmcContinue iterations' s a
 
@@ -293,8 +294,8 @@ runMarginalLikelihood (Spec an cls cns prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
-  -- let muBoxed = VB.convert mu
-  --     sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
+  let muBoxed = VB.convert mu
+      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -311,8 +312,8 @@ runMarginalLikelihood (Spec an cls cns prof) = do
       -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
       lh' = likelihoodFunction mu sigmaInv logSigmaDet
       -- Proposal cycle.
-      -- gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
-      cc' = proposals (isJust cls) start'
+      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
+      cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
 

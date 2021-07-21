@@ -118,7 +118,8 @@ executable mcmc-date
       Paths_mcmc_date
   hs-source-dirs: app
   build-depends:
-      aeson
+      ad
+    , aeson
     , base >=4.7 && <5
     , bytestring
     , deepseq
@@ -127,6 +128,7 @@ executable mcmc-date
     , lens
     , log-domain
     , math-functions
+    , matrices
     , mcmc
     , mcmc-date
     , mwc-random
