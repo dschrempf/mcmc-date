@@ -172,7 +172,9 @@ birthDeathWith ::
   -- Return (log D, E).
   (Log a, a)
 -- First case of the boundary conditions given after Eq. [4].
-birthDeathWith f la mu rho (Node br _ [l, r]) = (Exp (log (dT * la)) * dL * dR, eT)
+birthDeathWith f la mu rho (Node br _ [l, r])
+  | br <= 0 = error "birthDeathWith: Branch length negative (3-degree node)."
+  | otherwise = (Exp (log (dT * la)) * dL * dR, eT)
   where
     (dL, eL) = birthDeathWith f la mu rho l
     -- (dR, eR) = birthDeathWith f la mu rho r
@@ -190,12 +192,16 @@ birthDeathWith f la mu rho (Node br _ [l, r]) = (Exp (log (dT * la)) * dL * dR, 
     -- percentage of all living species.
     (dT, eT) = f la mu 1.0 br eL
 -- Second case of the boundary conditions given after Eq. [4].
-birthDeathWith f la mu rho (Node br _ [c]) = (Exp (log (dT * rho)) * d, eT)
+birthDeathWith f la mu rho (Node br _ [c])
+  | br <= 0 = error "birthDeathWith: Branch length negative (2-degree node)."
+  | otherwise = (Exp (log (dT * rho)) * d, eT)
   where
     (d, e) = birthDeathWith f la mu rho c
     (dT, eT) = f la mu 1.0 br e
 -- Third case of the boundary conditions given after Eq. [4].
-birthDeathWith f la mu rho (Node br _ []) = (Exp $ log $ dT * rho, eT)
+birthDeathWith f la mu rho (Node br _ [])
+  | br <= 0 = error "birthDeathWith: Branch length negative (leaf)."
+  | otherwise = (Exp $ log $ dT * rho, eT)
   where
     -- D and E at the top of the external branch. We use the given sampling
     -- probability here.
