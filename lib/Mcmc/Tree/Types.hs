@@ -30,7 +30,9 @@ module Mcmc.Tree.Types
 
     -- ** Ultrametric trees
     LengthTree (..),
+    isValidLengthTree,
     HeightTree (..),
+    isValidHeightTree,
     toHeightTreeUltrametric,
     heightTreeToLengthTree,
   )
@@ -117,6 +119,14 @@ instance ToJSON a => ToJSON (LengthTree a)
 
 instance FromJSON a => FromJSON (LengthTree a)
 
+-- | Check if 'LengthTree' is valid.
+--
+-- Stem length has to be greater equal zero.
+--
+-- All other lengths have to be greater than zero.
+isValidLengthTree :: LengthTree Double -> Bool
+isValidLengthTree (LengthTree (Node br _ ts)) = br >= 0 && all (all (>0) . ZipBranchTree) ts
+
 -- | Tree with node heights.
 newtype HeightTree a = HeightTree {getHeightTree :: Tree a Name}
   deriving (Generic)
@@ -153,6 +163,16 @@ instance Applicative HeightTree where
 instance ToJSON a => ToJSON (HeightTree a)
 
 instance FromJSON a => FromJSON (HeightTree a)
+
+-- | Check if 'HeightTree' is valid.
+--
+-- Heights of leaves are 0.0.
+--
+-- Height of parent node is greater than height of daughter node.
+isValidHeightTree :: HeightTree Double -> Bool
+isValidHeightTree = go (1/0) . getHeightTree
+  where go hParent (Node h _ []) = hParent > h && h == 0.0
+        go hParent (Node h _ ts) = hParent > h && all (go h) ts
 
 -- | Calculate node heights for a given tree.
 --

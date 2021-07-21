@@ -108,3 +108,9 @@ instance Applicative IG where
 instance ToJSON a => ToJSON (IG a)
 
 instance FromJSON a => FromJSON (IG a)
+
+-- | Check if a state is valid.
+isValidState :: I -> Bool
+isValidState  (IG l m h t mu va r) =
+  and [ l > 0
+      , m > 0, h > 0, isValidHeightTree t, mu > 0, va > 0, isValidLengthTree r ]

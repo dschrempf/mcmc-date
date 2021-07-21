@@ -249,52 +249,52 @@ proposalsChangingTimeHeight t =
     nRC = PName "Trees [R]"
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
--- | The proposal cycle includes proposals for the other parameters.
-proposals :: Bool -> I -> (I -> I) -> Cycle I
-proposals calibrationsAvailable x _ =
-  cycleFromList $
-    [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
-      timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
-      rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
-      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
-    ]
-      ++ proposalsTimeTree t
-      ++ proposalsRateTree t
-      ++ proposalsTimeRateTreeContra t
-      -- Only add proposals on time tree height when calibrations are available.
-      ++ if calibrationsAvailable then proposalsChangingTimeHeight t else []
-  where
-    t = getLengthTree $ _rateTree x
-    w = weightNBranches $ length t
+-- -- | The proposal cycle includes proposals for the other parameters.
+-- proposals :: Bool -> I -> (I -> I) -> Cycle I
+-- proposals calibrationsAvailable x _ =
+--   cycleFromList $
+--     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
+--       timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
+--       rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
+--       rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
+--     ]
+--       ++ proposalsTimeTree t
+--       ++ proposalsRateTree t
+--       ++ proposalsTimeRateTreeContra t
+--       -- Only add proposals on time tree height when calibrations are available.
+--       ++ if calibrationsAvailable then proposalsChangingTimeHeight t else []
+--   where
+--     t = getLengthTree $ _rateTree x
+--     w = weightNBranches $ length t
 
 -- -- The Hamiltonian proposal is slow.
 
--- -- | The proposal cycle includes proposals for the other parameters.
--- proposals :: Bool -> I -> (I -> I) -> Cycle I
--- proposals calibrationsAvailable x gradient =
---   cycleFromList
---     [ liftProposalWith jacobianRootBranch id $
---         hamiltonian x s (PName "All parameters") (pWeight 3)
---     ]
---   where
---     s = HSettings gradient masses'' 10 0.002 HTuneMassesAndLeapfrog
---     masses = fmap (const (Just 1)) x :: IG (Maybe Double)
---     masses' =
---       masses
---         -- Do not change the height of the relative time tree.
---         & timeTree . heightTreeL . branchL .~ Nothing
---         -- Do not change the height of the relative time tree leaves.
---         & timeTree . heightTreeL %~ setLeaves
---         -- Do not change the root branch of the relative rate tree.
---         & rateTree . lengthTreeL . branchL .~ Nothing
---     setLeaves (Node _ lb []) = Node Nothing lb []
---     setLeaves (Node br lb ts) = Node br lb (map setLeaves ts)
---     masses'' =
---       if calibrationsAvailable
---         then masses'
---         else
---           masses'
---             & timeHeight .~ Nothing
+-- | The proposal cycle includes proposals for the other parameters.
+proposals :: Bool -> I -> (I -> I) -> Cycle I
+proposals calibrationsAvailable x gradient =
+  cycleFromList
+    [ liftProposalWith jacobianRootBranch id $
+        hamiltonian x s (PName "All parameters") (pWeight 3)
+    ]
+  where
+    s = HSettings gradient (Just isValidState) masses'' 10 0.01 HTuneMassesAndLeapfrog
+    masses = fmap (const (Just 1)) x :: IG (Maybe Double)
+    masses' =
+      masses
+        -- Do not change the height of the relative time tree.
+        & timeTree . heightTreeL . branchL .~ Nothing
+        -- Do not change the height of the relative time tree leaves.
+        & timeTree . heightTreeL %~ setLeaves
+        -- Do not change the root branch of the relative rate tree.
+        & rateTree . lengthTreeL . branchL .~ Nothing
+    setLeaves (Node _ lb []) = Node Nothing lb []
+    setLeaves (Node br lb ts) = Node br lb (map setLeaves ts)
+    masses'' =
+      if calibrationsAvailable
+        then masses'
+        else
+          masses'
+            & timeHeight .~ Nothing
 
 -- Monitor parameters.
 monParams :: [MonitorParameter I]
