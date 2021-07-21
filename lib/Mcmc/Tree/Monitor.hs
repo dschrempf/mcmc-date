@@ -28,7 +28,7 @@ monitorTree ::
   -- | Name.
   String ->
   MonitorParameter (Tree e a)
-monitorTree n = MonitorParameter n (toNewickBuilder . lengthToPhyloTree)
+monitorTree n = MonitorParameter n (toNewickBuilder . first getLength)
 
 -- | Monitor a tree in Newick format.
 monitorLengthTree ::
