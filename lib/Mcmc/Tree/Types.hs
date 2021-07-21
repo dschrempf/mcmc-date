@@ -97,21 +97,21 @@ instance Traversable LengthTree where
 instance Applicative LengthTree where
   pure br = LengthTree $ Node br "" $ repeat (getLengthTree $ pure br)
   (LengthTree ~(Node brF lbF tsF)) <*> (LengthTree ~(Node brX _ tsX)) =
-    LengthTree $ Node (brF brX) lbF (getLengthTree <$> zipWith f tsF tsX)
+    LengthTree $ Node (brF brX) lbF (zipWith f tsF tsX)
     where
-      f x y = LengthTree x <*> LengthTree y
+      f x y = getLengthTree $ LengthTree x <*> LengthTree y
   liftA2 f (LengthTree ~(Node brX lbX tsX)) (LengthTree ~(Node brY _ tsY)) =
-    LengthTree $ Node (f brX brY) lbX (getLengthTree <$> zipWith f' tsX tsY)
+    LengthTree $ Node (f brX brY) lbX (zipWith g tsX tsY)
     where
-      f' x y = liftA2 f (LengthTree x) (LengthTree y)
+      g x y = getLengthTree $ liftA2 f (LengthTree x) (LengthTree y)
   (LengthTree ~(Node _ lbX tsX)) *> (LengthTree ~(Node brY _ tsY)) =
-    LengthTree $ Node brY lbX (getLengthTree <$> zipWith f tsX tsY)
+    LengthTree $ Node brY lbX (zipWith f tsX tsY)
     where
-      f x y = LengthTree x *> LengthTree y
+      f x y = getLengthTree $ LengthTree x *> LengthTree y
   (LengthTree ~(Node brX lbX tsX)) <* (LengthTree ~(Node _ _ tsY)) =
-    LengthTree $ Node brX lbX (getLengthTree <$> zipWith f tsX tsY)
+    LengthTree $ Node brX lbX (zipWith f tsX tsY)
     where
-      f x y = LengthTree x <* LengthTree y
+      f x y = getLengthTree $ LengthTree x <* LengthTree y
 
 instance ToJSON a => ToJSON (LengthTree a)
 
@@ -134,21 +134,21 @@ instance Traversable HeightTree where
 instance Applicative HeightTree where
   pure br = HeightTree $ Node br "" $ repeat (getHeightTree $ pure br)
   (HeightTree ~(Node brF lbF tsF)) <*> (HeightTree ~(Node brX _ tsX)) =
-    HeightTree $ Node (brF brX) lbF (getHeightTree <$> zipWith f tsF tsX)
+    HeightTree $ Node (brF brX) lbF (zipWith f tsF tsX)
     where
-      f x y = HeightTree x <*> HeightTree y
+      f x y = getHeightTree $ HeightTree x <*> HeightTree y
   liftA2 f (HeightTree ~(Node brX lbX tsX)) (HeightTree ~(Node brY _ tsY)) =
-    HeightTree $ Node (f brX brY) lbX (getHeightTree <$> zipWith f' tsX tsY)
+    HeightTree $ Node (f brX brY) lbX (zipWith g tsX tsY)
     where
-      f' x y = liftA2 f (HeightTree x) (HeightTree y)
+      g x y = getHeightTree $ liftA2 f (HeightTree x) (HeightTree y)
   (HeightTree ~(Node _ lbX tsX)) *> (HeightTree ~(Node brY _ tsY)) =
-    HeightTree $ Node brY lbX (getHeightTree <$> zipWith f tsX tsY)
+    HeightTree $ Node brY lbX (zipWith f tsX tsY)
     where
-      f x y = HeightTree x *> HeightTree y
+      f x y = getHeightTree $ HeightTree x *> HeightTree y
   (HeightTree ~(Node brX lbX tsX)) <* (HeightTree ~(Node _ _ tsY)) =
-    HeightTree $ Node brX lbX (getHeightTree <$> zipWith f tsX tsY)
+    HeightTree $ Node brX lbX (zipWith f tsX tsY)
     where
-      f x y = HeightTree x <* HeightTree y
+      f x y = getHeightTree $ HeightTree x <* HeightTree y
 
 instance ToJSON a => ToJSON (HeightTree a)
 
