@@ -230,12 +230,12 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
           Save
           LogStdOutAndFile
           Debug
-  -- -- Either use the MC3 algorithm.
-  -- let mc3S = MC3Settings (NChains 4) (SwapPeriod 2) (NSwaps 3)
-  -- a <- mc3 mc3S mcmcS pr' lh' cc' mon' start' g
+  -- Either use the MC3 algorithm.
+  let mc3S = MC3Settings (NChains 4) (SwapPeriod 2) (NSwaps 3)
+  a <- mc3 mc3S mcmcS pr' lh' cc' mon' start' g
 
-  -- Or the standard MHG algorithm.
-  a <- mhg mcmcS pr' lh' cc' mon' start' g
+  -- -- Or the standard MHG algorithm.
+  -- a <- mhg mcmcS pr' lh' cc' mon' start' g
 
   -- Run the Markov chain.
   void $ mcmc mcmcS a
