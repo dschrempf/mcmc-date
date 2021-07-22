@@ -277,8 +277,8 @@ proposals calibrationsAvailable x gradient =
         hamiltonian x s (PName "All parameters") (pWeight 3)
     ]
   where
-    s = HSettings gradient (Just isValidState) masses'' 10 0.01 HTuneMassesAndLeapfrog
-    masses = fmap (const (Just 1)) x :: IG (Maybe Double)
+    s = HSettings gradient (Just isValidState) masses'' 10 0.05 HTuneMassesAndLeapfrog
+    masses = fmap (const (Just 10)) x :: IG (Maybe Double)
     masses' =
       masses
         -- Do not change the height of the relative time tree.
