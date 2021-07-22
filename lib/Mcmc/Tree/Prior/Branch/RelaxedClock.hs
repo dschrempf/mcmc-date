@@ -126,13 +126,15 @@ uncorrelatedGamma hs m v
 
 -- A variant of the log normal distribution. See Yang 2006, equation (7.23).
 logNormal' :: RealFloat a => Mean a -> Variance a -> a -> Log a
-logNormal' mu var r
+logNormal' mu var x
   | var <= 0 = error "logNormal': Variance is zero or negative."
+  | x < 0 = error "logNormal': Negative value."
+  | x == 0 = 0.0
   | otherwise = Exp $ negate t - e
   where
-    t = realToFrac m_ln_sqrt_2_pi + log (r * sqrt var)
+    t = realToFrac m_ln_sqrt_2_pi + log (x * sqrt var)
     a = recip $ 2 * var
-    b = log (r / mu) + 0.5 * var
+    b = log (x / mu) + 0.5 * var
     e = a * (b ** 2)
 
 -- | Uncorrelated log normal model.
