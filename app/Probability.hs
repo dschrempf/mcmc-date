@@ -21,8 +21,8 @@ import Data.Foldable
 import qualified Data.Matrix as MB
 import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
-import qualified Numeric.LinearAlgebra as L
 import Numeric.AD
+import qualified Numeric.LinearAlgebra as L
 import Numeric.Log hiding (sum)
 import Numeric.MathFunctions.Constants
 
@@ -210,6 +210,21 @@ posteriorFunction cs ks mu sigmaInv logSigmaDet xs =
 -- | Gradient of the log posterior function.
 --
 -- Useful for Hamiltonian Monte Carlo proposals.
+--
+-- NOTE: Automatic differentiation.
+--
+-- - Automatic differentiation only works on overloaded operators. The type
+--   signatures of all used operators need to be general enough. Specifically:
+--
+--   + I cannot use any function pinning the type to a =Double=
+--
+--   + I cannot use linear algebra functions provided by =hmatrix=, because the
+--     data type is not =Storable=.
+--
+-- - I think in our case, manual calculation of the gradient may be a better
+--   option, but would also be more than cumbersome. In the book Bayesian Data
+--   Analysis by Gelman, they suggest computing the gradient manually. We could
+--   start using univariate normal distributions.
 gradLogPosteriorFunc ::
   (RealFloat a, Show a) =>
   VB.Vector (Calibration Double) ->
