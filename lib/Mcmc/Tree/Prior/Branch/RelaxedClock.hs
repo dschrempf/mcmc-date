@@ -35,6 +35,7 @@ module Mcmc.Tree.Prior.Branch.RelaxedClock
 where
 
 import Data.Maybe
+import qualified Data.Vector as VB
 import ELynx.Tree
 import Mcmc.Prior
 import Mcmc.Statistics.Types
@@ -86,14 +87,14 @@ gammaDirichlet ::
   -- | Alpha of Dirichlet distribution.
   a ->
   Mean a ->
-  PriorFunctionG [a] a
+  PriorFunctionG (VB.Vector a) a
 gammaDirichlet alphaMu betaMu alpha muMean xs = muPrior * dirichletDensitySymmetric ddSym xs
   where
     -- Call 'error' when 'alphaMu' or 'betaMu' are zero or negative.
     muPrior = gamma alphaMu betaMu muMean
     -- Call 'error' when 'alpha' is zero or negative.
     ddSym = either error id $ dirichletDistributionSymmetric (length xs) alpha
-{-# SPECIALIZE gammaDirichlet :: Double -> Double -> Double -> Double -> PriorFunction [Double] #-}
+{-# SPECIALIZE gammaDirichlet :: Double -> Double -> Double -> Double -> PriorFunction (VB.Vector Double) #-}
 
 -- | Uncorrelated gamma model.
 --
