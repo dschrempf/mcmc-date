@@ -16,6 +16,7 @@ module Mcmc.Tree.Prior.Branch.Internal
   )
 where
 
+import Data.Foldable
 import Mcmc.Internal.Gamma
 import Numeric.Log hiding (sum)
 
@@ -65,7 +66,8 @@ dirichletDensitySymmetric (DirichletDistributionSymmetric a k c) xs
   | not (isNormalized xs) = 0.0
   | otherwise = c * Exp logXsPow
   where
-    logXsPow = sum $ map (\x -> log $ x ** (a - 1.0)) xs
+    accF acc x = acc + log (x ** (a - 1.0))
+    logXsPow = foldl' 0 accF xs
 {-# SPECIALIZE dirichletDensitySymmetric ::
   DirichletDistributionSymmetric Double ->
   [Double] ->
