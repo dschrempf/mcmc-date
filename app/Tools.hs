@@ -45,7 +45,7 @@ sumFirstTwo v = (v VS.! 0 + v VS.! 1) `VS.cons` VS.drop 2 v
 
 -- | Convert a topology to Newick format.
 toNewickTopology :: T.Topology Name -> BL.ByteString
-toNewickTopology = toNewick . T.toBranchLabelTreeWith ""
+toNewickTopology = toNewick . T.toBranchLabelTreeWith () ""
 
 -- | Create lenses for tuples.
 --
