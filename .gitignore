@@ -44,3 +44,4 @@ cabal.project.local~
 *.bbl
 *.tex
 **/auto/
+**/result
