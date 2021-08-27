@@ -1,6 +1,6 @@
 {ghc}:
 
-with (import <nixpkgs> {config.allowUnfree = true;});
+with (import <nixpkgs> {});
 
 haskell.lib.buildStackProject {
   inherit ghc;
@@ -9,7 +9,7 @@ haskell.lib.buildStackProject {
     gfortran
     glpk
     gsl
-    mkl
+    openblas
     pkg-config
     sundials
     zlib

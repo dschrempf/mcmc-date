@@ -21,5 +21,4 @@ extra-deps:
 
 nix:
   add-gc-roots: true
-  path: [nixpkgs=/home/dominik/Nix/Nixpkgs]
   shell-file: shell.nix
