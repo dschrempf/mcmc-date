@@ -16,7 +16,10 @@
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   inputs.mcmc.url = "github:dschrempf/mcmc";
+  inputs.mcmc.inputs.circular.follows = "circular";
+  inputs.mcmc.inputs.dirichlet.follows = "dirichlet";
   inputs.mcmc.inputs.nixpkgs.follows = "nixpkgs";
+  inputs.mcmc.inputs.pava.follows = "pava";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
