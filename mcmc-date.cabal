@@ -96,6 +96,8 @@ benchmark mcmc-date-bench
   main-is: Bench.hs
   other-modules:
       Paths_mcmc_date
+  autogen-modules:
+      Paths_mcmc_date
   hs-source-dirs: bench
   build-depends:
       base >=4.7 && <5
