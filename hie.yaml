@@ -1,8 +1,25 @@
 cradle:
-  stack:
-    - path: "./lib"
-      component: "mcmc-date:lib"
-    - path: "./bench"
+  cabal:
+    - path: "lib"
+      component: "lib:mcmc-date"
+
+    - path: "bench/Bench.hs"
       component: "mcmc-date:bench:mcmc-date-bench"
-    - path: "./app"
+
+    - path: "app/Main.hs"
+      component: "mcmc-date:exe:mcmc-date"
+
+    - path: "app/Definitions.hs"
+      component: "mcmc-date:exe:mcmc-date"
+
+    - path: "app/Options.hs"
+      component: "mcmc-date:exe:mcmc-date"
+
+    - path: "app/Probability.hs"
+      component: "mcmc-date:exe:mcmc-date"
+
+    - path: "app/State.hs"
+      component: "mcmc-date:exe:mcmc-date"
+
+    - path: "app/Tools.hs"
       component: "mcmc-date:exe:mcmc-date"
