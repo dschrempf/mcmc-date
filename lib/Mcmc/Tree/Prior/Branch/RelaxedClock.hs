@@ -66,7 +66,7 @@ import Numeric.MathFunctions.Constants
 -- where \(x_i\) is the relative rate of partition \(i\).
 --
 -- See Dos Reis, M., Zhu, T., & Yang, Z., The impact of the rate prior on
--- bayesian estimation of divergence times with multiple loci, Systematic
+-- Bayesian estimation of divergence times with multiple loci, Systematic
 -- Biology, 63(4), 555–565 (2014). http://dx.doi.org/10.1093/sysbio/syu020.
 --
 -- Note that here, the SCALE and not the RATE is used as parameter of the gamma
