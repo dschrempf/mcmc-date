@@ -1,4 +1,4 @@
-resolver: lts-18.3
+resolver: lts-18.8
 
 packages:
 - .
@@ -18,7 +18,3 @@ extra-deps:
 #   # "$locals": -eventlog
 #   # Weeder 2.0.
 #   "$locals": -fwrite-ide-info
-
-nix:
-  add-gc-roots: true
-  shell-file: shell.nix

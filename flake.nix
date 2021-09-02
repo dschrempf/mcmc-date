@@ -84,11 +84,13 @@
                   dschrempf.iqtree2
                   dschrempf.phylobayes
                   dschrempf.tracer
-                  haskellPackages.cabal-install
                   haskellPackages.elynx
-                  haskellPackages.haskell-language-server
                   haskellPackages.slynx
                   haskellPackages.tlynx
+
+                  haskellPackages.cabal-install
+                  haskellPackages.haskell-language-server
+                  haskellPackages.stack
                 ];
                 doBenchmark = true;
               };
