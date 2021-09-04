@@ -1,8 +1,10 @@
-#!/usr/bin/env stack
-{- stack
-   runghc
-   --package bytestring
-   --package elynx-tree
+#!/usr/bin/env cabal
+{- cabal:
+   build-depends:
+     , base
+     , bytestring
+     , elynx-tree
+   ghc-options: -Wall
 -}
 
 import ELynx.Tree

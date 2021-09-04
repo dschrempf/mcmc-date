@@ -79,6 +79,7 @@
                     '';
                 packages = _: [ mcmc-date-package ];
                 buildInputs = with pkgs; [
+                  bashInteractive
                   dschrempf.beast2
                   dschrempf.figtree
                   dschrempf.iqtree2
@@ -93,6 +94,7 @@
                   haskellPackages.stack
                 ];
                 doBenchmark = true;
+                withHoogle = true;
               };
             }
       );

@@ -1,16 +1,18 @@
-#!/usr/bin/env stack
-{- stack
-   runghc
-   --package attoparsec
-   --package bytestring
-   --package comonad
-   --package elynx-tree
-   --package filepath
-   --package matrices
-   --package statistics
-   --package vector
--}
+#!/usr/bin/env cabal
 
+{- cabal:
+  build-depends:
+    attoparsec
+    , base
+    , bytestring
+    , comonad
+    , elynx-tree
+    , filepath
+    , matrices
+    , statistics
+    , vector
+  ghc-options: -Wall
+-}
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Comonad
@@ -21,7 +23,6 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Foldable
 import Data.List hiding (sort)
-import qualified Data.Map as M
 import qualified Data.Matrix.Unboxed as MU
 import Data.Maybe
 import qualified Data.Vector.Unboxed as VU
@@ -40,7 +41,9 @@ getTree l =
         parseOnly (oneNewick Standard) $ BS.split '\t' l !! 4
 
 toNewickTopology :: T.Topology Name -> BL.ByteString
-toNewickTopology = toNewick . first (const $ Phylo Nothing Nothing) . T.toBranchLabelTreeWith ""
+toNewickTopology =
+  toNewick . first (const $ Phylo Nothing Nothing)
+    . T.toBranchLabelTreeWith (0 :: Int) ""
 
 checkTopologies :: [Tree e Name] -> IO ()
 checkTopologies ts = do
@@ -98,9 +101,9 @@ getHeights ts = [(i, n, hs) | (i, n, hs) <- zip3 is ns hss']
     -- tree.
     hss' :: [VU.Vector Double]
     hss' = MU.toRows $ MU.fromColumns hss
-    -- Means and variances.
-    msvs :: [(Mean, Variance)]
-    msvs = map meanVariance hss'
+    -- -- Means and variances.
+    -- msvs :: [(Mean, Variance)]
+    -- msvs = map meanVariance hss'
     -- Node indices.
     is = toList $ identify $ head ts
     -- Node names.

@@ -1,10 +1,14 @@
-#!/usr/bin/env stack
-{- stack
-runghc
---package bytestring
---package elynx-tree
---package hmatrix
---package mcmc-tree
+#!/usr/bin/env cabal
+{- cabal:
+   build-depends:
+     , base
+     , bytestring
+     , containers
+     , elynx-tree
+     , hmatrix
+     , mcmc-date
+     , vector
+   ghc-options: -Wall
 -}
 
 import Data.Bifunctor
@@ -31,8 +35,8 @@ main = do
       toLength' = either (error . (<>) "main: ") id . toLength
       meanTree =
         fromMaybe (error "Could not label tree with mean branch lengths") $
-          setBranches (map (toLength' $ VS.toList mu) tree
+          setBranches (map toLength' $ VS.toList mu) tree
       -- This only works if the root node has three sub trees.
       meanTreeRooted = either error id $ outgroup (S.singleton $ head $ leaves meanTree) meanTree
       meanTreeMidpointRooted = either error id $ midpoint meanTreeRooted
-  BL.putStrLn $ toNewick $ measurableToPhyloTree meanTreeMidpointRooted
+  BL.putStrLn $ toNewick $ lengthToPhyloTree meanTreeMidpointRooted
