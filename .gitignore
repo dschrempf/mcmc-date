@@ -36,8 +36,6 @@ cabal.project.local~
 # *.settings
 /analyses/
 /misc/
-/scripts/TreesMonitorSummary
-/scripts/TreesMonitorSummary.hs
 /.direnv/
 
 # Latex stuff.
