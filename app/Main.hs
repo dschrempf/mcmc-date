@@ -68,10 +68,12 @@ getDataFn s = s <> ".data"
 
 -- Get the posterior branch length means, the inverted covariance matrix, and
 -- the determinant of the covariance matrix.
-getData :: String -> IO (VS.Vector Double, L.Matrix Double, Double)
+getData :: String -> IO (VS.Vector Double, L.Herm Double, Double)
 getData s = do
   (Just (mu, sigmaInvRows, logSigmaDet)) <- decodeFileStrict' $ getDataFn s
-  let sigmaInv = L.fromRows sigmaInvRows
+  -- We can trust that the matrix is symmetric here, because the matrix was
+  -- created by 'meanCov'.
+  let sigmaInv = L.trustSym $ L.fromRows sigmaInvRows
   return (mu, sigmaInv, logSigmaDet)
 
 -- Get the posterior matrix of branch lengths. Merge the two branch lengths
@@ -188,7 +190,7 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
   let muBoxed = VB.convert mu
-      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
+      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -259,7 +261,7 @@ continueMetropolisHastingsGreen (Spec an cls cns prof) = do
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
   let muBoxed = VB.convert mu
-      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
+      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -295,7 +297,7 @@ runMarginalLikelihood (Spec an cls cns prof) = do
   meanTree <- getMeanTree an
   (mu, sigmaInv, logSigmaDet) <- getData an
   let muBoxed = VB.convert mu
-      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows sigmaInv
+      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.

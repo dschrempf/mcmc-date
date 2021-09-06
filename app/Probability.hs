@@ -77,23 +77,24 @@ priorFunction cb' cs (IG l m h t mu va r) =
 -- NOTE: The generalized likelihood function with boxed vectors is much slower.
 
 -- Log of density of multivariate normal distribution with given parameters.
--- https://en.wikipedia.org/wiki/Multivariate_normal_distribution.
+-- https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Density_function.
 logDensityMultivariateNormal ::
   -- Mean vector.
   VS.Vector Double ->
   -- Inverted covariance matrix.
-  L.Matrix Double ->
+  L.Herm Double ->
   -- Log of determinant of covariance matrix.
   Double ->
   -- Value vector.
   VS.Vector Double ->
   Log Double
-logDensityMultivariateNormal mu sigmaInv logSigmaDet xs =
+logDensityMultivariateNormal mu sigmaInvH logSigmaDet xs =
   Exp $ c + (-0.5) * (logSigmaDet + ((dxs L.<# sigmaInv) L.<.> dxs))
   where
     dxs = xs - mu
     k = fromIntegral $ VS.length mu
     c = negate $ m_ln_sqrt_2_pi * k
+    sigmaInv = L.unSym sigmaInvH
 
 -- | Approximation of the phylogenetic likelihood using a multivariate normal
 -- distribution.
@@ -101,7 +102,7 @@ likelihoodFunction ::
   -- | Mean vector.
   VS.Vector Double ->
   -- | Inverted covariance matrix.
-  L.Matrix Double ->
+  L.Herm Double ->
   -- | Log of determinant of covariance matrix.
   Double ->
   LikelihoodFunction I
@@ -130,6 +131,10 @@ reduceVMV vl m vr =
   where
     nl = VB.length vl
     nr = VB.length vr
+
+
+-- TODO: Check that the inverted covariance matrix is symmetric (similar to
+-- above, where a hermitian matrix is used).
 
 -- Generalized multivariate normal.
 logDensityMultivariateNormalG ::
