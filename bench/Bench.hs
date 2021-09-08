@@ -43,9 +43,9 @@ import Mcmc.Tree
 --   let i = initWith tr
 --       pr' = priorFunction (getCalibrations tr) (getConstraints tr)
 --   benchmark $ nf pr' i
---   (Just (mu, sigmaInvRows, logSigmaDet)) <- decodeFileStrict' fnData
+--   (Just (mu, sigmaInvRows, logDetSigma)) <- decodeFileStrict' fnData
 --   let sigmaInv = L.fromRows sigmaInvRows
---       lh' = likelihoodFunction mu sigmaInv logSigmaDet
+--       lh' = likelihoodFunction mu sigmaInv logDetSigma
 --   putStrLn "Benchmark calculation of likelihood."
 --   benchmark $ nf lh' i
 

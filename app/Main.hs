@@ -70,11 +70,11 @@ getDataFn s = s <> ".data"
 -- the determinant of the covariance matrix.
 getData :: String -> IO (VS.Vector Double, L.Herm Double, Double)
 getData s = do
-  (Just (mu, sigmaInvRows, logSigmaDet)) <- decodeFileStrict' $ getDataFn s
+  (Just (mu, sigmaInvRows, logDetSigma)) <- decodeFileStrict' $ getDataFn s
   -- We can trust that the matrix is symmetric here, because the matrix was
   -- created by 'meanCov'.
   let sigmaInv = L.trustSym $ L.fromRows sigmaInvRows
-  return (mu, sigmaInv, logSigmaDet)
+  return (mu, sigmaInv, logDetSigma)
 
 -- Get the posterior matrix of branch lengths. Merge the two branch lengths
 -- leading to the root.
@@ -153,11 +153,11 @@ prepare (PrepSpec an rt ts) = do
   putStrLn $ "Minimum variance: " ++ show (L.minElement variances)
   putStrLn $ "Maximum variance: " ++ show (L.maxElement variances)
   putStrLn "Prepare the covariance matrix for the likelihood calculation."
-  let (sigmaInv, (logSigmaDet, sign)) = L.invlndet sigma
+  let (sigmaInv, (logDetSigma, sign)) = L.invlndet sigma
   when (sign /= 1.0) $ error "prepare: Determinant of covariance matrix is negative?"
-  putStrLn $ "The logarithm of the determinant of the covariance matrix is: " ++ show logSigmaDet
+  putStrLn $ "The logarithm of the determinant of the covariance matrix is: " ++ show logDetSigma
   putStrLn $ "Save the posterior means and covariances to " <> getDataFn an <> "."
-  encodeFile (getDataFn an) (mu, L.toRows sigmaInv, logSigmaDet)
+  encodeFile (getDataFn an) (mu, L.toRows sigmaInv, logDetSigma)
 
   putStrLn "Prepare the rooted tree with mean branch lengths (used as initial state)."
   -- Use one of the trees of the tree list in case the given rooted tree has a
@@ -188,7 +188,7 @@ runMetropolisHastingsGreen :: Spec -> IO ()
 runMetropolisHastingsGreen (Spec an cls cns prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
-  (mu, sigmaInv, logSigmaDet) <- getData an
+  (mu, sigmaInv, logDetSigma) <- getData an
   let muBoxed = VB.convert mu
       sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
 
@@ -204,10 +204,10 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
       -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
-      -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
-      lh' = likelihoodFunction mu sigmaInv logSigmaDet
+      -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
+      lh' = likelihoodFunction mu sigmaInv logDetSigma
       -- Proposal cycle.
-      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
+      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma
       cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
@@ -247,10 +247,10 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
 -- chain' <- fromMHG <$> mcmc mcmcS a
 -- trace' <- VB.map state <$> takeT 100 (trace chain')
 -- let x = VB.head trace'
---     gAd = _rateMean $ gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet x
+--     gAd = _rateMean $ gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma x
 --     startX = x & rateMean -~ 0.002
 --     startY = x & rateMean +~ 0.002
---     dNm = numDiffLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet startX startY 0.004
+--     dNm = numDiffLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma startX startY 0.004
 -- putStrLn $ "GRAD: " <> show gAd
 -- putStrLn $ "NUM: " <> show dNm
 -- error "Debug."
@@ -259,7 +259,7 @@ continueMetropolisHastingsGreen :: Spec -> IO ()
 continueMetropolisHastingsGreen (Spec an cls cns prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
-  (mu, sigmaInv, logSigmaDet) <- getData an
+  (mu, sigmaInv, logDetSigma) <- getData an
   let muBoxed = VB.convert mu
       sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
 
@@ -275,10 +275,10 @@ continueMetropolisHastingsGreen (Spec an cls cns prof) = do
       -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
-      -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
-      lh' = likelihoodFunction mu sigmaInv logSigmaDet
+      -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
+      lh' = likelihoodFunction mu sigmaInv logDetSigma
       -- Proposal cycle.
-      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
+      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma
       cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
@@ -295,7 +295,7 @@ runMarginalLikelihood :: Spec -> IO ()
 runMarginalLikelihood (Spec an cls cns prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
-  (mu, sigmaInv, logSigmaDet) <- getData an
+  (mu, sigmaInv, logDetSigma) <- getData an
   let muBoxed = VB.convert mu
       sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
 
@@ -311,10 +311,10 @@ runMarginalLikelihood (Spec an cls cns prof) = do
       -- Prior function.
       pr' = priorFunction cb cs
       -- Likelihood function.
-      -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logSigmaDet
-      lh' = likelihoodFunction mu sigmaInv logSigmaDet
+      -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
+      lh' = likelihoodFunction mu sigmaInv logDetSigma
       -- Proposal cycle.
-      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logSigmaDet
+      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma
       cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)

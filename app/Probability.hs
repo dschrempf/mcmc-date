@@ -88,8 +88,8 @@ logDensityMultivariateNormal ::
   -- Value vector.
   VS.Vector Double ->
   Log Double
-logDensityMultivariateNormal mu sigmaInvH logSigmaDet xs =
-  Exp $ c + (-0.5) * (logSigmaDet + ((dxs L.<# sigmaInv) L.<.> dxs))
+logDensityMultivariateNormal mu sigmaInvH logDetSigma xs =
+  Exp $ c + (-0.5) * (logDetSigma + ((dxs L.<# sigmaInv) L.<.> dxs))
   where
     dxs = xs - mu
     k = fromIntegral $ VS.length mu
@@ -106,8 +106,8 @@ likelihoodFunction ::
   -- | Log of determinant of covariance matrix.
   Double ->
   LikelihoodFunction I
-likelihoodFunction mu sigmaInv logSigmaDet x =
-  logDensityMultivariateNormal mu sigmaInv logSigmaDet distances
+likelihoodFunction mu sigmaInv logDetSigma x =
+  logDensityMultivariateNormal mu sigmaInv logDetSigma distances
   where
     times = getBranches (getLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
     rates = getBranches (getLengthTree $ x ^. rateTree)
@@ -148,8 +148,8 @@ logDensityMultivariateNormalG ::
   -- Value vector.
   VB.Vector a ->
   Log a
-logDensityMultivariateNormalG mu sigmaInv logSigmaDet xs =
-  Exp $ c + (-0.5) * (logSigmaDet + reduceVMV dxs sigmaInv dxs)
+logDensityMultivariateNormalG mu sigmaInv logDetSigma xs =
+  Exp $ c + (-0.5) * (logDetSigma + reduceVMV dxs sigmaInv dxs)
   where
     dxs = VB.zipWith (-) xs mu
     k = fromIntegral $ VB.length mu
@@ -178,13 +178,13 @@ likelihoodFunctionG ::
   -- Log of determinant of covariance matrix.
   Double ->
   LikelihoodFunctionG (IG a) a
-likelihoodFunctionG mu' sigmaInv' logSigmaDet' x =
-  logDensityMultivariateNormalG mu sigmaInv logSigmaDet distances
+likelihoodFunctionG mu' sigmaInv' logDetSigma' x =
+  logDensityMultivariateNormalG mu sigmaInv logDetSigma distances
   where
     -- Usage of 'realToFrac' is safe here, because values are constant.
     mu = VB.map realToFrac mu'
     sigmaInv = MB.map realToFrac sigmaInv'
-    logSigmaDet = realToFrac logSigmaDet'
+    logDetSigma = realToFrac logDetSigma'
     -- Actual computation.
     times = getBranchesG (getLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
     rates = getBranchesG (getLengthTree $ x ^. rateTree)
@@ -209,8 +209,8 @@ posteriorFunction ::
   -- Log of determinant of covariance matrix.
   Double ->
   PosteriorFunctionG (IG a) a
-posteriorFunction cs ks mu sigmaInv logSigmaDet xs =
-  priorFunction cs ks xs * likelihoodFunctionG mu sigmaInv logSigmaDet xs
+posteriorFunction cs ks mu sigmaInv logDetSigma xs =
+  priorFunction cs ks xs * likelihoodFunctionG mu sigmaInv logDetSigma xs
 
 -- | Gradient of the log posterior function.
 --
@@ -242,10 +242,10 @@ gradLogPosteriorFunc ::
   Double ->
   IG a ->
   IG a
-gradLogPosteriorFunc cs ks mu sigmaInv logSigmaDet =
+gradLogPosteriorFunc cs ks mu sigmaInv logDetSigma =
   -- grad (ln . priorFunction cs ks)
-  -- grad (ln . likelihoodFunction mu sigmaInv logSigmaDet)
-  grad (ln . posteriorFunction cs ks mu sigmaInv logSigmaDet)
+  -- grad (ln . likelihoodFunction mu sigmaInv logDetSigma)
+  grad (ln . posteriorFunction cs ks mu sigmaInv logDetSigma)
 
 -- numDiffLogPosteriorFunc ::
 --   (RealFloat a, Show a) =>
@@ -261,9 +261,9 @@ gradLogPosteriorFunc cs ks mu sigmaInv logSigmaDet =
 --   IG a ->
 --   a ->
 --   a
--- numDiffLogPosteriorFunc cs ks mu sigmaInv logSigmaDet xs ys h =
+-- numDiffLogPosteriorFunc cs ks mu sigmaInv logDetSigma xs ys h =
 --   (f ys - f xs) / h
 --   where
 --     -- f = ln . priorFunction cs ks
---     -- f = ln . likelihoodFunction mu sigmaInv logSigmaDet
---     f = ln . posteriorFunction cs ks mu sigmaInv logSigmaDet
+--     -- f = ln . likelihoodFunction mu sigmaInv logDetSigma
+--     f = ln . posteriorFunction cs ks mu sigmaInv logDetSigma
