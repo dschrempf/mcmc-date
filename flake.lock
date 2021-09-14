@@ -46,6 +46,29 @@
         "type": "github"
       }
     },
+    "covariance_2": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1631625800,
+        "narHash": "sha256-UAq5ka9Dbcr+nvPjjaDl+f8R151xUCIHUEperErGnpk=",
+        "owner": "dschrempf",
+        "repo": "covariance",
+        "rev": "88418608846f9c59ef634e11627a0757ee72f766",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dschrempf",
+        "repo": "covariance",
+        "type": "github"
+      }
+    },
     "dirichlet": {
       "inputs": {
         "flake-utils": [
@@ -135,6 +158,7 @@
         "circular": [
           "circular"
         ],
+        "covariance": "covariance_2",
         "dirichlet": [
           "dirichlet"
         ],
@@ -149,11 +173,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1630928613,
-        "narHash": "sha256-gn2PQq65/4PchsTtQ7fOA9IRYKF2/1D7U1zXyoXfKp8=",
+        "lastModified": 1631632951,
+        "narHash": "sha256-bHdqZz4qi6l3DhnVjIE+eTHdEnwJHZlWS4wDcoYSccg=",
         "owner": "dschrempf",
         "repo": "mcmc",
-        "rev": "837aa7aec7bd5e7c366ad82ab94471865532359a",
+        "rev": "527b430688367f95ed76e8c756e87a0cf0db08cc",
         "type": "github"
       },
       "original": {

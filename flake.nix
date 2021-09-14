@@ -5,6 +5,10 @@
   inputs.circular.inputs.flake-utils.follows = "flake-utils";
   inputs.circular.inputs.nixpkgs.follows = "nixpkgs";
 
+  inputs.covariance.url = "github:dschrempf/covariance";
+  inputs.covariance.inputs.flake-utils.follows = "flake-utils";
+  inputs.covariance.inputs.nixpkgs.follows = "nixpkgs";
+
   inputs.dirichlet.url = "github:dschrempf/dirichlet";
   inputs.dirichlet.inputs.flake-utils.follows = "flake-utils";
   inputs.dirichlet.inputs.nixpkgs.follows = "nixpkgs";
@@ -35,6 +39,7 @@
   outputs =
     { self
     , circular
+    , covariance
     , dirichlet
     , dschrempf-nur
     , elynx
@@ -52,6 +57,7 @@
                   overrides = selfh: superh:
                     {
                       circular = circular.defaultPackage.${system};
+                      covariance = covariance.defaultPackage.${system};
                       dirichlet = dirichlet.defaultPackage.${system};
                       mcmc = mcmc.defaultPackage.${system};
                       pava = pava.defaultPackage.${system};

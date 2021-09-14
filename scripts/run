@@ -2,7 +2,7 @@
 
 set -e
 
-source analysis.conf
+source ./analysis.conf
 
 usage() {
     echo "Usage: $(basename "$0") [OPTIONS] COMMANDS"
@@ -106,21 +106,21 @@ mkdir -p $outdir; cd $outdir
 
 if [[ "$command" == "p" ]]
 then
-    cabal run "${p_flags_cabal[@]}" -- mcmc-date prepare \
+    cabal exec "${p_flags_cabal[@]}" -- mcmc-date prepare \
           -a "$analysis_name" -t "../$rooted_tree" -d "../$trees"
 elif [[ "$command" == "r" ]]
 then
-    cabal run "${p_flags_cabal[@]}" -- mcmc-date run \
+    cabal exec "${p_flags_cabal[@]}" -- mcmc-date run \
           -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
            +RTS -N5 "${p_flags_rts[@]}"
 elif [[ "$command" == "c" ]]
 then
-    cabal run "${p_flags_cabal[@]}" -- mcmc-date continue \
+    cabal exec "${p_flags_cabal[@]}" -- mcmc-date continue \
           -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           +RTS -N5 "${p_flags_rts[@]}"
 elif [[ "$command" == "m" ]]
 then
-    cabal run "${p_flags_cabal[@]}" -- mcmc-date marginal-likelihood \
+    cabal exec "${p_flags_cabal[@]}" -- mcmc-date marginal-likelihood \
           -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           +RTS -N5 "${p_flags_rts[@]}"
 else

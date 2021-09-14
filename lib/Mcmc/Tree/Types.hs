@@ -74,7 +74,7 @@ withoutRootNode = not . null
 
 -- | Tree with branch lengths.
 newtype LengthTree a = LengthTree {getLengthTree :: Tree a Name}
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance Functor LengthTree where
   fmap f = LengthTree . first f . getLengthTree
@@ -129,7 +129,7 @@ isValidLengthTree (LengthTree (Node br _ ts)) = br >= 0 && all (all (>0) . ZipBr
 
 -- | Tree with node heights.
 newtype HeightTree a = HeightTree {getHeightTree :: Tree a Name}
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 instance Functor HeightTree where
   fmap f = HeightTree . first f . getHeightTree

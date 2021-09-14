@@ -111,6 +111,7 @@ executable mcmc-date
   main-is: Main.hs
   other-modules:
       Definitions
+      Hamiltonian
       Options
       Probability
       State

@@ -77,6 +77,7 @@ import Mcmc
 
 -- Local Modules.
 import Mcmc.Tree
+import Hamiltonian
 import State
 import Tools
 {- ORMOLU_ENABLE -}
@@ -89,7 +90,7 @@ import Tools
 -- and set all rates to 1.0.
 initWith :: Tree Length Name -> I
 initWith t =
-  IG
+  I
     { _timeBirthRate = 1.0,
       _timeDeathRate = 1.0,
       _timeHeight = 1.0,
@@ -267,34 +268,11 @@ proposalsChangingTimeHeight t =
 --     t = getLengthTree $ _rateTree x
 --     w = weightNBranches $ length t
 
--- -- The Hamiltonian proposal is slow.
-
 -- | The proposal cycle includes proposals for the other parameters.
 proposals :: Bool -> I -> (I -> I) -> Cycle I
 proposals calibrationsAvailable x gradient =
   cycleFromList
-    [ liftProposalWith jacobianRootBranch id $
-        hamiltonian x s (PName "All parameters") (pWeight 3)
-    ]
-  where
-    s = HSettings gradient (Just isValidState) masses'' 10 0.05 HTuneMassesAndLeapfrog
-    masses = fmap (const (Just 10)) x :: IG (Maybe Double)
-    masses' =
-      masses
-        -- Do not change the height of the relative time tree.
-        & timeTree . heightTreeL . branchL .~ Nothing
-        -- Do not change the height of the relative time tree leaves.
-        & timeTree . heightTreeL %~ setLeaves
-        -- Do not change the root branch of the relative rate tree.
-        & rateTree . lengthTreeL . branchL .~ Nothing
-    setLeaves (Node _ lb []) = Node Nothing lb []
-    setLeaves (Node br lb ts) = Node br lb (map setLeaves ts)
-    masses'' =
-      if calibrationsAvailable
-        then masses'
-        else
-          masses'
-            & timeHeight .~ Nothing
+    [liftProposalWith jacobianRootBranch id $ hmc calibrationsAvailable x gradient]
 
 -- Monitor parameters.
 monParams :: [MonitorParameter I]

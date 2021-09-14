@@ -40,7 +40,7 @@ priorFunction ::
   VB.Vector (Calibration Double) ->
   VB.Vector Constraint ->
   PriorFunctionG (IG a) a
-priorFunction cb' cs (IG l m h t mu va r) =
+priorFunction cb' cs (I l m h t mu va r) =
   product' $
     calibrateAndConstrain cb 1e-4 h cs 1e-4 t :
     -- -- Usually, the combined treatment is faster.
@@ -73,8 +73,6 @@ priorFunction cb' cs (IG l m h t mu va r) =
   VB.Vector Constraint ->
   PriorFunction I
   #-}
-
--- NOTE: The generalized likelihood function with boxed vectors is much slower.
 
 -- Log of density of multivariate normal distribution with given parameters.
 -- https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Density_function.
@@ -133,10 +131,15 @@ reduceVMV vl m vr =
     nr = VB.length vr
 
 
--- TODO: Check that the inverted covariance matrix is symmetric (similar to
--- above, where a hermitian matrix is used).
-
 -- Generalized multivariate normal.
+--
+-- Assume the inverted covariance matrix is symmetric.
+--
+-- XXX: Check that the inverted covariance matrix is symmetric (similar to
+-- above, where a hermitian matrix is used).
+--
+-- NOTE: The generalized likelihood function with boxed vectors is much slower
+-- than the specialized ones using storable vectors.
 logDensityMultivariateNormalG ::
   RealFloat a =>
   -- Mean vector.

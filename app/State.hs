@@ -18,6 +18,7 @@ module State where
 
 import Control.Lens
 import Data.Aeson
+-- import Debug.Trace
 import GHC.Generics
 import Mcmc.Tree
 
@@ -67,7 +68,7 @@ import Mcmc.Tree
 -- NOTE: The topologies of the time and rate trees are equal. This is, however,
 -- not ensured by the types. Equality of the topology could be ensured by using
 -- one tree storing both, the times and the rates.
-data IG a = IG
+data IG a = I
   { -- | Hyper-parameter. Birth rate of relative time tree.
     _timeBirthRate :: a,
     -- | Hyper-parameter. Death rate of relative time tree.
@@ -86,7 +87,7 @@ data IG a = IG
     -- | Relative rate tree. Branch labels denote relative rates with mean 1.0.
     _rateTree :: LengthTree a
   }
-  deriving (Generic)
+  deriving (Eq, Generic)
 
 type I = IG Double
 
@@ -99,11 +100,6 @@ deriving instance Foldable IG
 
 deriving instance Traversable IG
 
-instance Applicative IG where
-  pure x = IG x x x (pure x) x x (pure x)
-  (IG lL mL hL tL muL vaL rL) <*> (IG lR mR hR tR muR vaR rR) =
-    IG (lL lR) (mL mR) (hL hR) (tL <*> tR) (muL muR) (vaL vaR) (rL <*> rR)
-
 -- Allow storage of the trace as JSON.
 instance ToJSON a => ToJSON (IG a)
 
@@ -111,6 +107,21 @@ instance FromJSON a => FromJSON (IG a)
 
 -- | Check if a state is valid.
 isValidState :: I -> Bool
-isValidState  (IG l m h t mu va r) =
-  and [ l > 0
-      , m > 0, h > 0, isValidHeightTree t, mu > 0, va > 0, isValidLengthTree r ]
+isValidState (I l m h t mu va r) =
+  and
+    [ l > 0,
+      m > 0,
+      h > 0,
+      isValidHeightTree t,
+      mu > 0,
+      va > 0,
+      isValidLengthTree r
+    ]
+
+-- where
+--   f = toNewick . lengthToPhyloTree . setLengths . getLengthTree . heightTreeToLengthTree
+--   setLengths = first (errF . toLength)
+--   -- Call 'error' when branch lengths are negative. One could use 'assert'
+--   -- here. But then, the checks are not too time intense, and provide some
+--   -- security also in production.
+--   errF = either (error . ("monitorLengthTree: " <>)) id
