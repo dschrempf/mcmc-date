@@ -64,11 +64,11 @@ hmcSettingsWith mask x gradient =
     (Just isValidState)
     masses
     10
-    0.05
-    (HTune HTuneLeapfrog HTuneDiagonalMassesOnly)
+    0.001
+    (HTune HTuneLeapfrog HTuneAllMasses)
   where
     toVector' = toVector mask
-    masses = L.scale 100 $ L.trustSym $ L.ident $ L.size $ toVector' x
+    masses = L.scale 10.0 $ L.trustSym $ L.ident $ L.size $ toVector' x
 
 -- | The Hamiltonian proposal.
 hmc :: Bool -> I -> (I -> I) -> Proposal I

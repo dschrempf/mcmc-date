@@ -18,7 +18,6 @@ module State where
 
 import Control.Lens
 import Data.Aeson
--- import Debug.Trace
 import GHC.Generics
 import Mcmc.Tree
 
