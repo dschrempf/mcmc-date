@@ -250,29 +250,32 @@ proposalsChangingTimeHeight t =
     nRC = PName "Trees [R]"
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
--- -- | The proposal cycle includes proposals for the other parameters.
--- proposals :: Bool -> I -> (I -> I) -> Cycle I
--- proposals calibrationsAvailable x _ =
---   cycleFromList $
---     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
---       timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
---       rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
---       rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
---     ]
---       ++ proposalsTimeTree t
---       ++ proposalsRateTree t
---       ++ proposalsTimeRateTreeContra t
---       -- Only add proposals on time tree height when calibrations are available.
---       ++ if calibrationsAvailable then proposalsChangingTimeHeight t else []
---   where
---     t = getLengthTree $ _rateTree x
---     w = weightNBranches $ length t
-
 -- | The proposal cycle includes proposals for the other parameters.
 proposals :: Bool -> I -> (I -> I) -> Cycle I
 proposals calibrationsAvailable x gradient =
-  cycleFromList
-    [liftProposalWith jacobianRootBranch id $ hmc calibrationsAvailable x gradient]
+  cycleFromList $
+    [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
+      timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
+      rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
+      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
+      -- liftProposalWith jacobianRootBranch id $ hmc calibrationsAvailable x gradient
+    ]
+      ++ proposalsTimeTree t
+      ++ proposalsRateTree t
+      ++ proposalsTimeRateTreeContra t
+      -- Only add proposals on time tree height when calibrations are available.
+      ++ if calibrationsAvailable then proposalsChangingTimeHeight t else []
+  where
+    t = getLengthTree $ _rateTree x
+    w = weightNBranches $ length t
+
+-- -- Hamiltonian proposal only.
+
+-- -- | The proposal cycle includes proposals for the other parameters.
+-- proposals :: Bool -> I -> (I -> I) -> Cycle I
+-- proposals calibrationsAvailable x gradient =
+--   cycleFromList
+--     [liftProposalWith jacobianRootBranch id $ hmc calibrationsAvailable x gradient]
 
 -- Monitor parameters.
 monParams :: [MonitorParameter I]
