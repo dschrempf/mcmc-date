@@ -10,11 +10,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1630765703,
-        "narHash": "sha256-eNNcK+3oC7mrTz322aDjtTkDOh/lC+zWH2MjaYJ0uWw=",
+        "lastModified": 1631706227,
+        "narHash": "sha256-1XQrvgZbrqgEDRp6U11NLRmBDbBRE4h9wlAKIfgHci8=",
         "owner": "dschrempf",
         "repo": "circular",
-        "rev": "4fc7698002b40b1963a2f4aefee70a4a23df5cc1",
+        "rev": "c091d2653b388c9077117c1270be9b9bd36d54ea",
         "type": "github"
       },
       "original": {
@@ -79,11 +79,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1630765712,
-        "narHash": "sha256-cq+vcPSI+K/Qe6zpbQKuyqvBV1j7dnVvS9i1B+2SeXg=",
+        "lastModified": 1631706309,
+        "narHash": "sha256-x+RmicnFFluMYD6FoDTb7DWs4FVtiBuCHGKH57KMThw=",
         "owner": "dschrempf",
         "repo": "dirichlet",
-        "rev": "1e639b38743fa24de2ffdd1e793645d3e87ee0e1",
+        "rev": "5051cdfb188dcd359b263213862658b231afd743",
         "type": "github"
       },
       "original": {
@@ -125,11 +125,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1630928593,
-        "narHash": "sha256-VQp7K84xBrWCNFQMRtbteDmuOl0b/ESp0BwwrCTsBis=",
+        "lastModified": 1631706452,
+        "narHash": "sha256-8dN6NerlfECqySHgqN8M6w7ZvanoOsAnjQveLQHihd4=",
         "owner": "dschrempf",
         "repo": "elynx",
-        "rev": "b99ea31a4a866fd929903c1f17548f9a7f8322d6",
+        "rev": "1b1450490ac37a35d99e44b08535674e8aafddd5",
         "type": "github"
       },
       "original": {
@@ -173,11 +173,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1631693864,
-        "narHash": "sha256-3UtbeHIoH8tnNMulAS2ZOSCYev6LfluF6w1SJJLkZk8=",
+        "lastModified": 1631706111,
+        "narHash": "sha256-QAwee0GL/aGY5lvaW3D++wBLXHW/nc2UPtm7SnOSPaI=",
         "owner": "dschrempf",
         "repo": "mcmc",
-        "rev": "40b521eaaff2b6039d3c9e1689f54abd7d423ac9",
+        "rev": "ce5ee0562a6085ac93b2220c0eb095f8dc6968bf",
         "type": "github"
       },
       "original": {
@@ -212,11 +212,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1630765722,
-        "narHash": "sha256-lkN1y2HG35bs7/PLjEjl2RRWk/y6a6pN8105ffq1JOE=",
+        "lastModified": 1631706376,
+        "narHash": "sha256-7z/V2feF0dqtgt3fCJsYH9nNeZzhQ/lRM/s9ZF1pchw=",
         "owner": "dschrempf",
         "repo": "pava",
-        "rev": "6d983a5030a78736bd39846484e2f110d0ef7505",
+        "rev": "eebbfc75dcdbf0f52a9474d8509b7a7a8a44b808",
         "type": "github"
       },
       "original": {
