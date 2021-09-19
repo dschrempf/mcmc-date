@@ -257,8 +257,8 @@ proposals calibrationsAvailable x gradient =
     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
       timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
       rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
-      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
-      -- liftProposalWith jacobianRootBranch id $ hmc calibrationsAvailable x gradient
+      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune,
+      liftProposalWith jacobianRootBranch id $ hmc calibrationsAvailable x gradient
     ]
       ++ proposalsTimeTree t
       ++ proposalsRateTree t
