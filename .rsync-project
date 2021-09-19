@@ -3,6 +3,7 @@
 SERVER="meganeura"
 PATH_SERVER="/scratch/dominik/projects/mcmc-date"
 EXCLUDE=$(cat <<EOF
+- .direnv/
 - .stack-work*/
 - .git/
 - dist-newstyle/
