@@ -11,6 +11,7 @@ usage() {
     echo "-c Activate calibrations"
     echo "-k Activate constraints"
     echo "-p Activate profiling"
+    echo "-s Use stack instead of cabal-install"
     echo
     echo "Available commands:"
     echo "p  Prepare"
@@ -25,8 +26,9 @@ usage() {
 calibrations_activated=0
 constraints_activated=0
 profiling_activated=0
+use_stack=0
 OPTIND=1
-while getopts "h?ckp" opt; do
+while getopts "h?ckps" opt; do
     case "$opt" in
         h|\?)
             usage
@@ -37,6 +39,8 @@ while getopts "h?ckp" opt; do
         k)  constraints_activated=1
             ;;
         p)  profiling_activated=1
+            ;;
+        s)  use_stack=1
             ;;
     esac
 done
@@ -61,6 +65,27 @@ else
     echo "Rooted tree: ${rooted_tree}."
     echo "Trees: ${trees}."
 fi
+
+if [[ $use_stack -eq 0 ]]
+then
+    echo "Using cabal-install."
+    prog_name="cabal"
+    prog_cmd="run"
+    prog_profiling_flag="--enable-profiling"
+    prog_target="exe:mcmc-date"
+elif [[ $use_stack -eq 1 ]]
+then
+    echo "Using Stack."
+    prog_name="stack"
+    prog_cmd="exec"
+    prog_profiling_flag="--profile"
+    prog_target="mcmc-date"
+else
+    echo "Error: use_stack is neither 0 nor 1: ${use_stack}."
+    exit 1
+fi
+
+
 
 outdir="results"
 c_flags=()
@@ -90,12 +115,12 @@ then
     fi
 fi
 
-p_flags_cabal=()
+p_flags=()
 p_flags_prog=()
 p_flags_rts=()
 if [[ $profiling_activated -eq 1 ]]
 then
-    p_flags_cabal+=(--enable-profiling)
+    p_flags+=("${prog_profiling_flag}")
     p_flags_prog+=(-p)
     p_flags_rts+=(-p)
     outdir="${outdir}-profile"
@@ -106,21 +131,21 @@ mkdir -p $outdir; cd $outdir
 
 if [[ "$command" == "p" ]]
 then
-    cabal run "${p_flags_cabal[@]}" -- exe:mcmc-date prepare \
+    ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} prepare \
           -a "$analysis_name" -t "../$rooted_tree" -d "../$trees"
 elif [[ "$command" == "r" ]]
 then
-    cabal run "${p_flags_cabal[@]}" -- exe:mcmc-date run \
+    ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} run \
           -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
            +RTS -N5 "${p_flags_rts[@]}"
 elif [[ "$command" == "c" ]]
 then
-    cabal run "${p_flags_cabal[@]}" -- exe:mcmc-date continue \
+    ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} continue \
           -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           +RTS -N5 "${p_flags_rts[@]}"
 elif [[ "$command" == "m" ]]
 then
-    cabal run "${p_flags_cabal[@]}" -- exe:mcmc-date marginal-likelihood \
+    ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} marginal-likelihood \
           -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           +RTS -N5 "${p_flags_rts[@]}"
 else
