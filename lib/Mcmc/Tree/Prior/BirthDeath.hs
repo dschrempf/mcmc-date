@@ -126,7 +126,7 @@ data ConditionOn = ConditionOnTimeOfOrigin | ConditionOnTimeOfMrca
 -- labeled trees without orientation. This is an issue if the prior is
 -- calculated for trees with different topologies!
 --
--- Call 'error' if
+-- Call 'error' if:
 --
 -- - The birth or death rate are negative.
 --

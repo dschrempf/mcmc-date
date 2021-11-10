@@ -53,12 +53,11 @@ constrainV s k hs = constrainSoftF s (hY, hO)
 --
 -- See 'calibrate', and 'constrain'.
 --
--- This first extracts all node heights from the trees and then checks the
--- calibrations and constraints.
+-- First, extract all node heights from the trees.
 --
--- Use if you have many calibrations or constraints.
+-- Second, check the calibrations and constraints.
 --
--- Do not use, if only a few calibrations and constraints have to be checked.
+-- Use if there are many calibrations or constraints.
 calibrateAndConstrain ::
   (RealFloat a) =>
   VB.Vector (Calibration a) ->

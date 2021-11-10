@@ -183,7 +183,7 @@ uncorrelatedLogNormal hs mu var = branchesWith hs (logNormal' mu var) . getLengt
 -- of relaxed molecular clock models, Molecular Biology and Evolution, 24(12),
 -- 2669–2680 (2007). http://dx.doi.org/10.1093/molbev/msm193
 --
--- Call 'error' if
+-- Call 'error' if:
 --
 -- - the topologies of the time and rate trees do not match;
 --
@@ -233,7 +233,7 @@ whiteNoise hs v (LengthTree tTr) (LengthTree rTr)
 -- prior = autocorrelatedGamma initialMean variance timeTree rateTree
 -- @
 --
--- Call 'error' if
+-- Call 'error' if:
 --
 -- - the topologies of the time and rate trees do not match;
 --
@@ -285,7 +285,7 @@ autocorrelatedGamma hs mu var (LengthTree tTr) (LengthTree rTr)
 -- prior = autocorrelatedLogNormal initialRate variance timeTree rateTree
 -- @
 --
--- Call 'error' if
+-- Call 'error' if:
 --
 -- - the topologies of the time and rate trees do not match;
 --

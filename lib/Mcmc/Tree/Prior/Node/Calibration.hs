@@ -159,11 +159,11 @@ prettyPrintCalibration (Calibration n p i l) =
     <> show l
     <> "."
 
--- | Create and validate a calibration.
+-- | Create a calibration.
 --
--- Call 'error' if:
+-- See also 'loadCalibrations' which validates calibrations against each other.
 --
--- - The node cannot be found on the tree.
+-- Call 'error' if the node cannot be found on the tree.
 calibration ::
   (Ord a, Show a) =>
   Tree e a ->
@@ -195,7 +195,7 @@ data CalibrationData a
       String -- Calibration name.
       String -- Leaf a.
       String -- Leaf b.
-      a -- Lef boundary.
+      a -- Leaf boundary.
       (Maybe a) -- Maybe right boundary.
   deriving (Generic, Show)
 
@@ -235,9 +235,9 @@ findDupsBy eq (x : xs) = case partition (eq x) xs of
 -- Primates,Human,Chimpanzees,1e6,
 -- @
 --
--- Call 'error' if
+-- Call 'error' if:
 --
--- - The file contains errors.
+-- - The file contains syntax errors.
 --
 -- - An MRCA cannot be found.
 --

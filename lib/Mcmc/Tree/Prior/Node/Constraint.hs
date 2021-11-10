@@ -250,9 +250,9 @@ describeRedundant (l, r) =
 --
 -- Redundant constraints are removed.
 --
--- Call 'error' if
+-- Call 'error' if:
 --
--- - The file contains errors.
+-- - The file contains syntax errors.
 --
 -- - An MRCA cannot be found.
 --
