@@ -52,19 +52,21 @@
             pkgs = import nixpkgs {
               inherit system overlays;
             };
+            # When changing the package set, the override above also has to be amended.
+            hpkgs = pkgs.haskellPackages;
             dschrempf = import dschrempf-nur {
               inherit pkgs;
             };
             mcmc-date-package =
               let
-                p = pkgs.haskellPackages.callCabal2nix "mcmc-date" ./. rec {};
+                p = hpkgs.callCabal2nix "mcmc-date" ./. rec {};
               in
                 pkgs.haskell.lib.doBenchmark p;
           in
             {
               defaultPackage = mcmc-date-package;
 
-              devShell = pkgs.haskellPackages.shellFor {
+              devShell = hpkgs.shellFor {
                 shellHook =
                   let
                     scripts = ./scripts;
@@ -80,13 +82,13 @@
                   dschrempf.iqtree2
                   dschrempf.phylobayes
                   dschrempf.tracer
-                  haskellPackages.elynx
-                  haskellPackages.slynx
-                  haskellPackages.tlynx
+                  hpkgs.elynx
+                  hpkgs.slynx
+                  hpkgs.tlynx
 
-                  haskellPackages.cabal-install
-                  haskellPackages.haskell-language-server
-                  haskellPackages.stack
+                  hpkgs.cabal-install
+                  hpkgs.haskell-language-server
+                  hpkgs.stack
                 ];
                 doBenchmark = true;
                 withHoogle = true;
