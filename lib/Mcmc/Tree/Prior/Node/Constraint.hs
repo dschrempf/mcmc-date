@@ -372,7 +372,7 @@ constrainSoftF ::
   PriorFunctionG (a, a) a
 constrainSoftF s' (hY, hO)
   | hY < hO = 1.0
-  | otherwise = d (hY - hO) - d 0.0
+  | otherwise = d (hY - hO) / d 0.0
   where
     s = realToFrac s'
     d = normal 0.0 s

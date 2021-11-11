@@ -201,7 +201,7 @@ braceSoftF ::
   PriorFunctionG (a, a) a
 braceSoftF s' (hX, hY)
   | hX == hY = 1.0
-  | otherwise = d (hX - hY) - d 0
+  | otherwise = d (hX - hY) / d 0
   where
     s = realToFrac s'
     d = normal 0 s
