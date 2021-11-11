@@ -39,16 +39,18 @@ priorFunction ::
   (RealFloat a, Show a) =>
   VB.Vector (Calibration Double) ->
   VB.Vector Constraint ->
+  VB.Vector Brace ->
   PriorFunctionG (IG a) a
-priorFunction cb' cs (I l m h t mu va r) =
+priorFunction cb' cs bs (I l m h t mu va r) =
   product' $
-    calibrateAndConstrain cb 1e-4 h cs 1e-4 t :
+    calibrateConstrainBraceSoft 1e-4 h cb 1e-4 cs 1e-4 bs t :
     -- -- Usually, the combined treatment is faster.
-    -- calibrate 1e-4 cb h t :
-    -- constrain 1e-4 cs t :
+    -- calibrateSoft 1e-4 h cb t :
+    -- constrainSoft 1e-4 cs t :
+    -- braceSoft 1e-4 bs t :
     [ -- Birth and death rates of the relative time tree.
-      exponential 1 l,
-      exponential 1 m,
+      exponential 1.0 l,
+      exponential 1.0 m,
       -- No explicit prior on the height of the time tree. However, the height
       -- is calibrated (see above). If no calibrations are given, the height is
       -- set to 1.0.
@@ -59,11 +61,11 @@ priorFunction cb' cs (I l m h t mu va r) =
       --
       -- IDEA: Use gamma distribution with mean calculated using the number of
       -- branches and the total length of the substitution-like tree.
-      exponential 1 mu,
+      exponential 1.0 mu,
       -- Variance of the relative rates.
-      exponential 1 va,
+      exponential 1.0 va,
       -- Relative rate tree.
-      uncorrelatedGamma WithoutStem 1 va r
+      uncorrelatedGamma WithoutStem 1.0 va r
     ]
   where
     cb = VB.map realToFracC cb'
@@ -71,6 +73,7 @@ priorFunction cb' cs (I l m h t mu va r) =
 {-# SPECIALIZE priorFunction ::
   VB.Vector (Calibration Double) ->
   VB.Vector Constraint ->
+  VB.Vector Brace ->
   PriorFunction I
   #-}
 
@@ -205,6 +208,7 @@ posteriorFunction ::
   (RealFloat a, Show a) =>
   VB.Vector (Calibration Double) ->
   VB.Vector Constraint ->
+  VB.Vector Brace ->
   -- Mean  vector.
   VB.Vector Double ->
   -- Inverted covariance matrix.
@@ -212,8 +216,8 @@ posteriorFunction ::
   -- Log of determinant of covariance matrix.
   Double ->
   PosteriorFunctionG (IG a) a
-posteriorFunction cs ks mu sigmaInv logDetSigma xs =
-  priorFunction cs ks xs * likelihoodFunctionG mu sigmaInv logDetSigma xs
+posteriorFunction cs ks bs mu sigmaInv logDetSigma xs =
+  priorFunction cs ks bs xs * likelihoodFunctionG mu sigmaInv logDetSigma xs
 
 -- | Gradient of the log posterior function.
 --
@@ -237,6 +241,7 @@ gradLogPosteriorFunc ::
   (RealFloat a, Show a) =>
   VB.Vector (Calibration Double) ->
   VB.Vector Constraint ->
+  VB.Vector Brace ->
   -- | Mean  vector.
   VB.Vector Double ->
   -- | Inverted covariance matrix.
@@ -245,10 +250,10 @@ gradLogPosteriorFunc ::
   Double ->
   IG a ->
   IG a
-gradLogPosteriorFunc cs ks mu sigmaInv logDetSigma =
+gradLogPosteriorFunc cs ks bs mu sigmaInv logDetSigma =
   -- grad (ln . priorFunction cs ks)
   -- grad (ln . likelihoodFunction mu sigmaInv logDetSigma)
-  grad (ln . posteriorFunction cs ks mu sigmaInv logDetSigma)
+  grad (ln . posteriorFunction cs ks bs mu sigmaInv logDetSigma)
 
 -- numDiffLogPosteriorFunc ::
 --   (RealFloat a, Show a) =>

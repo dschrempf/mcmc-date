@@ -10,7 +10,7 @@
 --
 -- Creation date: Fri Jun 25 11:23:24 2021.
 module Mcmc.Tree.Prior.Node.Combined
-  ( calibrateAndConstrainSoft,
+  ( calibrateConstrainBraceSoft,
   )
 where
 
@@ -18,6 +18,7 @@ import qualified Data.Vector as VB
 import ELynx.Tree
 import Mcmc.Prior
 import Mcmc.Statistics.Types
+import Mcmc.Tree.Prior.Node.Brace
 import Mcmc.Tree.Prior.Node.Calibration
 import Mcmc.Tree.Prior.Node.Constraint
 import Mcmc.Tree.Types
@@ -49,30 +50,46 @@ constrainV s k hs = constrainSoftF s (hY, hO)
     iO = constraintOldNodeIndex k
     hO = hs VB.! iO
 
--- | Calibrate and constrain nodes.
+braceV ::
+  (RealFloat a) =>
+  StandardDeviation a ->
+  Brace ->
+  PriorFunctionG (VB.Vector a) a
+braceV s b hs = braceSoftF s (hA, hB)
+  where
+    iA = braceNodeAIndex b
+    hA = hs VB.! iA
+    iB = braceNodeBIndex b
+    hB = hs VB.! iB
+
+-- | Calibrate, constrain, and brace nodes.
 --
--- See 'calibrateSoft', and 'constrainSoft'.
+-- See 'calibrateSoft', 'constrainSoft', and 'braceSoft'.
 --
 -- First, extract all node heights from the trees.
 --
--- Second, check the calibrations and constraints.
+-- Then, check the calibrations, constraints, and braces.
 --
--- Use if there are many calibrations or constraints.
-calibrateAndConstrainSoft ::
+-- Use if there are many calibrations, constraints, or braces.
+calibrateConstrainBraceSoft ::
   (RealFloat a) =>
-  VB.Vector (Calibration a) ->
   -- | Standard deviation of calibrations.
   StandardDeviation a ->
   -- | Height multiplier of tree for calibrations.
   a ->
-  VB.Vector Constraint ->
+  VB.Vector (Calibration a) ->
   -- | Standard deviation of constraints.
   StandardDeviation a ->
+  VB.Vector Constraint ->
+  -- | Standard deviation of braces.
+  StandardDeviation a ->
+  VB.Vector Brace ->
   PriorFunctionG (HeightTree a) a
-calibrateAndConstrainSoft cs sdC h ks sdK t
-  | sdC <= 0 = error "calibrateAndConstrainSoft: Standard deviation of calibrations is zero or negative."
-  | sdK <= 0 = error "calibrateAndConstrainSoft: Standard deviation of constraints is zero or negative."
-  | h <= 0 = error "calibrateAndConstrainSoft: Height multiplier is zero or negative."
+calibrateConstrainBraceSoft sdC h cs sdK ks sdB bs t
+  | sdC <= 0 = error "calibrateConstrainBraceSoft: Standard deviation of calibrations is zero or negative."
+  | h <= 0 = error "calibrateConstrainBraceSoft: Height multiplier is zero or negative."
+  | sdK <= 0 = error "calibrateConstrainBraceSoft: Standard deviation of constraints is zero or negative."
+  | sdB <= 0 = error "calibrateConstrainBraceSoft: Standard deviation of braces is zero or negative."
   | otherwise = VB.product csPr * VB.product ksPr
   where
     hs = getAllHeights t
@@ -81,11 +98,13 @@ calibrateAndConstrainSoft cs sdC h ks sdK t
        in Calibration n x i l'
     csPr = VB.map ((\c -> calibrateV sdC c hs) . transform) cs
     ksPr = VB.map (\k -> constrainV sdK k hs) ks
-{-# SPECIALIZE calibrateAndConstrainSoft ::
-  VB.Vector (Calibration Double) ->
+{-# SPECIALIZE calibrateConstrainBraceSoft ::
   Double ->
+  Double ->
+  VB.Vector (Calibration Double) ->
   Double ->
   VB.Vector Constraint ->
   Double ->
+  VB.Vector Brace ->
   PriorFunction (HeightTree Double)
   #-}

@@ -115,7 +115,7 @@ lowerBoundOnly a = Interval (nonNegative a) Infinity
 -- from relative heights to absolute heights.
 transformInterval :: RealFloat a => a -> Interval a -> Interval a
 transformInterval x (Interval a b)
-  | x <= 0 = error "transform: Multiplier is zero or negative."
+  | x <= 0 = error "transformInterval: Multiplier is zero or negative."
   | otherwise = Interval a' b'
   where
     a' = NonNegative $ x * fromNonNegative a
@@ -139,6 +139,10 @@ h >* Positive b = h > b
 -- @
 --
 -- ensures that the root node is older than @YOUNG@, and younger than @OLD@.
+--
+-- Calibrations can be created using 'calibration' or 'loadCalibrations'. The
+-- reason is that finding the nodes on the tree is a slow process not to be
+-- repeated at each proposal.
 data Calibration a = Calibration
   { calibrationName :: String,
     calibrationNodePath :: Path,
@@ -263,7 +267,10 @@ loadCalibrations t f = do
       error "loadCalibrations: Duplicates and/or conflicting calibrations have been detected."
   return calsAll
 
--- | Calibrate height of a single node with given path using the uniform distribution.
+-- | Calibrate height of a single node.
+--
+-- When the height of the node is within the given bounds, use the uniform
+-- distribution. Otherwise, the prior is 0.0.
 --
 -- If the upper bound is not given, no upper bound is used.
 --
@@ -286,14 +293,15 @@ calibrateHardS c (HeightTree t)
     p = calibrationNodePath c
 {-# SPECIALIZE calibrateHardS :: Calibration Double -> PriorFunction (HeightTree Double) #-}
 
--- | Calibrate height of a single node with given path.
+-- | Calibrate height of a single node.
 --
--- When the node is in the given bounds, a uniform distribution is used.
+-- When the height of the node is within the given bounds, a uniform
+-- distribution is used.
 --
--- When the node is out of bounds, a one-sided normal distribution with given
--- standard deviation is used. The normal distribution is normalized such that
--- the complete distribution of the constraint is continuous. Use of the normal
--- distribution also ensures that the first derivative is continuous.
+-- When the height of the node is out of bounds, a one-sided normal distribution
+-- with given standard deviation is used. The normal distribution is normalized
+-- such that the complete distribution of the constraint is continuous. Use of
+-- the normal distribution also ensures that the first derivative is continuous.
 --
 -- If the upper bound is not given, no upper bound is used.
 --
@@ -307,7 +315,7 @@ calibrateSoftS ::
   Calibration a ->
   PriorFunctionG (HeightTree a) a
 calibrateSoftS s c (HeightTree t)
-  | s <= 0.0 = error "calibrateSoft: Standard deviation is zero or negative."
+  | s <= 0.0 = error "calibrateSoftS: Standard deviation is zero or negative."
   | otherwise = calibrateSoftF s l h
   where
     p = calibrationNodePath c
@@ -333,10 +341,6 @@ calibrateSoftF s (Interval a' b) h
 -- Calculate the calibration prior for a given vector of calibrations, the
 -- absolute height of the tree, and the tree with relative heights.
 --
--- Calibrations can be created using 'calibration' or 'loadCalibrations'. The
--- reason is that finding the nodes on the tree is a slow process not to be
--- repeated at each proposal.
---
 -- Call 'error' if:
 --
 -- - A path is invalid.
@@ -344,7 +348,6 @@ calibrateSoftF s (Interval a' b) h
 -- - The height multiplier is zero or negative.
 calibrateSoft ::
   RealFloat a =>
-  VB.Vector (Calibration a) ->
   -- | Standard deviation of the calibrations before scaling with the height
   -- multiplier.
   --
@@ -352,18 +355,19 @@ calibrateSoft ::
   StandardDeviation a ->
   -- | Height multiplier of tree. Useful when working on normalized trees.
   a ->
+  VB.Vector (Calibration a) ->
   PriorFunctionG (HeightTree a) a
-calibrateSoft cs sd h t
-  | h <= 0.0 = error "calibrate: Height multiplier is zero or negative."
+calibrateSoft sd h cs t
+  | h <= 0.0 = error "calibrateSoft: Height multiplier is zero or negative."
   | otherwise = VB.product $ VB.map f cs
   where
     f (Calibration n x i l) =
       let l' = if h == 1.0 then l else transformInterval (recip h) l
        in calibrateSoftS sd (Calibration n x i l') t
 {-# SPECIALIZE calibrateSoft ::
+  Double ->
+  Double ->
   VB.Vector (Calibration Double) ->
-  Double ->
-  Double ->
   PriorFunction (HeightTree Double)
   #-}
 

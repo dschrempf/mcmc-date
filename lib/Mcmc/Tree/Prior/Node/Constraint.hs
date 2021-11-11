@@ -47,6 +47,10 @@ import Mcmc.Tree.Types
 --
 -- ensures that the node with path @YOUNGER@ is younger than the node with path
 -- @OLDER@.
+--
+-- Constraints can be created using 'constraint' or 'loadConstraints'. The
+-- reason is that finding the nodes on the tree is a slow process not to be
+-- repeated at each proposal.
 data Constraint = Constraint
   { constraintName :: String,
     -- | Path to younger node (closer to the leaves).
@@ -352,7 +356,7 @@ constrainSoftS ::
   Constraint ->
   PriorFunctionG (HeightTree a) a
 constrainSoftS s c (HeightTree t)
-  | s <= 0.0 = error "constrainSfot: Standard deviation is zero or negative."
+  | s <= 0.0 = error "constrainSoftS: Standard deviation is zero or negative."
   | otherwise = constrainSoftF s (hY, hO)
   where
     hY = t ^. subTreeAtL y . branchL
@@ -379,17 +383,11 @@ constrainSoftF s' (hY, hO)
 -- Calculate the constraint prior for a given vector of constraints, and a
 -- tree with relative heights.
 --
--- Constraints can be created using 'constraint' or 'loadConstraints'. The
--- reason is that finding the nodes on the tree is a slow process not to be
--- repeated at each proposal.
---
 -- Call 'error' if a path is invalid.
 constrainSoft ::
   RealFloat a =>
   StandardDeviation a ->
   VB.Vector Constraint ->
   PriorFunctionG (HeightTree a) a
-constrainSoft sd cs t = VB.product $ VB.map f cs
-  where
-    f x = constrainSoftS sd x t
+constrainSoft sd cs t = VB.product $ VB.map (\c -> constrainSoftS sd c t) cs
 {-# SPECIALIZE constrainSoft :: Double -> VB.Vector Constraint -> PriorFunction (HeightTree Double) #-}

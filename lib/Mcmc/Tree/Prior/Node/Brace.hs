@@ -19,6 +19,7 @@ module Mcmc.Tree.Prior.Node.Brace
     braceHardS,
     braceSoftS,
     braceSoftF,
+    braceSoft,
   )
 where
 
@@ -37,6 +38,8 @@ import Mcmc.Tree.Mrca
 import Mcmc.Tree.Types
 
 -- | Brace.
+--
+-- Braces can be created using 'brace' or 'loadBraces'.
 data Brace = Brace
   { braceName :: String,
     braceNodeAPath :: Path,
@@ -158,6 +161,11 @@ loadBraces t f = do
       error "loadBraces: Duplicates and/or conflicting braces have been detected."
   return bsAll
 
+-- | Brace a single pair of nodes.
+--
+-- If the node heights are equal, the prior is 1.0. Otherwise, the prior is 0.0.
+--
+-- Call 'error' if a path is invalid.
 braceHardS :: RealFloat a => Brace -> PriorFunctionG (HeightTree a) a
 braceHardS (Brace _ x _ y _) (HeightTree t)
   | hX == hY = 1.0
@@ -167,12 +175,18 @@ braceHardS (Brace _ x _ y _) (HeightTree t)
     hY = t ^. subTreeAtL y . branchL
 {-# SPECIALIZE braceHardS :: Brace -> PriorFunctionG (HeightTree Double) Double #-}
 
+-- | Brace a single pair of nodes.
+--
+-- Use a normal distribution with given standard deviation.
+--
+-- Call 'error' if a path is invalid.
 braceSoftS ::
   RealFloat a =>
   StandardDeviation a ->
   Brace ->
   PriorFunctionG (HeightTree a) a
 braceSoftS s (Brace _ x _ y _) (HeightTree t)
+  | s <= 0.0 = error "braceSoftS: Standard deviation is zero or negative."
   | hX == hY = 1.0
   | otherwise = braceSoftF s (hX, hY)
   where
@@ -192,3 +206,15 @@ braceSoftF s' (hX, hY)
     s = realToFrac s'
     d = normal 0 s
 {-# SPECIALIZE braceSoftF :: Double -> PriorFunction (Double, Double) #-}
+
+-- | Brace pairs of nodes using 'braceSoftS'.
+--
+-- Call 'error' if a path is invalid.
+braceSoft ::
+  RealFloat a =>
+  -- | NOTE: The same standard deviation is used for all braces.
+  StandardDeviation a ->
+  VB.Vector Brace ->
+  PriorFunctionG (HeightTree a) a
+braceSoft s bs t = VB.product $ VB.map (\b -> braceSoftS s b t) bs
+{-# SPECIALIZE braceSoftS :: Double -> Brace -> PriorFunctionG (HeightTree Double) Double #-}

@@ -27,6 +27,7 @@ data Spec = Spec
     -- inferred.
     calibrations :: Maybe FilePath,
     constraints :: Maybe FilePath,
+    braces :: Maybe FilePath,
     -- | Activate profiling (change the number of iterations).
     profile :: Bool
   }
@@ -59,6 +60,15 @@ constraintsP =
         <> metavar "FILE"
     )
 
+bracesP :: Parser FilePath
+bracesP =
+  strOption
+    ( short 'b'
+        <> long "braces"
+        <> help "File name specifying braces"
+        <> metavar "FILE"
+    )
+
 profileP :: Parser Bool
 profileP =
   switch
@@ -73,6 +83,7 @@ specP =
     <$> analysisNameP
     <*> optional calibrationsP
     <*> optional constraintsP
+    <*> optional bracesP
     <*> profileP
 
 data PrepSpec = PrepSpec

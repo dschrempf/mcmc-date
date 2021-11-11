@@ -23,6 +23,7 @@ module Mcmc.Tree
     module Mcmc.Tree.Prior.BirthDeath,
     module Mcmc.Tree.Prior.Branch,
     module Mcmc.Tree.Prior.Branch.RelaxedClock,
+    module Mcmc.Tree.Prior.Node.Brace,
     module Mcmc.Tree.Prior.Node.Calibration,
     module Mcmc.Tree.Prior.Node.Constraint,
     module Mcmc.Tree.Prior.Node.Combined,
@@ -45,6 +46,7 @@ import Mcmc.Tree.Mrca
 import Mcmc.Tree.Prior.BirthDeath
 import Mcmc.Tree.Prior.Branch
 import Mcmc.Tree.Prior.Branch.RelaxedClock
+import Mcmc.Tree.Prior.Node.Brace
 import Mcmc.Tree.Prior.Node.Calibration
 import Mcmc.Tree.Prior.Node.Combined
 import Mcmc.Tree.Prior.Node.Constraint

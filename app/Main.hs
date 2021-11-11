@@ -183,9 +183,13 @@ getConstraints :: Tree e Name -> Maybe FilePath -> IO (VB.Vector Constraint)
 getConstraints _ Nothing = return VB.empty
 getConstraints t (Just f) = loadConstraints t f
 
+getBraces :: Tree e Name -> Maybe FilePath -> IO (VB.Vector Brace)
+getBraces _ Nothing = return VB.empty
+getBraces t (Just f) = loadBraces t f
+
 -- Run the Metropolis-Hastings-Green algorithm.
 runMetropolisHastingsGreen :: Spec -> IO ()
-runMetropolisHastingsGreen (Spec an cls cns prof) = do
+runMetropolisHastingsGreen (Spec an cls cns brs prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logDetSigma) <- getData an
@@ -199,15 +203,17 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
   cb <- getCalibrations meanTree cls
   -- Constraints.
   cs <- getConstraints meanTree cns
+  -- Braces.
+  bs <- getBraces meanTree brs
   let -- Starting state.
       start' = initWith meanTree
       -- Prior function.
-      pr' = priorFunction cb cs
+      pr' = priorFunction cb cs bs
       -- Likelihood function.
       -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
       lh' = likelihoodFunction mu sigmaInv logDetSigma
       -- Proposal cycle.
-      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma
+      gradient = gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma
       cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
@@ -247,7 +253,7 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
 -- chain' <- fromMHG <$> mcmc mcmcS a
 -- trace' <- VB.map state <$> takeT 100 (trace chain')
 -- let x = VB.head trace'
---     gAd = _rateMean $ gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma x
+--     gAd = _rateMean $ gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma x
 --     startX = x & rateMean -~ 0.002
 --     startY = x & rateMean +~ 0.002
 --     dNm = numDiffLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma startX startY 0.004
@@ -256,7 +262,7 @@ runMetropolisHastingsGreen (Spec an cls cns prof) = do
 -- error "Debug."
 
 continueMetropolisHastingsGreen :: Spec -> IO ()
-continueMetropolisHastingsGreen (Spec an cls cns prof) = do
+continueMetropolisHastingsGreen (Spec an cls cns brs prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logDetSigma) <- getData an
@@ -270,15 +276,17 @@ continueMetropolisHastingsGreen (Spec an cls cns prof) = do
   cb <- getCalibrations meanTree cls
   -- Constraints.
   cs <- getConstraints meanTree cns
+  -- Braces.
+  bs <- getBraces meanTree brs
   let -- Starting state.
       start' = initWith meanTree
       -- Prior function.
-      pr' = priorFunction cb cs
+      pr' = priorFunction cb cs bs
       -- Likelihood function.
       -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
       lh' = likelihoodFunction mu sigmaInv logDetSigma
       -- Proposal cycle.
-      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma
+      gradient = gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma
       cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
@@ -292,7 +300,7 @@ continueMetropolisHastingsGreen (Spec an cls cns prof) = do
   void $ mcmcContinue iterations' s a
 
 runMarginalLikelihood :: Spec -> IO ()
-runMarginalLikelihood (Spec an cls cns prof) = do
+runMarginalLikelihood (Spec an cls cns brs prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logDetSigma) <- getData an
@@ -306,15 +314,17 @@ runMarginalLikelihood (Spec an cls cns prof) = do
   cb <- getCalibrations meanTree cls
   -- Constraints.
   cs <- getConstraints meanTree cns
+  -- Braces.
+  bs <- getBraces meanTree brs
   let -- Starting state.
       start' = initWith meanTree
       -- Prior function.
-      pr' = priorFunction cb cs
+      pr' = priorFunction cb cs bs
       -- Likelihood function.
       -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
       lh' = likelihoodFunction mu sigmaInv logDetSigma
       -- Proposal cycle.
-      gradient = gradLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma
+      gradient = gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma
       cc' = proposals (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs)
