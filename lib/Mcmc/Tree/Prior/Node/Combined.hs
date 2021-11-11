@@ -90,7 +90,7 @@ calibrateConstrainBraceSoft sdC h cs sdK ks sdB bs t
   | h <= 0 = error "calibrateConstrainBraceSoft: Height multiplier is zero or negative."
   | sdK <= 0 = error "calibrateConstrainBraceSoft: Standard deviation of constraints is zero or negative."
   | sdB <= 0 = error "calibrateConstrainBraceSoft: Standard deviation of braces is zero or negative."
-  | otherwise = VB.product csPr * VB.product ksPr
+  | otherwise = VB.product csPr * VB.product ksPr * VB.product bsPr
   where
     hs = getAllHeights t
     transform (Calibration n x i l) =
@@ -98,6 +98,7 @@ calibrateConstrainBraceSoft sdC h cs sdK ks sdB bs t
        in Calibration n x i l'
     csPr = VB.map ((\c -> calibrateV sdC c hs) . transform) cs
     ksPr = VB.map (\k -> constrainV sdK k hs) ks
+    bsPr = VB.map (\b -> braceV sdB b hs) bs
 {-# SPECIALIZE calibrateConstrainBraceSoft ::
   Double ->
   Double ->
