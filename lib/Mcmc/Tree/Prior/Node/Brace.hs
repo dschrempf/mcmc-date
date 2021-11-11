@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+
 -- |
 -- Module      :  Mcmc.Tree.Prior.Node.Brace
 -- Description :  Brace nodes
@@ -18,10 +19,13 @@ module Mcmc.Tree.Prior.Node.Brace
   )
 where
 
+import Control.Monad
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Csv hiding (Name)
+import Data.List
+import Data.Maybe
 import qualified Data.Vector as VB
-import ELynx.Tree
+import ELynx.Tree hiding (partition)
 import GHC.Generics
 import Mcmc.Tree.Mrca
 
@@ -79,6 +83,36 @@ braceDataToBrace t (BraceData n nXA nXB nYA nYB) = brace t n [pn nXA, pn nXB] [p
   where
     pn = Name . BL.pack
 
+-- Check if two braces conflict or are duplicates.
+checkBraces :: Brace -> Brace -> [String]
+checkBraces x y@(Brace nY apY aiY bpY biY) = checkBraces' x y ++ checkBraces' x y'
+  where
+    y' = Brace nY bpY biY apY aiY
+
+-- Assume node order is fixed.
+checkBraces' :: Brace -> Brace -> [String]
+checkBraces' (Brace nX apX aiX bpX biX) (Brace nY apY aiY bpY _) =
+  catMaybes
+    [ indicesMismatch apX apY aiX aiY,
+      indicesMismatch bpX apY biX aiY,
+      pathsMismatch apX apY aiX aiY,
+      pathsMismatch bpX apY biX aiY,
+      equalNodePaths
+    ]
+  where
+    msg m = "Braces " ++ nX ++ " and " ++ nY ++ ":" ++ m
+    -- True if paths match but indices do not match (weird error).
+    indicesMismatch pX pY iX iY
+      | (pX == pY) && (iX /= iY) = Just $ msg "Node paths match but node indices do not."
+      | otherwise = Nothing
+    pathsMismatch pX pY iX iY
+      | (pX /= pY) && (iX == iY) = Just $ msg "Node indices match but node paths do not."
+      | otherwise = Nothing
+    equalNodePaths =
+      if (apX == apY) && (bpX == bpY)
+        then Just $ msg "Paths are equal."
+        else Nothing
+
 -- | Load and validate braces from file.
 --
 -- The brace file is a comma separated values (CSV) file with rows of the
@@ -104,4 +138,15 @@ braceDataToBrace t (BraceData n nXA nXB nYA nYB) = brace t n [pn nXA, pn nXB] [p
 loadBraces :: Tree e Name -> FilePath -> IO (VB.Vector Brace)
 loadBraces t f = do
   d <- BL.readFile f
-  undefined
+  let mr = decode NoHeader d :: Either String (VB.Vector BraceData)
+      bs = either error id mr
+  when (VB.null bs) $ error $ "loadBraces: No braces found in file: " <> f <> "."
+  let bsAll = VB.map (braceDataToBrace t) bs
+  -- Check for duplicates and conflicts.
+  let bsErrs = concat [checkBraces x y | (x : ys) <- tails (VB.toList bsAll), y <- ys]
+  if null bsErrs
+    then putStrLn "No duplicates and no conflicting braces have been detected."
+    else do
+      mapM_ putStr bsErrs
+      error "loadBraces: Duplicates and/or conflicting braces have been detected."
+  return bsAll

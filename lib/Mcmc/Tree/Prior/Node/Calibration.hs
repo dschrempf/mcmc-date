@@ -251,15 +251,15 @@ loadCalibrations t f = do
   when (VB.null cds) $ error $ "loadCalibrations: No calibrations found in file: " <> f <> "."
   let calsAll = VB.map (calibrationDataToCalibration t) cds
   -- Check for duplicates and conflicts.
-  let calsDupl = findDupsBy ((==) `on` calibrationNodePath) $ VB.toList calsAll
-  if null calsDupl
+  let calsErrs = findDupsBy ((==) `on` calibrationNodePath) $ VB.toList calsAll
+  if null calsErrs
     then putStrLn "No duplicates and no conflicting calibrations have been detected."
     else do
       -- Calibrations could also be removed. But then, which one should be removed?
       let render xs =
             unlines $
               "Redundant and/or conflicting calibration:" : map prettyPrintCalibration xs
-      mapM_ (putStr . render) calsDupl
+      mapM_ (putStr . render) calsErrs
       error "loadCalibrations: Duplicates and/or conflicting calibrations have been detected."
   return calsAll
 
