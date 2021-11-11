@@ -16,9 +16,13 @@ module Mcmc.Tree.Prior.Node.Brace
     Brace (..),
     brace,
     loadBraces,
+    braceHardS,
+    braceSoftS,
+    braceSoftF,
   )
 where
 
+import Control.Lens
 import Control.Monad
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Csv hiding (Name)
@@ -27,7 +31,10 @@ import Data.Maybe
 import qualified Data.Vector as VB
 import ELynx.Tree hiding (partition)
 import GHC.Generics
+import Mcmc
+import Mcmc.Tree.Lens
 import Mcmc.Tree.Mrca
+import Mcmc.Tree.Types
 
 -- | Brace.
 data Brace = Brace
@@ -150,3 +157,38 @@ loadBraces t f = do
       mapM_ putStr bsErrs
       error "loadBraces: Duplicates and/or conflicting braces have been detected."
   return bsAll
+
+braceHardS :: RealFloat a => Brace -> PriorFunctionG (HeightTree a) a
+braceHardS (Brace _ x _ y _) (HeightTree t)
+  | hX == hY = 1.0
+  | otherwise = 0.0
+  where
+    hX = t ^. subTreeAtL x . branchL
+    hY = t ^. subTreeAtL y . branchL
+{-# SPECIALIZE braceHardS :: Brace -> PriorFunctionG (HeightTree Double) Double #-}
+
+braceSoftS ::
+  RealFloat a =>
+  StandardDeviation a ->
+  Brace ->
+  PriorFunctionG (HeightTree a) a
+braceSoftS s (Brace _ x _ y _) (HeightTree t)
+  | hX == hY = 1.0
+  | otherwise = braceSoftF s (hX, hY)
+  where
+    hX = t ^. subTreeAtL x . branchL
+    hY = t ^. subTreeAtL y . branchL
+{-# SPECIALIZE braceSoftS :: Double -> Brace -> PriorFunctionG (HeightTree Double) Double #-}
+
+-- | See 'braceSoftS'.
+braceSoftF ::
+  RealFloat a =>
+  StandardDeviation a ->
+  PriorFunctionG (a, a) a
+braceSoftF s' (hX, hY)
+  | hX == hY = 1.0
+  | otherwise = d (hX - hY) - d 0
+  where
+    s = realToFrac s'
+    d = normal 0 s
+{-# SPECIALIZE braceSoftF :: Double -> PriorFunction (Double, Double) #-}

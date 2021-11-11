@@ -10,7 +10,7 @@
 --
 -- Creation date: Fri Jun 25 11:23:24 2021.
 module Mcmc.Tree.Prior.Node.Combined
-  ( calibrateAndConstrain,
+  ( calibrateAndConstrainSoft,
   )
 where
 
@@ -51,14 +51,14 @@ constrainV s k hs = constrainSoftF s (hY, hO)
 
 -- | Calibrate and constrain nodes.
 --
--- See 'calibrate', and 'constrain'.
+-- See 'calibrateSoft', and 'constrainSoft'.
 --
 -- First, extract all node heights from the trees.
 --
 -- Second, check the calibrations and constraints.
 --
 -- Use if there are many calibrations or constraints.
-calibrateAndConstrain ::
+calibrateAndConstrainSoft ::
   (RealFloat a) =>
   VB.Vector (Calibration a) ->
   -- | Standard deviation of calibrations.
@@ -69,10 +69,10 @@ calibrateAndConstrain ::
   -- | Standard deviation of constraints.
   StandardDeviation a ->
   PriorFunctionG (HeightTree a) a
-calibrateAndConstrain cs sdC h ks sdK t
-  | sdC <= 0 = error "calibrateAndConstrain: Standard deviation of calibrations is zero or negative."
-  | sdK <= 0 = error "calibrateAndConstrain: Standard deviation of constraints is zero or negative."
-  | h <= 0 = error "calibrateAndConstrain: Height multiplier is zero or negative."
+calibrateAndConstrainSoft cs sdC h ks sdK t
+  | sdC <= 0 = error "calibrateAndConstrainSoft: Standard deviation of calibrations is zero or negative."
+  | sdK <= 0 = error "calibrateAndConstrainSoft: Standard deviation of constraints is zero or negative."
+  | h <= 0 = error "calibrateAndConstrainSoft: Height multiplier is zero or negative."
   | otherwise = VB.product csPr * VB.product ksPr
   where
     hs = getAllHeights t
@@ -81,7 +81,7 @@ calibrateAndConstrain cs sdC h ks sdK t
        in Calibration n x i l'
     csPr = VB.map ((\c -> calibrateV sdC c hs) . transform) cs
     ksPr = VB.map (\k -> constrainV sdK k hs) ks
-{-# SPECIALIZE calibrateAndConstrain ::
+{-# SPECIALIZE calibrateAndConstrainSoft ::
   VB.Vector (Calibration Double) ->
   Double ->
   Double ->

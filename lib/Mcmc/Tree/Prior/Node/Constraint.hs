@@ -16,10 +16,10 @@ module Mcmc.Tree.Prior.Node.Constraint
     Constraint (..),
     constraint,
     loadConstraints,
-    constrainHard,
-    constrainSoft,
+    constrainHardS,
+    constrainSoftS,
     constrainSoftF,
-    constrain,
+    constrainSoft,
   )
 where
 
@@ -317,25 +317,25 @@ loadConstraints t f = do
   mapM_ (putStrLn . prettyPrintConstraint) informativeConstraints
   return $ VB.fromList informativeConstraints
 
--- | Hard constrain order of nodes with given paths.
+-- | Hard constrain order of a single pair of nodes with given paths.
 --
 -- A truncated, improper uniform distribution is used.
 --
 -- For reasons of computational efficiency, the paths are not checked for
 -- validity. Please do so beforehand using 'constraint'.
-constrainHard ::
+constrainHardS ::
   RealFloat a =>
   Constraint ->
   PriorFunctionG (HeightTree a) a
-constrainHard c (HeightTree t)
+constrainHardS c (HeightTree t)
   | (t ^. subTreeAtL y . branchL) < (t ^. subTreeAtL o . branchL) = 1
-  | otherwise = 0
+  | otherwise = 0.0
   where
     y = constraintYoungNodePath c
     o = constraintOldNodePath c
-{-# SPECIALIZE constrainHard :: Constraint -> PriorFunction (HeightTree Double) #-}
+{-# SPECIALIZE constrainHardS :: Constraint -> PriorFunction (HeightTree Double) #-}
 
--- | Soft constrain order of nodes with given paths.
+-- | Soft constrain order of a single pair of nodes with given paths.
 --
 -- When the node order is correct, a uniform distribution is used.
 --
@@ -346,35 +346,35 @@ constrainHard c (HeightTree t)
 --
 -- For reasons of computational efficiency, the paths are not checked for
 -- validity. Please do so beforehand using 'constraint'.
-constrainSoft ::
+constrainSoftS ::
   RealFloat a =>
   StandardDeviation a ->
   Constraint ->
   PriorFunctionG (HeightTree a) a
-constrainSoft s c (HeightTree t)
-  | s <= 0 = error "constrainSfot: Standard deviation is zero or negative."
+constrainSoftS s c (HeightTree t)
+  | s <= 0.0 = error "constrainSfot: Standard deviation is zero or negative."
   | otherwise = constrainSoftF s (hY, hO)
   where
     hY = t ^. subTreeAtL y . branchL
     hO = t ^. subTreeAtL o . branchL
     y = constraintYoungNodePath c
     o = constraintOldNodePath c
-{-# SPECIALIZE constrainSoft :: Double -> Constraint -> PriorFunction (HeightTree Double) #-}
+{-# SPECIALIZE constrainSoftS :: Double -> Constraint -> PriorFunction (HeightTree Double) #-}
 
--- | See 'constrainSoft'.
+-- | See 'constrainSoftS'.
 constrainSoftF ::
   RealFloat a =>
   StandardDeviation a ->
   PriorFunctionG (a, a) a
 constrainSoftF s' (hY, hO)
-  | hY < hO = 1
-  | otherwise = d (hY - hO) - d 0
+  | hY < hO = 1.0
+  | otherwise = d (hY - hO) - d 0.0
   where
     s = realToFrac s'
-    d = normal 0 s
+    d = normal 0.0 s
 {-# SPECIALIZE constrainSoftF :: Double -> PriorFunction (Double, Double) #-}
 
--- | Constrain nodes of a tree using 'constrainSoft'.
+-- | Constrain nodes of a tree using 'constrainSoftS'.
 --
 -- Calculate the constraint prior for a given vector of constraints, and a
 -- tree with relative heights.
@@ -384,12 +384,12 @@ constrainSoftF s' (hY, hO)
 -- repeated at each proposal.
 --
 -- Call 'error' if a path is invalid.
-constrain ::
+constrainSoft ::
   RealFloat a =>
   StandardDeviation a ->
   VB.Vector Constraint ->
   PriorFunctionG (HeightTree a) a
-constrain sd cs t = VB.product $ VB.map f cs
+constrainSoft sd cs t = VB.product $ VB.map f cs
   where
-    f x = constrainSoft sd x t
-{-# SPECIALIZE constrain :: Double -> VB.Vector Constraint -> PriorFunction (HeightTree Double) #-}
+    f x = constrainSoftS sd x t
+{-# SPECIALIZE constrainSoft :: Double -> VB.Vector Constraint -> PriorFunction (HeightTree Double) #-}

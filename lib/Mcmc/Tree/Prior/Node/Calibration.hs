@@ -24,10 +24,10 @@ module Mcmc.Tree.Prior.Node.Calibration
     Calibration (..),
     calibration,
     loadCalibrations,
-    calibrateHard,
-    calibrateSoft,
+    calibrateHardS,
+    calibrateSoftS,
     calibrateSoftF,
-    calibrate,
+    calibrateSoft,
 
     -- * Misc
     realToFracC,
@@ -263,7 +263,7 @@ loadCalibrations t f = do
       error "loadCalibrations: Duplicates and/or conflicting calibrations have been detected."
   return calsAll
 
--- | Calibrate height of a node with given path using the uniform distribution.
+-- | Calibrate height of a single node with given path using the uniform distribution.
 --
 -- If the upper bound is not given, no upper bound is used.
 --
@@ -271,11 +271,11 @@ loadCalibrations t f = do
 -- validity. Please do so beforehand using 'calibration'.
 --
 -- Call 'error' if the path is invalid.
-calibrateHard ::
+calibrateHardS ::
   RealFloat a =>
   Calibration a ->
   PriorFunctionG (HeightTree a) a
-calibrateHard c (HeightTree t)
+calibrateHardS c (HeightTree t)
   | h <= a' = 0.0
   | h >* b = 0.0
   | otherwise = 1.0
@@ -284,9 +284,9 @@ calibrateHard c (HeightTree t)
     h = t ^. subTreeAtL p . branchL
     (Interval a b) = calibrationInterval c
     p = calibrationNodePath c
-{-# SPECIALIZE calibrateHard :: Calibration Double -> PriorFunction (HeightTree Double) #-}
+{-# SPECIALIZE calibrateHardS :: Calibration Double -> PriorFunction (HeightTree Double) #-}
 
--- | Calibrate height of a node with given path.
+-- | Calibrate height of a single node with given path.
 --
 -- When the node is in the given bounds, a uniform distribution is used.
 --
@@ -301,34 +301,34 @@ calibrateHard c (HeightTree t)
 -- validity. Please do so beforehand using 'calibration'.
 --
 -- Call 'error' if the path is invalid.
-calibrateSoft ::
+calibrateSoftS ::
   RealFloat a =>
   StandardDeviation a ->
   Calibration a ->
   PriorFunctionG (HeightTree a) a
-calibrateSoft s c (HeightTree t)
-  | s <= 0 = error "calibrateSoft: Standard deviation is zero or negative."
+calibrateSoftS s c (HeightTree t)
+  | s <= 0.0 = error "calibrateSoft: Standard deviation is zero or negative."
   | otherwise = calibrateSoftF s l h
   where
     p = calibrationNodePath c
     h = t ^. subTreeAtL p . branchL
     l = calibrationInterval c
-{-# SPECIALIZE calibrateSoft :: Double -> Calibration Double -> PriorFunction (HeightTree Double) #-}
+{-# SPECIALIZE calibrateSoftS :: Double -> Calibration Double -> PriorFunction (HeightTree Double) #-}
 
--- | See 'calibrateSoft'.
+-- | See 'calibrateSoftS'.
 calibrateSoftF :: RealFloat a => StandardDeviation a -> Interval a -> PriorFunctionG a a
 calibrateSoftF s (Interval a' b) h
-  | h <= a = d (a - h) / d 0
+  | h <= a = d (a - h) / d 0.0
   | h >* b = case b of
     Infinity -> 1.0
-    Positive b' -> d (h - b') / d 0
-  | otherwise = 1
+    Positive b' -> d (h - b') / d 0.0
+  | otherwise = 1.0
   where
     a = fromNonNegative a'
-    d = normal 0 s
+    d = normal 0.0 s
 {-# SPECIALIZE calibrateSoftF :: Double -> Interval Double -> PriorFunction Double #-}
 
--- | Calibrate nodes of a tree using 'calibrateSoft'.
+-- | Calibrate nodes of a tree using 'calibrateSoftS'.
 --
 -- Calculate the calibration prior for a given vector of calibrations, the
 -- absolute height of the tree, and the tree with relative heights.
@@ -342,7 +342,7 @@ calibrateSoftF s (Interval a' b) h
 -- - A path is invalid.
 --
 -- - The height multiplier is zero or negative.
-calibrate ::
+calibrateSoft ::
   RealFloat a =>
   VB.Vector (Calibration a) ->
   -- | Standard deviation of the calibrations before scaling with the height
@@ -353,14 +353,14 @@ calibrate ::
   -- | Height multiplier of tree. Useful when working on normalized trees.
   a ->
   PriorFunctionG (HeightTree a) a
-calibrate cs sd h t
-  | h <= 0 = error "calibrate: Height multiplier is zero or negative."
+calibrateSoft cs sd h t
+  | h <= 0.0 = error "calibrate: Height multiplier is zero or negative."
   | otherwise = VB.product $ VB.map f cs
   where
     f (Calibration n x i l) =
       let l' = if h == 1.0 then l else transformInterval (recip h) l
-       in calibrateSoft sd (Calibration n x i l') t
-{-# SPECIALIZE calibrate ::
+       in calibrateSoftS sd (Calibration n x i l') t
+{-# SPECIALIZE calibrateSoft ::
   VB.Vector (Calibration Double) ->
   Double ->
   Double ->
