@@ -92,7 +92,7 @@ calibrateConstrainBraceSoft sdC h cs sdK ks sdB bs t
   where
     hs = getAllHeights t
     transform (Calibration n x i l) =
-      let l' = if h == 1.0 then l else transformInterval (recip h) l
+      let l' = if h == 1 then l else transformInterval (recip h) l
        in Calibration n x i l'
     csPr = VB.map ((\c -> calibrateV sdC c hs) . transform) cs
     ksPr = VB.map (\k -> constrainV sdK k hs) ks

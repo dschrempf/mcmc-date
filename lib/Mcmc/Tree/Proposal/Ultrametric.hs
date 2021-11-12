@@ -36,7 +36,6 @@ module Mcmc.Tree.Proposal.Ultrametric
   )
 where
 
-import Control.Exception
 import Control.Lens hiding (children)
 import ELynx.Tree
 import Mcmc.Proposal
@@ -55,11 +54,12 @@ slideNodeAtUltrametricSimple ::
   ProposalSimple (HeightTree Double)
 slideNodeAtUltrametricSimple pth s t tr g = do
   (hNode', q) <- truncatedNormalSample hNode s t hChild hParent g
-  let tr' = toTree $ pos & currentTreeL . branchL .~ assert (hNode' > 0) hNode'
-  -- The absolute value of the determinant of the Jacobian is 1.0.
-  return (HeightTree tr', q, 1.0)
+  let tr' = toTree $ pos & currentTreeL . branchL .~ assertWith (> 0) hNode'
+  -- The absolute value of the determinant of the Jacobian is 1.
+  return (HeightTree tr', q, 1)
   where
-    (pos, hNode, _, hChild, hParent) = getHeightBoundaries "slideNodeAtUltrametricSimple" pth tr
+    (HeightBoundaryData pos hNode _ hChild hParent) =
+      getHeightBoundaries "slideNodeAtUltrametricSimple" tr pth
 
 -- | Slide node (for ultrametric trees).
 --
@@ -135,7 +135,7 @@ scaleSubTreeAtUltrametricSimple n pth sd t tr g
   | otherwise = do
     (hNode', q) <- truncatedNormalSample hNode sd t 0 hParent g
     -- Scaling factor (xi, not x_i).
-    let xi = let x = hNode' / hNode in assert (x > 0) x
+    let xi = let x = hNode' / hNode in assertWith (> 0) x
         -- (-1) because the root height has an additive change.
         jacobian = Exp $ fromIntegral (n - 1) * log xi
         tr' = toTree $ trPos & currentTreeL %~ scaleUltrametricTreeF hNode' xi
@@ -264,14 +264,14 @@ pulleyUltrametricSimple nL nR s t tr@(HeightTree (Node br lb [l, r])) g = do
   (u, q) <- pulleyUltrametricTruncatedNormalSample s t tr g
   -- Left.
   let hL = branch l
-      hL' = let x = hL - u in assert (x > 0) x
-      -- Scaling factor left. (hL - u)/hL = (1.0 - u/hL).
-      xiL = let x = hL' / hL in assert (x > 0) x
+      hL' = let x = hL - u in assertWith (> 0) x
+      -- Scaling factor left. (hL - u)/hL = (1 - u/hL).
+      xiL = let x = hL' / hL in assertWith (> 0) x
   -- Right.
   let hR = branch r
-      hR' = let x = hR + u in assert (x > 0) x
-      -- Scaling factor right. (hR + u)/hR = (1.0 + u/hR).
-      xiR = let x = hR' / hR in assert (x > 0) x
+      hR' = let x = hR + u in assertWith (> 0) x
+      -- Scaling factor right. (hR + u)/hR = (1 + u/hR).
+      xiR = let x = hR' / hR in assertWith (> 0) x
   let tr' = Node br lb [scaleUltrametricTreeF hL' xiL l, scaleUltrametricTreeF hR' xiR r]
   -- The derivation of the Jacobian matrix is very lengthy. Similar to before,
   -- we parameterize the right and left trees into the heights of all other

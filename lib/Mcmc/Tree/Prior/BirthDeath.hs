@@ -66,10 +66,10 @@ computeDE la mu rho dt e0 = (nomD / denom / denom, nomE / denom)
   where
     d = la - mu
     x = exp (- d * dt)
-    c = (1.0 - rho) + rho * e0
+    c = (1 - rho) + rho * e0
     y = (mu - c * la) * x
     nomD = d * d * x
-    c' = c - 1.0
+    c' = c - 1
     nomE = mu * c' + y
     denom = la * c' + y
 {-# INLINE computeDE #-}
@@ -92,11 +92,11 @@ computeDENearCritical ::
 computeDENearCritical la mu rho dt e0 = (nomD / denom / denom, nomE / denom)
   where
     d = la - mu
-    c = (1.0 - rho) + rho * e0
+    c = (1 - rho) + rho * e0
     y = (mu - c * la) * dt
     nomD = 1 - d * dt
     nomE = c + y
-    denom = 1.0 + y
+    denom = 1 + y
 {-# INLINE computeDENearCritical #-}
 
 -- Require near critical process if birth and death rates are closer than this value.
@@ -130,7 +130,7 @@ data ConditionOn = ConditionOnTimeOfOrigin | ConditionOnTimeOfMrca
 --
 -- - The birth or death rate are negative.
 --
--- - The sampling rate is zero or negative, or above 1.0.
+-- - The sampling rate is zero or negative, or above 1.
 --
 -- - The tree is not bifurcating.
 birthDeath ::
@@ -141,10 +141,10 @@ birthDeath ::
   SamplingRate a ->
   PriorFunctionG (LengthTree a) a
 birthDeath ConditionOnTimeOfOrigin la mu rho t
-  | la < 0.0 = error "birthDeath: Birth rate is negative."
-  | mu < 0.0 = error "birthDeath: Death rate is negative."
-  | rho <= 0.0 = error "birthDeath: Sampling rate is zero or negative."
-  | rho > 1.0 = error "birthDeath: Sampling rate is larger than 1.0."
+  | la < 0 = error "birthDeath: Birth rate is negative."
+  | mu < 0 = error "birthDeath: Death rate is negative."
+  | rho <= 0 = error "birthDeath: Sampling rate is zero or negative."
+  | rho > 1 = error "birthDeath: Sampling rate is larger than 1."
   | epsNearCritical > abs (la - mu) =
     fst $ birthDeathWith computeDENearCritical la mu rho $ getLengthTree t
   | otherwise = fst $ birthDeathWith computeDE la mu rho $ getLengthTree t
@@ -187,17 +187,17 @@ birthDeathWith f la mu rho (Node br _ [l, r])
     -- would also slow down the calculation.
     (dR, _) = birthDeathWith f la mu rho r
     -- D and E at the top of the internal branch. Since we are treating internal
-    -- nodes here, we use rho=1.0. In the future, one may also allow values
-    -- below 1.0 modeling, for example, catastrophes killing a certain
+    -- nodes here, we use rho=1. In the future, one may also allow values
+    -- below 1 modeling, for example, catastrophes killing a certain
     -- percentage of all living species.
-    (dT, eT) = f la mu 1.0 br eL
+    (dT, eT) = f la mu 1 br eL
 -- Second case of the boundary conditions given after Eq. [4].
 birthDeathWith f la mu rho (Node br _ [c])
   | br <= 0 = error "birthDeathWith: Branch length negative (2-degree node)."
   | otherwise = (Exp (log (dT * rho)) * d, eT)
   where
     (d, e) = birthDeathWith f la mu rho c
-    (dT, eT) = f la mu 1.0 br e
+    (dT, eT) = f la mu 1 br e
 -- Third case of the boundary conditions given after Eq. [4].
 birthDeathWith f la mu rho (Node br _ [])
   | br <= 0 = error "birthDeathWith: Branch length negative (leaf)."
@@ -211,22 +211,22 @@ birthDeathWith _ _ _ _ _ = error "birthDeathWith: Tree is multifurcating."
 -- * Tests
 
 --
--- >>> let testTree1 = Node 1.0 () [] :: Tree Length ()
--- >>> birthDeath WithStem 1.2 3.2 1.0 testTree1
+-- >>> let testTree1 = Node 1 () [] :: Tree Length ()
+-- >>> birthDeath WithStem 1.2 3.2 1 testTree1
 -- 5.8669248906043234e-2
 --
--- >>> let testTree2 = Node 0.0 () [Node 0.4 () [], Node 0.2 () [Node 0.2 () [], Node 0.2 () []]] :: Tree Length ()
--- >>> birthDeath WithStem 1.2 3.2 1.0 testTree2
+-- >>> let testTree2 = Node 0 () [Node 0.4 () [], Node 0.2 () [Node 0.2 () [], Node 0.2 () []]] :: Tree Length ()
+-- >>> birthDeath WithStem 1.2 3.2 1 testTree2
 -- 4.3357752474276125e-2
 --
 -- The following computations are checked against RevBayes:
 --
 -- >>> let t = parseNewick Standard "(((a:1.0,b:1.0):1.0,c:2.0):1.0,d:3.0):0.0;"
 --
--- >>> map (\mu -> ln $ 1/3* (birthDeath WithoutStem 1.0 mu 1.0 $ either error id $ phyloToLengthTree t)) [0, 0.01, 0.05, 0.1, 0.2, 0.5]
+-- >>> map (\mu -> ln $ 1/3* (birthDeath WithoutStem 1 mu 1 $ either error id $ phyloToLengthTree t)) [0, 0.01, 0.05, 0.1, 0.2, 0.5]
 -- [-10.09861228866811,-10.07675364864067,-9.993307032921498,-9.898174270006024,-9.73975910235509,-9.54137886890279]
 --
--- >>> map (\rho -> ln $ 1/3* (birthDeath WithoutStem 1.0 0.0 rho $ either error id $ phyloToLengthTree t)) [1.0, 0.9, 0.8]
+-- >>> map (\rho -> ln $ 1/3* (birthDeath WithoutStem 1 0 rho $ either error id $ phyloToLengthTree t)) [1, 0.9, 0.8]
 -- [-10.09861228866811,-9.809211822253452,-9.498032504556043]
 --
 -- >>> ln $ 1/3 * (birthDeath WithoutStem 0.2 0.5 0.8 $ either error id $ phyloToLengthTree t)
@@ -258,8 +258,8 @@ birthDeathWith _ _ _ _ _ = error "birthDeathWith: Tree is multifurcating."
 --   Tree Double a ->
 --   Log Double
 -- birthDeathPointProcess l m t
---   | l < 0.0 = error "birthDeath: Birth rate lambda is negative."
---   | m < 0.0 = error "birthDeath: Death rate mu is negative."
+--   | l < 0 = error "birthDeath: Birth rate lambda is negative."
+--   | m < 0 = error "birthDeath: Death rate mu is negative."
 --   | otherwise = Exp $ logDensity d 0
 --   where
 --     d = BDD (label t + branch t) l m

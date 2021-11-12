@@ -171,13 +171,13 @@ allEqual xs = all (== head xs) (tail xs)
 --
 -- 'brace' ensures that the node list is not empty nor a singleton.
 --
--- If the node heights are equal, the prior is 1.0. Otherwise, the prior is 0.0.
+-- If the node heights are equal, the prior is 1. Otherwise, the prior is 0.
 --
 -- Call 'error' if a path is invalid.
 braceHardS :: RealFloat a => Brace -> PriorFunctionG (HeightTree a) a
 braceHardS (Brace _ xs) (HeightTree t)
-  | allEqual hs = 1.0
-  | otherwise = 0.0
+  | allEqual hs = 1
+  | otherwise = 0
   where
     hs = map (\ni -> t ^. subTreeAtL (nodePath ni) . branchL) xs
 {-# SPECIALIZE braceHardS :: Brace -> PriorFunctionG (HeightTree Double) Double #-}
@@ -205,13 +205,13 @@ braceSoftF ::
   StandardDeviation a ->
   PriorFunctionG [a] a
 braceSoftF s' hs
-  | s <= 0.0 = error "braceSoftF: Standard deviation is zero or negative."
-  | allEqual hs = 1.0
+  | s <= 0 = error "braceSoftF: Standard deviation is zero or negative."
+  | allEqual hs = 1
   | otherwise = product $ map f hs
   where
     s = realToFrac s'
-    d = normal 0.0 s
-    d0 = d 0.0
+    d = normal 0 s
+    d0 = d 0
     hMean = sum hs / fromIntegral (length hs)
     f x = d (x - hMean) / d0
 {-# SPECIALIZE braceSoftF :: Double -> PriorFunction [Double] #-}

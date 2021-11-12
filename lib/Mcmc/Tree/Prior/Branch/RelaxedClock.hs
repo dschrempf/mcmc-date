@@ -72,7 +72,7 @@ import Numeric.MathFunctions.Constants
 -- Note that here, the SCALE and not the RATE is used as parameter of the gamma
 -- distribution (in contrast to the cited publication above).
 --
--- Return a probability of zero if the relative rates do not sum to 1.0 (with
+-- Return a probability of zero if the relative rates do not sum to 1 (with
 -- tolerance 1e-12).
 --
 -- Call 'error' if:
@@ -129,7 +129,7 @@ logNormal' :: RealFloat a => Mean a -> Variance a -> a -> Log a
 logNormal' mu var x
   | var <= 0 = error "logNormal': Variance is zero or negative."
   | x < 0 = error "logNormal': Negative value."
-  | x == 0 = 0.0
+  | x == 0 = 0
   | otherwise = Exp $ negate t - e
   where
     t = realToFrac m_ln_sqrt_2_pi + log (x * sqrt var)

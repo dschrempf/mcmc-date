@@ -174,13 +174,13 @@ instance FromJSON a => FromJSON (HeightTree a)
 
 -- | Check if 'HeightTree' is valid.
 --
--- Heights of leaves are 0.0.
+-- Heights of leaves are 0.
 --
 -- Height of parent node is greater than height of daughter node.
 isValidHeightTree :: HeightTree Double -> Bool
 isValidHeightTree = go (1 / 0) . getHeightTree
   where
-    go hParent (Node h _ []) = hParent > h && h == 0.0
+    go hParent (Node h _ []) = hParent > h && h == 0
     go hParent (Node h _ ts) = hParent > h && all (go h) ts
 
 -- | Calculate node heights for a given tree.

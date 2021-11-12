@@ -56,7 +56,7 @@ eps = 1e-14
 -- Check if vector is normalized with tolerance 'eps'.
 isNormalized :: RealFloat a => VB.Vector a -> Bool
 isNormalized v
-  | abs (VB.sum v - 1.0) > eps = False
+  | abs (VB.sum v - 1) > eps = False
   | otherwise = True
 
 dirichletDensitySymmetric :: RealFloat a => DirichletDistributionSymmetric a -> VB.Vector a -> Log a
@@ -66,7 +66,7 @@ dirichletDensitySymmetric (DirichletDistributionSymmetric a k c) xs
   | not (isNormalized xs) = error "dirichletDensitySymmetric: Out of domain."
   | otherwise = c * Exp logXsPow
   where
-    accF acc x = acc + log (x ** (a - 1.0))
+    accF acc x = acc + log (x ** (a - 1))
     logXsPow = VB.foldl' accF 0 xs
 {-# SPECIALIZE dirichletDensitySymmetric ::
   DirichletDistributionSymmetric Double ->

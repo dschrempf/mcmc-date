@@ -334,7 +334,7 @@ constrainHardS ::
   PriorFunctionG (HeightTree a) a
 constrainHardS c (HeightTree t)
   | (t ^. subTreeAtL y . branchL) < (t ^. subTreeAtL o . branchL) = 1
-  | otherwise = 0.0
+  | otherwise = 0
   where
     y = constraintYoungNodePath c
     o = constraintOldNodePath c
@@ -370,12 +370,12 @@ constrainSoftF ::
   StandardDeviation a ->
   PriorFunctionG (a, a) a
 constrainSoftF s' (hY, hO)
-  | s <= 0.0 = error "constrainSoftF: Standard deviation is zero or negative."
-  | hY < hO = 1.0
-  | otherwise = d (hY - hO) / d 0.0
+  | s <= 0 = error "constrainSoftF: Standard deviation is zero or negative."
+  | hY < hO = 1
+  | otherwise = d (hY - hO) / d 0
   where
     s = realToFrac s'
-    d = normal 0.0 s
+    d = normal 0 s
 {-# SPECIALIZE constrainSoftF :: Double -> PriorFunction (Double, Double) #-}
 
 -- | Constrain nodes of a tree using 'constrainSoftS'.

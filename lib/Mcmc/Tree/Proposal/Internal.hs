@@ -10,14 +10,18 @@
 --
 -- Creation date: Wed Nov  4 11:53:16 2020.
 module Mcmc.Tree.Proposal.Internal
-  ( getHeightBoundaries,
+  ( assertWith,
+    HeightBoundaryData (..),
+    getHeightBoundaries,
     nInnerNodes,
     truncatedNormalSample,
     scaleUltrametricTreeF,
   )
 where
 
+import Control.Exception
 import Control.Monad
+import Data.Bifunctor
 import Data.Maybe
 import ELynx.Tree
 import Mcmc.Proposal
@@ -27,7 +31,19 @@ import Numeric.Log hiding (sum)
 import Statistics.Distribution hiding (Mean)
 import Statistics.Distribution.TruncatedNormal
 import System.Random.MWC
-import Data.Bifunctor
+
+data HeightBoundaryData = HeightBoundaryData
+  { hbdTreePosition :: TreePos Double Name,
+    hbdNodeHeight :: Double,
+    hbdChildrenHeights :: [Double],
+    hbdMaximumChildrenHeight :: Double,
+    hbdParentHeight :: Double
+  }
+
+-- | Assert predicate.
+assertWith :: (a -> Bool) -> a -> a
+assertWith f x = assert (f x) x
+{-# INLINE assertWith #-}
 
 -- Calculate boundaries for sliding a node at given path.
 --
@@ -40,14 +56,13 @@ import Data.Bifunctor
 -- - The path leads to a leaf.
 getHeightBoundaries ::
   String ->
-  Path ->
   HeightTree Double ->
-  -- | @(Position, Node height, Children heights, Maximum children height, Parent height or Infinity)@.
-  (TreePos Double Name, Double, [Double], Double, Double)
-getHeightBoundaries n p t
+  Path ->
+  HeightBoundaryData
+getHeightBoundaries n t p
   | null children =
     error $ "getHeightBoundaries: " <> n <> ": Path leads to a leaf: " <> show p <> "."
-  | otherwise = (position, hNode, hsChildren, hChild, hParent)
+  | otherwise = HeightBoundaryData position hNode hsChildren hChild hParent
   where
     position =
       fromMaybe

@@ -271,7 +271,7 @@ loadCalibrations t f = do
 -- | Calibrate height of a single node.
 --
 -- When the height of the node is within the given bounds, use the uniform
--- distribution. Otherwise, the prior is 0.0.
+-- distribution. Otherwise, the prior is 0.
 --
 -- If the upper bound is not given, no upper bound is used.
 --
@@ -284,9 +284,9 @@ calibrateHardS ::
   Calibration a ->
   PriorFunctionG (HeightTree a) a
 calibrateHardS c (HeightTree t)
-  | h <= a' = 0.0
-  | h >* b = 0.0
-  | otherwise = 1.0
+  | h <= a' = 0
+  | h >* b = 0
+  | otherwise = 1
   where
     a' = realToFrac $ fromNonNegative a
     h = t ^. subTreeAtL p . branchL
@@ -325,15 +325,15 @@ calibrateSoftS s c (HeightTree t) = calibrateSoftF s l h
 -- | See 'calibrateSoftS'.
 calibrateSoftF :: RealFloat a => StandardDeviation a -> Interval a -> PriorFunctionG a a
 calibrateSoftF s (Interval a' b) h
-  | s <= 0.0 = error "calibrateSoftF: Standard deviation is zero or negative."
-  | h <= a = d (a - h) / d 0.0
+  | s <= 0 = error "calibrateSoftF: Standard deviation is zero or negative."
+  | h <= a = d (a - h) / d 0
   | h >* b = case b of
-    Infinity -> 1.0
-    Positive b' -> d (h - b') / d 0.0
-  | otherwise = 1.0
+    Infinity -> 1
+    Positive b' -> d (h - b') / d 0
+  | otherwise = 1
   where
     a = fromNonNegative a'
-    d = normal 0.0 s
+    d = normal 0 s
 {-# SPECIALIZE calibrateSoftF :: Double -> Interval Double -> PriorFunction Double #-}
 
 -- | Calibrate nodes of a tree using 'calibrateSoftS'.
@@ -358,11 +358,11 @@ calibrateSoft ::
   VB.Vector (Calibration a) ->
   PriorFunctionG (HeightTree a) a
 calibrateSoft sd h cs t
-  | h <= 0.0 = error "calibrateSoft: Height multiplier is zero or negative."
+  | h <= 0 = error "calibrateSoft: Height multiplier is zero or negative."
   | otherwise = VB.product $ VB.map f cs
   where
     f (Calibration n x i l) =
-      let l' = if h == 1.0 then l else transformInterval (recip h) l
+      let l' = if h == 1 then l else transformInterval (recip h) l
        in calibrateSoftS sd (Calibration n x i l') t
 {-# SPECIALIZE calibrateSoft ::
   Double ->

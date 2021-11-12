@@ -24,7 +24,6 @@ module Mcmc.Tree.Proposal.Brace
   )
 where
 
-import Control.Exception
 import Control.Lens
 import Data.Maybe
 import ELynx.Tree
@@ -45,35 +44,26 @@ slideBracedNodesUltrametricSimple ::
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (HeightTree Double)
-slideBracedNodesUltrametricSimple b s t tr g
-  | any null childrens = error "slideBracedNodesUltrametricSimple: Cannot slide leaf."
-  | otherwise = do
-    -- TODO: In weird cases, if the two node heights are far apart,
-    -- `hMaxChildren - hBar` can be positive, and `hMinParents - hBar` can be
-    -- negative. In this case, the proposals calls 'error'.
-    --
-    -- I should calculate the boundaries per node, and then choose the smallest
-    -- interval satisfying all boundaries.
-    (deltaH, q) <- truncatedNormalSample 0 s t (hMaxChildren - hBar) (hMinParents - hBar) g
-    let f h = let h' = h + deltaH in assert (h' > 0) h'
-        -- NOTE: The first path is walked again which could be improved.
-        --
-        -- TODO: Set node heights of all paths.
-        tr' = undefined
-    -- tr
-    --   & heightTreeL . subTreeAtL x . branchL %~ f
-    --   & heightTreeL . subTreeAtL y . branchL %~ f
-    return (tr', q, 1.0)
+slideBracedNodesUltrametricSimple b s t tr g = do
+  (deltaH, q) <- truncatedNormalSample 0 s t lowerBound upperBound g
+  let modifyHeight = assertWith (> 0) . (+ deltaH)
+      -- Set the node height at path.
+      modifyHeightAcc pth tre = tre & heightTreeL . subTreeAtL pth . branchL %~ modifyHeight
+      -- NOTE: The first path is walked again which could be improved.
+      tr' = foldr modifyHeightAcc tr paths
+  return (tr', q, 1)
   where
+    -- Calculate the boundaries per node, and then choose the smallest interval
+    -- satisfying all boundaries.
     paths = map nodePath $ getBraceNodes b
-    trPositions = map (\p -> goPathUnsafe p $ fromTree $ getHeightTree tr) paths
-    focuses = map current trPositions
-    childrens = map forest focuses
-    heights = map branch focuses
-    hBar = sum heights / fromIntegral (length heights)
-    hMaxChildren = maximum $ map branch $ concat childrens
-    progenitors = map current $ getParents paths trPositions
-    hMinParents = if null progenitors then 1 / 0 else minimum $ map branch progenitors
+    hbds = map (getHeightBoundaries "slideBracedNodesUltrametricSimple" tr) paths
+    -- Interval around 0.
+    getInterval d = let h = hbdNodeHeight d in (hbdMaximumChildrenHeight d - h, hbdParentHeight d - h)
+    intervals = map getInterval hbds
+    -- Should be strictly negative.
+    lowerBound = assertWith (< 0) $ maximum $ map fst intervals
+    -- Should be strictly positive.
+    upperBound = assertWith (> 0) $ minimum $ map snd intervals
 
 -- | Slide braced nodes.
 --

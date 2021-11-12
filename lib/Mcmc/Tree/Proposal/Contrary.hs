@@ -43,17 +43,17 @@ slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
   | otherwise = do
     (hNode', q) <- truncatedNormalSample hNode sd t hChild hParent g
     -- Time tree.
-    let tTr' = toTree $ tTrPos & currentTreeL . branchL .~ assert (hNode' > 0) hNode'
+    let tTr' = toTree $ tTrPos & currentTreeL . branchL .~ assertWith (> 0) hNode'
     -- Rate tree.
     let -- Scaling factor of rate tree stem.
         xiStemR =
           if null pth
-            then 1.0
+            then 1
             else
               let x = (hParent - hNode) / (hParent - hNode')
-               in assert (x > 0) x
+               in assertWith (> 0) x
         -- Scaling factors of rate tree daughter branches excluding the stem.
-        getXiR h = let x = (hNode - h) / (hNode' - h) in assert (x > 0) x
+        getXiR h = let x = (hNode - h) / (hNode' - h) in assertWith (> 0) x
         xisR = map getXiR hsChildren
         scaleDaughterBranches (Node br lb trs) =
           Node br lb $ zipWith (modifyStem . (*)) xisR trs
@@ -71,8 +71,8 @@ slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
     return (x', q, jacobian)
   where
     -- Time tree.
-    (tTrPos, hNode, hsChildren, hChild, hParent) =
-      getHeightBoundaries "slideNodesAtContrarilySimple" pth tTr
+    (HeightBoundaryData tTrPos hNode hsChildren hChild hParent) =
+      getHeightBoundaries "slideNodesAtContrarilySimple" tTr pth
     -- Rate tree.
     rTrPos = goPathUnsafe pth $ fromTree rTr
     rTrFocus = current rTrPos
@@ -195,9 +195,9 @@ slideRootContrarilySimple ::
 slideRootContrarilySimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
   let tTrHeight = branch tTr
   when
-    (tTrHeight /= 1.0)
+    (tTrHeight /= 1)
     ( error $
-        "slideRootSimple: Height of relative time tree is different from 1.0: "
+        "slideRootSimple: Height of relative time tree is different from 1: "
           <> show tTrHeight
           <> "."
     )
@@ -206,9 +206,9 @@ slideRootContrarilySimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
   (ht', q) <- truncatedNormalSample ht s t htOldestChild (1 / 0) g
   -- Scaling factor of absolute time tree height. This is the reverse scaling
   -- factor of the time tree node heights.
-  let u = let x = ht' / ht in assert (x > 0) x
+  let u = let x = ht' / ht in assertWith (> 0) x
   -- Scaling factors for rates.
-  let getXi h = let x = (1 - h) / (u - h) in assert (x > 0) x
+  let getXi h = let x = (1 - h) / (u - h) in assertWith (> 0) x
       xis = map getXi htsChildren
   -- Compute new state.
   let tTr' = tTr & forestL %~ map (first (/ u))
@@ -241,7 +241,7 @@ slideRootContrarilySimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
 --
 -- Call 'error' if:
 --
--- - The height of the relative time tree is different from 1.0.
+-- - The height of the relative time tree is different from 1.
 slideRootContrarily ::
   -- | The topology of the tree is used to precompute the number of inner nodes.
   Tree e a ->
@@ -281,7 +281,7 @@ scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, Length
   | otherwise = do
     (hTTrNode', q) <- truncatedNormalSample hTTrNode sd t 0 hTTrParent g
     let -- Scaling factor of time tree nodes heights (xi, not x_i).
-        xiT = let x = hTTrNode' / hTTrNode in assert (x > 0) x
+        xiT = let x = hTTrNode' / hTTrNode in assertWith (> 0) x
         tTr' = toTree $ tTrPos & currentTreeL %~ scaleUltrametricTreeF hTTrNode' xiT
     -- Rate tree.
     let -- Scaling factor of rate tree branches excluding the stem.
@@ -289,10 +289,10 @@ scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, Length
         -- Scaling factor of rate tree stem.
         xiStemR =
           if null pth
-            then 1.0
+            then 1
             else
               let x = (hTTrParent - hTTrNode) / (hTTrParent - hTTrNode')
-               in assert (x > 0) x
+               in assertWith (> 0) x
         -- If the root node is handled, do not scale the stem because no upper
         -- bound is set.
         f =

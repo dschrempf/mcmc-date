@@ -119,7 +119,7 @@ scaleTree tr k = createProposal description (scaleTreeSimple n k) (PDimension n)
 -- | Scale all branches including the stem at given node.
 --
 -- A gamma distributed kernel of given shape is used. The scale is set such that
--- the mean is 1.0.
+-- the mean is 1.
 --
 -- NOTE: Because the determinant of the Jacobian matrix depends on the number of
 -- branches scaled, this proposal is only valid if all branch lengths including
@@ -205,7 +205,7 @@ pulleySimple s t (LengthTree tr@(Node br lb [l, r])) g = do
             r & branchL -~ u
           ]
   -- The determinant of the Jacobian matrix is (-1).
-  return (LengthTree tr', q, 1.0)
+  return (LengthTree tr', q, 1)
 pulleySimple _ _ _ _ = error "pulleySimple: Node is not bifurcating."
 
 -- | Use a node as a pulley.
