@@ -62,6 +62,7 @@ library
       Mcmc.Tree.Prior.Node.Calibration
       Mcmc.Tree.Prior.Node.Combined
       Mcmc.Tree.Prior.Node.Constraint
+      Mcmc.Tree.Proposal.Brace
       Mcmc.Tree.Proposal.Contrary
       Mcmc.Tree.Proposal.Ultrametric
       Mcmc.Tree.Proposal.Unconstrained

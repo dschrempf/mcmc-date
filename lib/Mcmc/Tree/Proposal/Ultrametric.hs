@@ -71,6 +71,7 @@ slideNodeAtUltrametricSimple pth s t tr g
     children = forest focus
     hNode = branch focus
     hChild = maximum $ map branch children
+    -- Error if `null pth` but Haskell is lazy.
     parent = current $ goParentUnsafe trPos
     -- Set the upper bound to +Infinity if no parent node exists.
     hParent = if null pth then 1 / 0 else branch parent
@@ -105,12 +106,12 @@ slideNodeAtUltrametric ::
   PWeight ->
   Tune ->
   Proposal (HeightTree Double)
-slideNodeAtUltrametric tr pth ds
+slideNodeAtUltrametric tr pth s
   | not $ isValidPath tr pth = error $ "slideNodeAtUltrametric: Path is invalid: " <> show pth <> "."
   | isLeafPath tr pth = error $ "slideNodeAtUltrametric: Path leads to a leaf: " <> show pth <> "."
-  | otherwise = createProposal description (slideNodeAtUltrametricSimple pth ds) (PDimension 1)
+  | otherwise = createProposal description (slideNodeAtUltrametricSimple pth s) (PDimension 1)
   where
-    description = PDescription $ "Slide node ultrametric; sd: " ++ show ds
+    description = PDescription $ "Slide node ultrametric; sd: " ++ show s
 
 -- | Slide the nodes of a given tree.
 --
@@ -334,6 +335,9 @@ nInnerNodes (Node _ _ []) = 0
 nInnerNodes tr = 1 + sum (map nInnerNodes $ forest tr)
 
 -- | A very specific function scaling an ultrametric tree.
+--
+-- NOTE: Also scale leaf heights. This may be unintuitive, when leaf heights are
+-- non-zero.
 scaleUltrametricTreeF ::
   -- | New root node height.
   Double ->
