@@ -53,6 +53,7 @@ import Mcmc.Tree.Types
 -- repeated at each proposal.
 data Constraint = Constraint
   { constraintName :: String,
+    -- TODO: Use 'NodeInfo'.
     -- | Path to younger node (closer to the leaves).
     constraintYoungNodePath :: Path,
     -- | Index of younger node.

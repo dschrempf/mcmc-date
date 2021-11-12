@@ -145,6 +145,7 @@ h >* Positive b = h > b
 -- repeated at each proposal.
 data Calibration a = Calibration
   { calibrationName :: String,
+    -- TODO: Use 'NodeInfo'.
     calibrationNodePath :: Path,
     calibrationNodeIndex :: Int,
     calibrationInterval :: Interval a

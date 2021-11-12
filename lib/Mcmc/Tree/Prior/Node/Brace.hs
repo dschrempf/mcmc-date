@@ -25,8 +25,8 @@ where
 
 import Control.Lens
 import Control.Monad
+import Data.Aeson
 import qualified Data.ByteString.Lazy.Char8 as BL
-import Data.Csv hiding (Name)
 import Data.List
 import Data.Maybe
 import qualified Data.Vector as VB
@@ -42,10 +42,7 @@ import Mcmc.Tree.Types
 -- Braces can be created using 'brace' or 'loadBraces'.
 data Brace = Brace
   { braceName :: String,
-    braceNodeAPath :: Path,
-    braceNodeAIndex :: Int,
-    braceNodeBPath :: Path,
-    braceNodeBIndex :: Int
+    braceNodes :: [NodeInfo]
   }
   deriving (Eq, Read, Show)
 
@@ -55,72 +52,60 @@ data Brace = Brace
 --
 -- - A node cannot be found on the tree.
 --
--- - The nodes are equal.
+-- - Nodes are equal.
 brace ::
   (Ord a, Show a) =>
   Tree e a ->
   -- | Name.
   String ->
-  -- | The most recent common ancestor of the given leaves will be braced.
-  [a] ->
-  -- | The most recent common ancestor of the given leaves will be braced.
-  [a] ->
+  -- | The most recent common ancestors of the given leaf lists will be braced.
+  [[a]] ->
   Brace
-brace t n xs ys
-  | iX == iY = err "The nodes are equal."
-  | otherwise = Brace n pX iX pY iY
+brace t n xss
+  | null xss = err "Empty node list."
+  | length (nub is) /= length is = err "Some nodes have equal indices."
+  | length (nub ps) /= length ps = err "some nodes have equal paths."
+  | otherwise = Brace n $ sort (zipWith NodeInfo is ps)
   where
     err msg = error $ "brace: " ++ n ++ ": " ++ msg
     iTr = identify t
-    pX = either err id $ mrca xs t
-    iX = label $ getSubTreeUnsafe pX iTr
-    pY = either err id $ mrca ys t
-    iY = label $ getSubTreeUnsafe pY iTr
+    ps = map (\xs -> either err id $ mrca xs t) xss
+    is = map (\p -> label $ getSubTreeUnsafe p iTr) ps
 
-data BraceData
-  = BraceData
-      String -- Brace name.
-      String -- Node X, leaf A.
-      String -- Node X, leaf B.
-      String -- Node Y, leaf A.
-      String -- Node Y, leaf B.
+data BraceData = BraceData
+  { braceDataName :: String,
+    -- List of leaf pairs defining nodes.
+    braceDataNodes :: [(String, String)]
+  }
   deriving (Generic, Show)
 
-instance FromRecord BraceData
+instance ToJSON BraceData
+
+instance FromJSON BraceData
 
 braceDataToBrace :: Tree e Name -> BraceData -> Brace
-braceDataToBrace t (BraceData n nXA nXB nYA nYB) = brace t n [pn nXA, pn nXB] [pn nYA, pn nYB]
+braceDataToBrace t (BraceData n lvss) = brace t n [[pn lvA, pn lvB] | (lvA, lvB) <- lvss]
   where
     pn = Name . BL.pack
 
 -- Check if two braces conflict or are duplicates.
 checkBraces :: Brace -> Brace -> [String]
-checkBraces x y@(Brace nY apY aiY bpY biY) = checkBraces' x y ++ checkBraces' x y'
-  where
-    y' = Brace nY bpY biY apY aiY
-
--- Assume node order is fixed.
-checkBraces' :: Brace -> Brace -> [String]
-checkBraces' (Brace nX apX aiX bpX biX) (Brace nY apY aiY bpY _) =
-  catMaybes
-    [ indicesMismatch apX apY aiX aiY,
-      indicesMismatch bpX apY biX aiY,
-      pathsMismatch apX apY aiX aiY,
-      pathsMismatch bpX apY biX aiY,
-      equalNodePaths
-    ]
+checkBraces (Brace nX nsX) (Brace nY nsY) =
+  catMaybes $
+    equalNodeIndices :
+    [indicesMismatch x y | x <- nsX, y <- nsY]
+      ++ [pathsMismatch x y | x <- nsX, y <- nsY]
   where
     msg m = "Braces " ++ nX ++ " and " ++ nY ++ ":" ++ m
-    -- True if paths match but indices do not match (weird error).
-    indicesMismatch pX pY iX iY
+    indicesMismatch (NodeInfo iX pX) (NodeInfo iY pY)
       | (pX == pY) && (iX /= iY) = Just $ msg "Node paths match but node indices do not."
       | otherwise = Nothing
-    pathsMismatch pX pY iX iY
+    pathsMismatch (NodeInfo iX pX) (NodeInfo iY pY)
       | (pX /= pY) && (iX == iY) = Just $ msg "Node indices match but node paths do not."
       | otherwise = Nothing
-    equalNodePaths =
-      if (apX == apY) && (bpX == bpY)
-        then Just $ msg "Paths are equal."
+    equalNodeIndices =
+      if map nodeIndex nsX == map nodeIndex nsY
+        then Just $ msg "Braced nodes are equal."
         else Nothing
 
 -- | Load and validate braces from file.
@@ -148,7 +133,7 @@ checkBraces' (Brace nX apX aiX bpX biX) (Brace nY apY aiY bpY _) =
 loadBraces :: Tree e Name -> FilePath -> IO (VB.Vector Brace)
 loadBraces t f = do
   d <- BL.readFile f
-  let mr = decode NoHeader d :: Either String (VB.Vector BraceData)
+  let mr = eitherDecode d :: Either String (VB.Vector BraceData)
       bs = either error id mr
   when (VB.null bs) $ error $ "loadBraces: No braces found in file: " <> f <> "."
   let bsAll = VB.map (braceDataToBrace t) bs
@@ -161,21 +146,27 @@ loadBraces t f = do
       error "loadBraces: Duplicates and/or conflicting braces have been detected."
   return bsAll
 
--- | Brace a single pair of nodes.
+-- Test if all elements of a list are equal; returns True for empty list.
+allEqual :: Eq a => [a] -> Bool
+-- Well, maybe it should be False, but then, it is True that all elements are
+-- equal :).
+allEqual [] = True
+allEqual xs = all (== head xs) (tail xs)
+
+-- | Brace a single list of nodes.
 --
 -- If the node heights are equal, the prior is 1.0. Otherwise, the prior is 0.0.
 --
 -- Call 'error' if a path is invalid.
 braceHardS :: RealFloat a => Brace -> PriorFunctionG (HeightTree a) a
-braceHardS (Brace _ x _ y _) (HeightTree t)
-  | hX == hY = 1.0
+braceHardS (Brace _ xs) (HeightTree t)
+  | allEqual hs = 1.0
   | otherwise = 0.0
   where
-    hX = t ^. subTreeAtL x . branchL
-    hY = t ^. subTreeAtL y . branchL
+    hs = map (\ni -> t ^. subTreeAtL (nodePath ni) . branchL) xs
 {-# SPECIALIZE braceHardS :: Brace -> PriorFunctionG (HeightTree Double) Double #-}
 
--- | Brace a single pair of nodes.
+-- | Brace a single list of nodes.
 --
 -- Use a normal distribution with given standard deviation.
 --
@@ -185,27 +176,28 @@ braceSoftS ::
   StandardDeviation a ->
   Brace ->
   PriorFunctionG (HeightTree a) a
-braceSoftS s (Brace _ x _ y _) (HeightTree t)
+braceSoftS s (Brace _ xs) (HeightTree t)
   | s <= 0.0 = error "braceSoftS: Standard deviation is zero or negative."
-  | hX == hY = 1.0
-  | otherwise = braceSoftF s (hX, hY)
+  | otherwise = braceSoftF s hs
   where
-    hX = t ^. subTreeAtL x . branchL
-    hY = t ^. subTreeAtL y . branchL
+    hs = map (\ni -> t ^. subTreeAtL (nodePath ni) . branchL) xs
 {-# SPECIALIZE braceSoftS :: Double -> Brace -> PriorFunctionG (HeightTree Double) Double #-}
 
 -- | See 'braceSoftS'.
 braceSoftF ::
   RealFloat a =>
   StandardDeviation a ->
-  PriorFunctionG (a, a) a
-braceSoftF s' (hX, hY)
-  | hX == hY = 1.0
-  | otherwise = d (hX - hY) / d 0
+  PriorFunctionG [a] a
+braceSoftF s' hs
+  | allEqual hs = 1.0
+  | otherwise = product $ map f hs
   where
     s = realToFrac s'
     d = normal 0 s
-{-# SPECIALIZE braceSoftF :: Double -> PriorFunction (Double, Double) #-}
+    d0 = d 0
+    hMean = sum hs / fromIntegral (length hs)
+    f x = d (x - hMean) / d0
+{-# SPECIALIZE braceSoftF :: Double -> PriorFunction [Double] #-}
 
 -- | Brace pairs of nodes using 'braceSoftS'.
 --
@@ -217,4 +209,5 @@ braceSoft ::
   VB.Vector Brace ->
   PriorFunctionG (HeightTree a) a
 braceSoft s bs t = VB.product $ VB.map (\b -> braceSoftS s b t) bs
+
 {-# SPECIALIZE braceSoftS :: Double -> Brace -> PriorFunctionG (HeightTree Double) Double #-}

@@ -55,12 +55,10 @@ braceV ::
   StandardDeviation a ->
   Brace ->
   PriorFunctionG (VB.Vector a) a
-braceV s b hs = braceSoftF s (hA, hB)
+braceV s b hs = braceSoftF s nHs
   where
-    iA = braceNodeAIndex b
-    hA = hs VB.! iA
-    iB = braceNodeBIndex b
-    hB = hs VB.! iB
+    nIs = map nodeIndex $ braceNodes b
+    nHs = map (hs VB.!) nIs
 
 -- | Calibrate, constrain, and brace nodes.
 --

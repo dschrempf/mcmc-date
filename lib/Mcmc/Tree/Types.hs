@@ -24,6 +24,7 @@ module Mcmc.Tree.Types
 
     -- ** Nodes
     Path,
+    NodeInfo (..),
     HandleNode,
     allNodes,
     withoutRootNode,
@@ -46,6 +47,13 @@ import GHC.Generics
 
 -- | Should the stem be handled, when traversing branches of a tree?
 data HandleStem = WithStem | WithoutStem
+
+-- | Index and path of a node on a tree.
+data NodeInfo = NodeInfo
+  { nodeIndex :: Int,
+    nodePath :: Path
+  }
+  deriving (Eq, Ord, Read, Show)
 
 -- | Which nodes should be handled, when traversing a tree?
 --
@@ -125,7 +133,7 @@ instance FromJSON a => FromJSON (LengthTree a)
 --
 -- All other lengths have to be greater than zero.
 isValidLengthTree :: LengthTree Double -> Bool
-isValidLengthTree (LengthTree (Node br _ ts)) = br >= 0 && all (all (>0) . ZipBranchTree) ts
+isValidLengthTree (LengthTree (Node br _ ts)) = br >= 0 && all (all (> 0) . ZipBranchTree) ts
 
 -- | Tree with node heights.
 newtype HeightTree a = HeightTree {getHeightTree :: Tree a Name}
@@ -170,9 +178,10 @@ instance FromJSON a => FromJSON (HeightTree a)
 --
 -- Height of parent node is greater than height of daughter node.
 isValidHeightTree :: HeightTree Double -> Bool
-isValidHeightTree = go (1/0) . getHeightTree
-  where go hParent (Node h _ []) = hParent > h && h == 0.0
-        go hParent (Node h _ ts) = hParent > h && all (go h) ts
+isValidHeightTree = go (1 / 0) . getHeightTree
+  where
+    go hParent (Node h _ []) = hParent > h && h == 0.0
+    go hParent (Node h _ ts) = hParent > h && all (go h) ts
 
 -- | Calculate node heights for a given tree.
 --

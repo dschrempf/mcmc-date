@@ -36,14 +36,15 @@ import Mcmc.Tree.Types
 
 getParents :: [Path] -> [TreePos e a] -> [TreePos e a]
 getParents xs = catMaybes . zipWith f xs
-  where f pth pos = if null pth then Nothing else Just $ goParentUnsafe pos
+  where
+    f pth pos = if null pth then Nothing else Just $ goParentUnsafe pos
 
 slideBracedNodesUltrametricSimple ::
   Brace ->
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (HeightTree Double)
-slideBracedNodesUltrametricSimple (Brace _ x _ y _) s t tr g
+slideBracedNodesUltrametricSimple (Brace _ nis) s t tr g
   | any null childrens = error "slideBracedNodesUltrametricSimple: Cannot slide leaf."
   | otherwise = do
     -- TODO: In weird cases, if the two node heights are far apart,
@@ -55,15 +56,15 @@ slideBracedNodesUltrametricSimple (Brace _ x _ y _) s t tr g
     (deltaH, q) <- truncatedNormalSample 0 s t (hMaxChildren - hBar) (hMinParents - hBar) g
     let f h = let h' = h + deltaH in assert (h' > 0) h'
         -- NOTE: The first path is walked again which could be improved.
-        tr' =
-          tr
-            -- XXX: How can I improve this? I want to convert the list of paths
-            -- to a traversal.
-            & heightTreeL . subTreeAtL x . branchL %~ f
-            & heightTreeL . subTreeAtL y . branchL %~ f
+        --
+        -- TODO: Set node heights of all paths.
+        tr' = undefined
+    -- tr
+    --   & heightTreeL . subTreeAtL x . branchL %~ f
+    --   & heightTreeL . subTreeAtL y . branchL %~ f
     return (tr', q, 1.0)
   where
-    paths = [x, y]
+    paths = map nodePath nis
     trPositions = map (\p -> goPathUnsafe p $ fromTree $ getHeightTree tr) paths
     focuses = map current trPositions
     childrens = map forest focuses
@@ -91,19 +92,18 @@ slideBracedNodesUltrametric ::
   PWeight ->
   Tune ->
   Proposal (HeightTree Double)
-slideBracedNodesUltrametric tr b@(Brace _ x _ y _) s
-  | not $ isValidPath tr x =
-    error $ "slideBracedNodesUltrametric: Path of first node is invalid: " <> show x <> "."
-  | not $ isValidPath tr y =
-    error $ "slideBracedNodesUltrametric: Path of second node is invalid: " <> show y <> "."
-  | isLeafPath tr x =
-    error $ "slideBracedNodesUltrametric: Path of first node leads to a leaf: " <> show x <> "."
-  | isLeafPath tr y =
-    error $ "slideBracedNodesUltrametric: Path of second node leads to a leaf: " <> show y <> "."
+slideBracedNodesUltrametric tr b@(Brace n nis) s
+  | null nis =
+    error $ "slideBracedNodesUltrametric: Node list is empty: " <> n <> "."
+  | not $ all (isValidPath tr) paths =
+    error $ "slideBracedNodesUltrametric: Path of a node is invalid: Brace: " <> show n <> ", Paths: " <> show paths <> "."
+  | any (isLeafPath tr) paths =
+    error $ "slideBracedNodesUltrametric: Path of a node leads to a leaf: Brace: " <> show n <> ", Paths: " <> show paths <> "."
   -- NOTE: For hard braces, the dimension is 1.
   | otherwise =
-    createProposal description (slideBracedNodesUltrametricSimple b s) (PDimension 2)
+    createProposal description (slideBracedNodesUltrametricSimple b s) (PDimension $ length nis)
   where
+    paths = map nodePath nis
     description = PDescription $ "Slide braced nodes ultrametric; sd: " ++ show s
 
 slideBracedNodesContrarilySimple ::
@@ -111,16 +111,16 @@ slideBracedNodesContrarilySimple ::
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (HeightTree Double, LengthTree Double)
-slideBracedNodesContrarilySimple (Brace _ x _ y _) s t (hTr, lTr) g
-  | null tTrChildrens =
-    error "slideBracedNodesContrarilySimple: Sub tree of ultrametric tree is a leaf."
-  -- | null rTrChildrens =
-  --   error "slideBracedNodesContrarilySimple: Sub tree of unconstrained tree is a leaf."
+slideBracedNodesContrarilySimple (Brace _ nis) s t (hTr, lTr) g
+  -- -- | null tTrChildrens =
+  -- --   error "slideBracedNodesContrarilySimple: Sub tree of ultrametric tree is a leaf."
+  -- -- | null rTrChildrens =
+  -- --   error "slideBracedNodesContrarilySimple: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
-      -- TODO. But first fix the proposal above.
-      undefined
+    -- TODO. But first fix the proposal above.
+    undefined
   where
-    pths = [x, y]
+    pths = map nodePath nis
     tTrPositions = map (\p -> goPathUnsafe p $ fromTree $ getHeightTree hTr) pths
     tTrFocuses = map current tTrPositions
     tTrChildrens = map forest tTrFocuses
@@ -149,23 +149,31 @@ slideBracedNodesContrarily ::
   PWeight ->
   Tune ->
   Proposal (HeightTree Double, LengthTree Double)
-slideBracedNodesContrarily tr b@(Brace _ x _ y _) s
-  | not $ isValidPath tr x =
-    error $ "slideBracedNodesContrarily: Path of first node is invalid: " <> show x <> "."
-  | not $ isValidPath tr y =
-    error $ "slideBracedNodesContrarily: Path of second node is invalid: " <> show y <> "."
-  | isLeafPath tr x =
-    error $ "slideBracedNodesContrarily: Path of first node leads to a leaf: " <> show x <> "."
-  | isLeafPath tr y =
-    error $ "slideBracedNodesContrarily: Path of second node leads to a leaf: " <> show y <> "."
+slideBracedNodesContrarily tr b@(Brace n nis) s
+  | null nis =
+    error $ "slideBracedNodesContrarily: Node list is empty: " <> n <> "."
+  | not $ all (isValidPath tr) paths =
+    error $
+      "slideBracedNodesContrarily: Path of a node is invalid: Brace: "
+        <> show n
+        <> ", Paths: "
+        <> show paths
+        <> "."
+  | any (isLeafPath tr) paths =
+    error $
+      "slideBracedNodesContrarily: Path of a node leads to a leaf: Brace: "
+        <> show n
+        <> ", Paths: "
+        <> show paths
+        <> "."
   | otherwise =
     createProposal
       description
       (slideBracedNodesContrarilySimple b s)
       -- NOTE: For hard braces, the dimension is `1 + nStems + nDaughters`.
-      (PDimension $ 2 + nStems + nDaughters)
+      (PDimension $ length nis + nStems + nDaughters)
   where
     description = PDescription $ "Slide braced nodes contrarily; sd: " ++ show s
-    pths = [x, y]
-    nStems = sum [if null p then 0 else 1 | p <- pths]
-    nDaughters = sum [length $ forest $ current $ goPathUnsafe p $ fromTree tr | p <- pths]
+    paths = map nodePath nis
+    nStems = sum [if null p then 0 else 1 | p <- paths]
+    nDaughters = sum [length $ forest $ current $ goPathUnsafe p $ fromTree tr | p <- paths]
