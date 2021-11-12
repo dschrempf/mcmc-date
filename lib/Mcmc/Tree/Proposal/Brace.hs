@@ -102,24 +102,54 @@ slideBracedNodesContrarilySimple ::
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (HeightTree Double, LengthTree Double)
-slideBracedNodesContrarilySimple b s t (hTr, lTr) g
-  -- -- | null tTrChildrens =
-  -- --   error "slideBracedNodesContrarilySimple: Sub tree of ultrametric tree is a leaf."
-  -- -- | null rTrChildrens =
-  -- --   error "slideBracedNodesContrarilySimple: Sub tree of unconstrained tree is a leaf."
+slideBracedNodesContrarilySimple b s t (tTr, rTr) g
+  | any null rTrChildren =
+    error "slideBracedNodesContrarilySimple: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
-    -- TODO. But first fix the proposal above.
-    undefined
+    (deltaH, q) <- truncatedNormalSample 0 s t lowerBound upperBound g
+    -- Time tree. See also 'slideBracedNodesUltrametricSimple'.
+    let modifyHeight = assertWith (> 0) . (+ deltaH)
+        modifyHeightAcc pth tre = tre & heightTreeL . subTreeAtL pth . branchL %~ modifyHeight
+        tr' = foldr modifyHeightAcc tTr paths
+    -- TODO.
+    return undefined
+    -- -- Rate tree.
+    -- let -- Scaling factor of rate tree stem.
+    --     xiStemR =
+    --       if null pth
+    --         then 1
+    --         else
+    --           let x = (hParent - hNode) / (hParent - hNode')
+    --            in assertWith (> 0) x
+    --     -- Scaling factors of rate tree daughter branches excluding the stem.
+    --     getXiR h = let x = (hNode - h) / (hNode' - h) in assertWith (> 0) x
+    --     xisR = map getXiR hsChildren
+    --     scaleDaughterBranches (Node br lb trs) =
+    --       Node br lb $ zipWith (modifyStem . (*)) xisR trs
+    --     -- If the root node is handled, do not scale the stem because no upper
+    --     -- bound is set.
+    --     f =
+    --       if null pth
+    --         then scaleDaughterBranches
+    --         else modifyStem (* xiStemR) . scaleDaughterBranches
+    --     rTr' = toTree $ modifyTree f rTrPos
+    -- -- New state.
+    -- let x' = (HeightTree tTr', LengthTree rTr')
+    --     jacobian = Exp $ sum (map log xisR) + log xiStemR
+    -- let
+    -- return (x', q, jacobian)
   where
-    pths = map nodePath $ getBraceNodes b
-    tTrPositions = map (\p -> goPathUnsafe p $ fromTree $ getHeightTree hTr) pths
-    tTrFocuses = map current tTrPositions
-    tTrChildrens = map forest tTrFocuses
-    heights = map branch tTrFocuses
-    hBar = sum heights / fromIntegral (length heights)
-    hMaxChildren = maximum $ map branch $ concat tTrChildrens
-    tTrParents = map current $ getParents pths tTrPositions
-    hMinParents = if null tTrParents then 1 / 0 else minimum $ map branch tTrParents
+    -- Time tree. See also 'slideBracedNodesUltrametricSimple'.
+    paths = map nodePath $ getBraceNodes b
+    hbds = map (getHeightBoundaries "slideBracedNodesUltrametricSimple" tTr) paths
+    getInterval d = let h = hbdNodeHeight d in (hbdMaximumChildrenHeight d - h, hbdParentHeight d - h)
+    intervals = map getInterval hbds
+    lowerBound = assertWith (< 0) $ maximum $ map fst intervals
+    upperBound = assertWith (> 0) $ minimum $ map snd intervals
+    -- Rate tree.
+    rTrPs = map (\p -> goPathUnsafe p $ fromTree $ getLengthTree rTr) paths
+    rTrFocuses = map current rTrPs
+    rTrChildren = map forest rTrFocuses
 
 -- | Slide braced nodes contrarily.
 --
