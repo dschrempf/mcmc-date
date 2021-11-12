@@ -93,6 +93,7 @@ slideBracedNodesUltrametric ::
   Tune ->
   Proposal (HeightTree Double)
 slideBracedNodesUltrametric tr b@(Brace n nis) s
+  -- TODO: Length should be 2 or larger. Also below, and in prior file.
   | null nis =
     error $ "slideBracedNodesUltrametric: Node list is empty: " <> n <> "."
   | not $ all (isValidPath tr) paths =
