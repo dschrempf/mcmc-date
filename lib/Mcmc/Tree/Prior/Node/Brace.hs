@@ -13,7 +13,9 @@
 -- Creation date: Wed Nov 10 14:40:55 2021.
 module Mcmc.Tree.Prior.Node.Brace
   ( -- * Braces
-    Brace (..),
+    Brace,
+    getBraceName,
+    getBraceNodes,
     brace,
     loadBraces,
     braceHardS,
@@ -39,12 +41,21 @@ import Mcmc.Tree.Types
 
 -- | Brace.
 --
--- Braces can be created using 'brace' or 'loadBraces'.
+-- Abstract data type to ensure brace validity. Braces can be created using
+-- 'brace' or 'loadBraces'.
 data Brace = Brace
   { braceName :: String,
     braceNodes :: [NodeInfo]
   }
   deriving (Eq, Read, Show)
+
+-- | Name.
+getBraceName :: Brace -> String
+getBraceName = braceName
+
+-- | Node infos.
+getBraceNodes :: Brace -> [NodeInfo]
+getBraceNodes = braceNodes
 
 -- | Create a brace.
 --
@@ -53,6 +64,8 @@ data Brace = Brace
 -- - A node cannot be found on the tree.
 --
 -- - Nodes are equal.
+--
+-- - The leaf list is empty or a singleton.
 brace ::
   (Ord a, Show a) =>
   Tree e a ->
@@ -62,7 +75,8 @@ brace ::
   [[a]] ->
   Brace
 brace t n xss
-  | null xss = err "Empty node list."
+  | null xss = err "No node found."
+  | length xss == 1 = err "Only one node found."
   | length (nub is) /= length is = err "Some nodes have equal indices."
   | length (nub ps) /= length ps = err "some nodes have equal paths."
   | otherwise = Brace n $ sort (zipWith NodeInfo is ps)
@@ -137,7 +151,7 @@ loadBraces t f = do
       bs = either error id mr
   when (VB.null bs) $ error $ "loadBraces: No braces found in file: " <> f <> "."
   let bsAll = VB.map (braceDataToBrace t) bs
-  -- Check for duplicates and conflicts.
+  -- Check for duplicates and conflicts. Only check each pair once.
   let bsErrs = concat [checkBraces x y | (x : ys) <- tails (VB.toList bsAll), y <- ys]
   if null bsErrs
     then putStrLn "No duplicates and no conflicting braces have been detected."
@@ -155,6 +169,8 @@ allEqual xs = all (== head xs) (tail xs)
 
 -- | Brace a single list of nodes.
 --
+-- 'brace' ensures that the node list is not empty nor a singleton.
+--
 -- If the node heights are equal, the prior is 1.0. Otherwise, the prior is 0.0.
 --
 -- Call 'error' if a path is invalid.
@@ -168,6 +184,8 @@ braceHardS (Brace _ xs) (HeightTree t)
 
 -- | Brace a single list of nodes.
 --
+-- 'brace' ensures that the node list is not empty nor a singleton.
+--
 -- Use a normal distribution with given standard deviation.
 --
 -- Call 'error' if a path is invalid.
@@ -176,9 +194,7 @@ braceSoftS ::
   StandardDeviation a ->
   Brace ->
   PriorFunctionG (HeightTree a) a
-braceSoftS s (Brace _ xs) (HeightTree t)
-  | s <= 0.0 = error "braceSoftS: Standard deviation is zero or negative."
-  | otherwise = braceSoftF s hs
+braceSoftS s (Brace _ xs) (HeightTree t) = braceSoftF s hs
   where
     hs = map (\ni -> t ^. subTreeAtL (nodePath ni) . branchL) xs
 {-# SPECIALIZE braceSoftS :: Double -> Brace -> PriorFunctionG (HeightTree Double) Double #-}
@@ -189,12 +205,13 @@ braceSoftF ::
   StandardDeviation a ->
   PriorFunctionG [a] a
 braceSoftF s' hs
+  | s <= 0.0 = error "braceSoftF: Standard deviation is zero or negative."
   | allEqual hs = 1.0
   | otherwise = product $ map f hs
   where
     s = realToFrac s'
-    d = normal 0 s
-    d0 = d 0
+    d = normal 0.0 s
+    d0 = d 0.0
     hMean = sum hs / fromIntegral (length hs)
     f x = d (x - hMean) / d0
 {-# SPECIALIZE braceSoftF :: Double -> PriorFunction [Double] #-}

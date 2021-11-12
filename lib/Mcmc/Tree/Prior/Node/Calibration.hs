@@ -315,9 +315,7 @@ calibrateSoftS ::
   StandardDeviation a ->
   Calibration a ->
   PriorFunctionG (HeightTree a) a
-calibrateSoftS s c (HeightTree t)
-  | s <= 0.0 = error "calibrateSoftS: Standard deviation is zero or negative."
-  | otherwise = calibrateSoftF s l h
+calibrateSoftS s c (HeightTree t) = calibrateSoftF s l h
   where
     p = calibrationNodePath c
     h = t ^. subTreeAtL p . branchL
@@ -327,6 +325,7 @@ calibrateSoftS s c (HeightTree t)
 -- | See 'calibrateSoftS'.
 calibrateSoftF :: RealFloat a => StandardDeviation a -> Interval a -> PriorFunctionG a a
 calibrateSoftF s (Interval a' b) h
+  | s <= 0.0 = error "calibrateSoftF: Standard deviation is zero or negative."
   | h <= a = d (a - h) / d 0.0
   | h >* b = case b of
     Infinity -> 1.0

@@ -20,6 +20,7 @@
 -- really feasible. At the moment, I use soft braces exclusively.
 module Mcmc.Tree.Proposal.Brace
   ( slideBracedNodesUltrametric,
+    slideBracedNodesContrarily,
   )
 where
 
@@ -44,7 +45,7 @@ slideBracedNodesUltrametricSimple ::
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (HeightTree Double)
-slideBracedNodesUltrametricSimple (Brace _ nis) s t tr g
+slideBracedNodesUltrametricSimple b s t tr g
   | any null childrens = error "slideBracedNodesUltrametricSimple: Cannot slide leaf."
   | otherwise = do
     -- TODO: In weird cases, if the two node heights are far apart,
@@ -64,7 +65,7 @@ slideBracedNodesUltrametricSimple (Brace _ nis) s t tr g
     --   & heightTreeL . subTreeAtL y . branchL %~ f
     return (tr', q, 1.0)
   where
-    paths = map nodePath nis
+    paths = map nodePath $ getBraceNodes b
     trPositions = map (\p -> goPathUnsafe p $ fromTree $ getHeightTree tr) paths
     focuses = map current trPositions
     childrens = map forest focuses
@@ -92,19 +93,18 @@ slideBracedNodesUltrametric ::
   PWeight ->
   Tune ->
   Proposal (HeightTree Double)
-slideBracedNodesUltrametric tr b@(Brace n nis) s
-  -- TODO: Length should be 2 or larger. Also below, and in prior file.
-  | null nis =
-    error $ "slideBracedNodesUltrametric: Node list is empty: " <> n <> "."
+slideBracedNodesUltrametric tr b s
   | not $ all (isValidPath tr) paths =
     error $ "slideBracedNodesUltrametric: Path of a node is invalid: Brace: " <> show n <> ", Paths: " <> show paths <> "."
   | any (isLeafPath tr) paths =
     error $ "slideBracedNodesUltrametric: Path of a node leads to a leaf: Brace: " <> show n <> ", Paths: " <> show paths <> "."
   -- NOTE: For hard braces, the dimension is 1.
   | otherwise =
-    createProposal description (slideBracedNodesUltrametricSimple b s) (PDimension $ length nis)
+    createProposal description (slideBracedNodesUltrametricSimple b s) (PDimension $ length ns)
   where
-    paths = map nodePath nis
+    n = getBraceName b
+    ns = getBraceNodes b
+    paths = map nodePath ns
     description = PDescription $ "Slide braced nodes ultrametric; sd: " ++ show s
 
 slideBracedNodesContrarilySimple ::
@@ -112,7 +112,7 @@ slideBracedNodesContrarilySimple ::
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (HeightTree Double, LengthTree Double)
-slideBracedNodesContrarilySimple (Brace _ nis) s t (hTr, lTr) g
+slideBracedNodesContrarilySimple b s t (hTr, lTr) g
   -- -- | null tTrChildrens =
   -- --   error "slideBracedNodesContrarilySimple: Sub tree of ultrametric tree is a leaf."
   -- -- | null rTrChildrens =
@@ -121,7 +121,7 @@ slideBracedNodesContrarilySimple (Brace _ nis) s t (hTr, lTr) g
     -- TODO. But first fix the proposal above.
     undefined
   where
-    pths = map nodePath nis
+    pths = map nodePath $ getBraceNodes b
     tTrPositions = map (\p -> goPathUnsafe p $ fromTree $ getHeightTree hTr) pths
     tTrFocuses = map current tTrPositions
     tTrChildrens = map forest tTrFocuses
@@ -150,9 +150,7 @@ slideBracedNodesContrarily ::
   PWeight ->
   Tune ->
   Proposal (HeightTree Double, LengthTree Double)
-slideBracedNodesContrarily tr b@(Brace n nis) s
-  | null nis =
-    error $ "slideBracedNodesContrarily: Node list is empty: " <> n <> "."
+slideBracedNodesContrarily tr b s
   | not $ all (isValidPath tr) paths =
     error $
       "slideBracedNodesContrarily: Path of a node is invalid: Brace: "
@@ -172,9 +170,11 @@ slideBracedNodesContrarily tr b@(Brace n nis) s
       description
       (slideBracedNodesContrarilySimple b s)
       -- NOTE: For hard braces, the dimension is `1 + nStems + nDaughters`.
-      (PDimension $ length nis + nStems + nDaughters)
+      (PDimension $ length ns + nStems + nDaughters)
   where
+    n = getBraceName b
+    ns = getBraceNodes b
     description = PDescription $ "Slide braced nodes contrarily; sd: " ++ show s
-    paths = map nodePath nis
+    paths = map nodePath ns
     nStems = sum [if null p then 0 else 1 | p <- paths]
     nDaughters = sum [length $ forest $ current $ goPathUnsafe p $ fromTree tr | p <- paths]

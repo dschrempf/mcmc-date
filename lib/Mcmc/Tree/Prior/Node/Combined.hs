@@ -57,7 +57,7 @@ braceV ::
   PriorFunctionG (VB.Vector a) a
 braceV s b hs = braceSoftF s nHs
   where
-    nIs = map nodeIndex $ braceNodes b
+    nIs = map nodeIndex $ getBraceNodes b
     nHs = map (hs VB.!) nIs
 
 -- | Calibrate, constrain, and brace nodes.
