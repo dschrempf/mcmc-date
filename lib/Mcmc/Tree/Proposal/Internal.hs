@@ -10,17 +10,77 @@
 --
 -- Creation date: Wed Nov  4 11:53:16 2020.
 module Mcmc.Tree.Proposal.Internal
-  ( truncatedNormalSample,
+  ( getHeightBoundaries,
+    nInnerNodes,
+    truncatedNormalSample,
+    scaleUltrametricTreeF,
   )
 where
 
 import Control.Monad
+import Data.Maybe
+import ELynx.Tree
 import Mcmc.Proposal
 import Mcmc.Statistics.Types
+import Mcmc.Tree.Types
 import Numeric.Log hiding (sum)
 import Statistics.Distribution hiding (Mean)
 import Statistics.Distribution.TruncatedNormal
 import System.Random.MWC
+import Data.Bifunctor
+
+-- Calculate boundaries for sliding a node at given path.
+--
+-- The other values are returned for computation efficiency.
+--
+-- Call 'error' with given function name if:
+--
+-- - The path is invalid.
+--
+-- - The path leads to a leaf.
+getHeightBoundaries ::
+  String ->
+  Path ->
+  HeightTree Double ->
+  -- | @(Position, Node height, Children heights, Maximum children height, Parent height or Infinity)@.
+  (TreePos Double Name, Double, [Double], Double, Double)
+getHeightBoundaries n p t
+  | null children =
+    error $ "getHeightBoundaries: " <> n <> ": Path leads to a leaf: " <> show p <> "."
+  | otherwise = (position, hNode, hsChildren, hChild, hParent)
+  where
+    position =
+      fromMaybe
+        (error $ "getHeightBoundaries: " <> n <> ": Path is invalid: " <> show p <> ".")
+        (goPath p $ fromTree $ getHeightTree t)
+    focus = current position
+    hNode = branch focus
+    children = forest focus
+    hsChildren = map branch children
+    -- Above, we call 'error' with a meaningful message if @null children@.
+    hChild = maximum hsChildren
+    -- Set the upper bound to @+Infinity@ if no parent node exists.
+    hParent = maybe (1 / 0) (branch . current) (goParent position)
+
+-- | Calculate the number of inner nodes.
+nInnerNodes :: Tree e a -> Int
+nInnerNodes (Node _ _ []) = 0
+nInnerNodes tr = 1 + sum (map nInnerNodes $ forest tr)
+
+-- A very specific function scaling an ultrametric tree.
+--
+-- NOTE: Also scale leaf heights. This may be unintuitive, when leaf heights are
+-- non-zero.
+scaleUltrametricTreeF ::
+  -- | New root node height.
+  Double ->
+  -- | Scaling factor for other nodes. The scaling factor for inner node heights
+  -- is also given, since it is calculated anyways by the calling functions.
+  Double ->
+  Tree Double Name ->
+  Tree Double Name
+scaleUltrametricTreeF h xi (Node _ lb ts) =
+  Node h lb $ map (first (* xi)) ts
 
 -- A very specific function that samples a delta value from the truncated normal
 -- distribution with given bounds [a,b] and also computes the required factor of

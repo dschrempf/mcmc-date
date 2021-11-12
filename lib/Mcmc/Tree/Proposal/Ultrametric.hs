@@ -33,16 +33,11 @@ module Mcmc.Tree.Proposal.Ultrametric
     scaleSubTreeAtUltrametric,
     scaleSubTreesUltrametric,
     pulleyUltrametric,
-
-    -- * Helper functions
-    nInnerNodes,
-    scaleUltrametricTreeF,
   )
 where
 
 import Control.Exception
 import Control.Lens hiding (children)
-import Data.Bifunctor
 import ELynx.Tree
 import Mcmc.Proposal
 import Mcmc.Statistics.Types
@@ -58,23 +53,13 @@ slideNodeAtUltrametricSimple ::
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (HeightTree Double)
-slideNodeAtUltrametricSimple pth s t tr g
-  | null children = error "slideNodeAtUltrametricSimple: Cannot slide leaf."
-  | otherwise = do
-    (hNode', q) <- truncatedNormalSample hNode s t hChild hParent g
-    let tr' = toTree $ trPos & currentTreeL . branchL .~ assert (hNode' > 0) hNode'
-    -- The absolute value of the determinant of the Jacobian is 1.0.
-    return (HeightTree tr', q, 1.0)
+slideNodeAtUltrametricSimple pth s t tr g = do
+  (hNode', q) <- truncatedNormalSample hNode s t hChild hParent g
+  let tr' = toTree $ pos & currentTreeL . branchL .~ assert (hNode' > 0) hNode'
+  -- The absolute value of the determinant of the Jacobian is 1.0.
+  return (HeightTree tr', q, 1.0)
   where
-    trPos = goPathUnsafe pth $ fromTree $ getHeightTree tr
-    focus = current trPos
-    children = forest focus
-    hNode = branch focus
-    hChild = maximum $ map branch children
-    -- Error if `null pth` but Haskell is lazy.
-    parent = current $ goParentUnsafe trPos
-    -- Set the upper bound to +Infinity if no parent node exists.
-    hParent = if null pth then 1 / 0 else branch parent
+    (pos, hNode, _, hChild, hParent) = getHeightBoundaries "slideNodeAtUltrametricSimple" pth tr
 
 -- | Slide node (for ultrametric trees).
 --
@@ -328,23 +313,3 @@ pulleyUltrametric (Node _ _ [l, r]) d
     nL = nInnerNodes l
     nR = nInnerNodes r
 pulleyUltrametric _ _ = error "pulleyUltrametric: Node is not bifurcating."
-
--- | Calculate the number of inner nodes.
-nInnerNodes :: Tree e a -> Int
-nInnerNodes (Node _ _ []) = 0
-nInnerNodes tr = 1 + sum (map nInnerNodes $ forest tr)
-
--- | A very specific function scaling an ultrametric tree.
---
--- NOTE: Also scale leaf heights. This may be unintuitive, when leaf heights are
--- non-zero.
-scaleUltrametricTreeF ::
-  -- | New root node height.
-  Double ->
-  -- | Scaling factor for other nodes. The scaling factor for inner node heights
-  -- is also given, since it is calculated anyways by the calling functions.
-  Double ->
-  Tree Double Name ->
-  Tree Double Name
-scaleUltrametricTreeF h xi (Node _ lb ts) =
-  Node h lb $ map (first (* xi)) ts

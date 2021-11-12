@@ -27,7 +27,6 @@ import Mcmc.Proposal
 import Mcmc.Statistics.Types
 import Mcmc.Tree.Lens
 import Mcmc.Tree.Proposal.Internal
-import Mcmc.Tree.Proposal.Ultrametric
 import Mcmc.Tree.Proposal.Unconstrained
 import Mcmc.Tree.Types
 import Numeric.Log hiding (sum)
@@ -38,26 +37,24 @@ slideNodesAtContrarilySimple ::
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (HeightTree Double, LengthTree Double)
-slideNodesAtContrarilySimple pth sd t (HeightTree tTr, LengthTree rTr) g
-  | null tTrChildren =
-    error "slideNodesAtContrarilySimple: Sub tree of ultrametric tree is a leaf."
+slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
   | null rTrChildren =
     error "slideNodesAtContrarilySimple: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
-    (hTTrNode', q) <- truncatedNormalSample hTTrNode sd t hTTrOldestChild hTTrParent g
+    (hNode', q) <- truncatedNormalSample hNode sd t hChild hParent g
     -- Time tree.
-    let tTr' = toTree $ tTrPos & currentTreeL . branchL .~ assert (hTTrNode' > 0) hTTrNode'
+    let tTr' = toTree $ tTrPos & currentTreeL . branchL .~ assert (hNode' > 0) hNode'
     -- Rate tree.
     let -- Scaling factor of rate tree stem.
         xiStemR =
           if null pth
             then 1.0
             else
-              let x = (hTTrParent - hTTrNode) / (hTTrParent - hTTrNode')
+              let x = (hParent - hNode) / (hParent - hNode')
                in assert (x > 0) x
         -- Scaling factors of rate tree daughter branches excluding the stem.
-        getXiR h = let x = (hTTrNode - h) / (hTTrNode' - h) in assert (x > 0) x
-        xisR = map getXiR hsTTrChildren
+        getXiR h = let x = (hNode - h) / (hNode' - h) in assert (x > 0) x
+        xisR = map getXiR hsChildren
         scaleDaughterBranches (Node br lb trs) =
           Node br lb $ zipWith (modifyStem . (*)) xisR trs
         -- If the root node is handled, do not scale the stem because no upper
@@ -69,23 +66,13 @@ slideNodesAtContrarilySimple pth sd t (HeightTree tTr, LengthTree rTr) g
         rTr' = toTree $ modifyTree f rTrPos
     -- New state.
     let x' = (HeightTree tTr', LengthTree rTr')
-        -- jacobianTimeTree = Exp $ fromIntegral (nNodes - 1) * log xi
-        -- jacobianRateTree = Exp $ fromIntegral (nBranches -1) * log xi' + log xiStem
         jacobian = Exp $ sum (map log xisR) + log xiStemR
     let
     return (x', q, jacobian)
   where
     -- Time tree.
-    tTrPos = goPathUnsafe pth $ fromTree tTr
-    tTrFocus = current tTrPos
-    tTrParent = current $ goParentUnsafe tTrPos
-    hTTrNode = branch tTrFocus
-    -- If the root node is handled, set the upper bound to +Infinity because no
-    -- parent node exists.
-    hTTrParent = if null pth then 1 / 0 else branch tTrParent
-    tTrChildren = forest tTrFocus
-    hsTTrChildren = map branch tTrChildren
-    hTTrOldestChild = maximum hsTTrChildren
+    (tTrPos, hNode, hsChildren, hChild, hParent) =
+      getHeightBoundaries "slideNodesAtContrarilySimple" pth tTr
     -- Rate tree.
     rTrPos = goPathUnsafe pth $ fromTree rTr
     rTrFocus = current rTrPos
