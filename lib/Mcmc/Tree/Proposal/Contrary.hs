@@ -18,7 +18,6 @@ module Mcmc.Tree.Proposal.Contrary
   )
 where
 
-import Control.Exception
 import Control.Lens
 import Control.Monad
 import Data.Bifunctor
@@ -45,15 +44,14 @@ slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
     -- Time tree.
     let tTr' = toTree $ tTrPos & currentTreeL . branchL .~ assertWith (> 0) hNode'
     -- Rate tree.
-    let -- Scaling factor of rate tree stem.
+    let -- Scaling factors of rate tree stems (inversely proportional to scaling
+        -- factors of height tree).
         xiStemR =
           if null pth
             then 1
-            else
-              let x = (hParent - hNode) / (hParent - hNode')
-               in assertWith (> 0) x
+            else assertWith (> 0) $ (hParent - hNode) / (hParent - hNode')
         -- Scaling factors of rate tree daughter branches excluding the stem.
-        getXiR h = let x = (hNode - h) / (hNode' - h) in assertWith (> 0) x
+        getXiR hChild = assertWith (> 0) (hNode - hChild) / (hNode' - hChild)
         xisR = map getXiR hsChildren
         scaleDaughterBranches (Node br lb trs) =
           Node br lb $ zipWith (modifyStem . (*)) xisR trs
@@ -67,7 +65,6 @@ slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
     -- New state.
     let x' = (HeightTree tTr', LengthTree rTr')
         jacobian = Exp $ sum (map log xisR) + log xiStemR
-    let
     return (x', q, jacobian)
   where
     -- Time tree.

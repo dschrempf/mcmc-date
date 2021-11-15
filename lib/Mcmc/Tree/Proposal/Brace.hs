@@ -25,7 +25,6 @@ module Mcmc.Tree.Proposal.Brace
 where
 
 import Control.Lens
-import Data.Maybe
 import ELynx.Tree
 import Mcmc.Proposal
 import Mcmc.Statistics.Types
@@ -33,11 +32,7 @@ import Mcmc.Tree.Lens
 import Mcmc.Tree.Prior.Node.Brace
 import Mcmc.Tree.Proposal.Internal
 import Mcmc.Tree.Types
-
-getParents :: [Path] -> [TreePos e a] -> [TreePos e a]
-getParents xs = catMaybes . zipWith f xs
-  where
-    f pth pos = if null pth then Nothing else Just $ goParentUnsafe pos
+import Numeric.Log hiding (sum)
 
 slideBracedNodesUltrametricSimple ::
   Brace ->
@@ -45,11 +40,11 @@ slideBracedNodesUltrametricSimple ::
   TuningParameter ->
   ProposalSimple (HeightTree Double)
 slideBracedNodesUltrametricSimple b s t tr g = do
-  (deltaH, q) <- truncatedNormalSample 0 s t lowerBound upperBound g
-  let modifyHeight = assertWith (> 0) . (+ deltaH)
+  (hDelta, q) <- truncatedNormalSample 0 s t lowerBound upperBound g
+  let modifyHeight = assertWith (> 0) . (+ hDelta)
       -- Set the node height at path.
       modifyHeightAcc pth tre = tre & heightTreeL . subTreeAtL pth . branchL %~ modifyHeight
-      -- NOTE: The first path is walked again which could be improved.
+      -- NOTE: The first path is walked again.
       tr' = foldr modifyHeightAcc tr paths
   return (tr', q, 1)
   where
@@ -106,38 +101,44 @@ slideBracedNodesContrarilySimple b s t (tTr, rTr) g
   | any null rTrChildren =
     error "slideBracedNodesContrarilySimple: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
-    (deltaH, q) <- truncatedNormalSample 0 s t lowerBound upperBound g
+    (hDelta, q) <- truncatedNormalSample 0 s t lowerBound upperBound g
     -- Time tree. See also 'slideBracedNodesUltrametricSimple'.
-    let modifyHeight = assertWith (> 0) . (+ deltaH)
+    let modifyHeight = assertWith (> 0) . (+ hDelta)
         modifyHeightAcc pth tre = tre & heightTreeL . subTreeAtL pth . branchL %~ modifyHeight
-        tr' = foldr modifyHeightAcc tTr paths
-    -- TODO.
-    return undefined
-    -- -- Rate tree.
-    -- let -- Scaling factor of rate tree stem.
-    --     xiStemR =
-    --       if null pth
-    --         then 1
-    --         else
-    --           let x = (hParent - hNode) / (hParent - hNode')
-    --            in assertWith (> 0) x
-    --     -- Scaling factors of rate tree daughter branches excluding the stem.
-    --     getXiR h = let x = (hNode - h) / (hNode' - h) in assertWith (> 0) x
-    --     xisR = map getXiR hsChildren
-    --     scaleDaughterBranches (Node br lb trs) =
-    --       Node br lb $ zipWith (modifyStem . (*)) xisR trs
-    --     -- If the root node is handled, do not scale the stem because no upper
-    --     -- bound is set.
-    --     f =
-    --       if null pth
-    --         then scaleDaughterBranches
-    --         else modifyStem (* xiStemR) . scaleDaughterBranches
-    --     rTr' = toTree $ modifyTree f rTrPos
-    -- -- New state.
-    -- let x' = (HeightTree tTr', LengthTree rTr')
-    --     jacobian = Exp $ sum (map log xisR) + log xiStemR
-    -- let
-    -- return (x', q, jacobian)
+        -- NOTE: The first path is walked again.
+        tTr' = foldr modifyHeightAcc tTr paths
+    -- Rate tree.
+    let -- Scaling factors of rate tree stems (inversely proportional to scaling
+        -- factors of height tree).
+        getXiStem pth hNode hParent =
+          if null pth
+            then 1
+            else assertWith (> 0) $ (hParent - hNode) / (hParent - hNode - hDelta)
+        -- Scaling factors of rate tree daughter branches excluding the stem
+        -- (inversely proportional to scaling factors of time tree).
+        getXi hNode hChild = assertWith (> 0) (hNode - hChild) / (hNode + hDelta - hChild)
+        scaleDaughterBranches xis (Node br lb trs)
+          | length trs /= length xis =
+            error "slideBracedNodesContrarilySimple: Mismatch between lengths of subforest and scaling factors."
+          | otherwise = Node br lb $ zipWith (modifyStem . (*)) xis trs
+        -- If the root node is handled, do not scale the stem because no upper
+        -- bound is set.
+        modifyRatesF pth xiStem xis =
+          if null pth
+            then scaleDaughterBranches xis
+            else modifyStem (* xiStem) . scaleDaughterBranches xis
+        modifyRatesAcc (pth, hbd) (tre, jac) =
+          let hPa = hbdParentHeight hbd
+              hNo = hbdNodeHeight hbd
+              hCs = hbdChildrenHeights hbd
+              xiS = getXiStem pth hNo hPa
+              xis = map (getXi hNo) hCs
+              jac' = jac * Exp (sum (map log xis) + log xiS)
+              tre' = tre & lengthTreeL . subTreeAtL pth %~ modifyRatesF pth xiS xis
+           in (tre', jac')
+        -- NOTE: The first path is walked again.
+        (rTr', jacobian) = foldr modifyRatesAcc (rTr, 1.0) $ zip paths hbds
+    return ((tTr', rTr'), q, jacobian)
   where
     -- Time tree. See also 'slideBracedNodesUltrametricSimple'.
     paths = map nodePath $ getBraceNodes b
