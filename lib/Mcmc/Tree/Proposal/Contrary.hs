@@ -40,7 +40,7 @@ slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
   | null rTrChildren =
     error "slideNodesAtContrarilySimple: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
-    (hNode', q) <- truncatedNormalSample hNode sd t hChild hParent g
+    (hNode', q) <- truncatedNormalSample hNode sd t hMaxChild hParent g
     -- Time tree.
     let tTr' = toTree $ tTrPos & currentTreeL . branchL .~ assertWith (> 0) hNode'
     -- Rate tree.
@@ -68,7 +68,7 @@ slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
     return (x', q, jacobian)
   where
     -- Time tree.
-    (HeightBoundaryData tTrPos hNode hsChildren hChild hParent) =
+    (HeightBoundaryData tTrPos hNode hsChildren hMaxChild hParent) =
       getHeightBoundaries "slideNodesAtContrarilySimple" tTr pth
     -- Rate tree.
     rTrPos = goPathUnsafe pth $ fromTree rTr
