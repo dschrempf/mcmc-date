@@ -1,0 +1,30 @@
+   ------------------------------------------------------------------------------
+   ELynx Suite version 0.6.1.0.
+   Developed by Dominik Schrempf.
+   Compiled on November 9, 2021, at 09:49 am, UTC.
+   ------------------------------------------------------------------------------
+   Command name: simulate
+   Simulate multi sequence alignments.
+   Starting time: November 16, 2021, at 10:20 am, UTC.
+   Command line: slynx -f -o data simulate -S [182739478361] -t time.relabelled.tree -s LG -l 5000
+   ------------------------------------------------------------------------------
+   Seed: fixed to [2350851929].
+
+   Read tree from file 'time.relabelled.tree'.
+   Number of leaves: 24
+   Origin height:                    1.00000
+   Average distance origin to leaves 1.00000
+   Total branch length:             15.12507
+
+   Read model string.
+   Protein substitution model: LG.
+   Stationary distribution: 0.079  0.013  0.053  0.072  0.042  0.057  0.022  0.062  0.065  0.099  0.023  0.042  0.044  0.041  0.056  0.061  0.053  0.069  0.012  0.034.
+   Scale: 1.0.
+   Write model definition (machine readable) to file 'data.model.gz'.
+   Simulate alignment.
+   Length: 5000.
+
+   Write simulated multi sequence alignment to file 'data.fasta'.
+   Write ELynx reproduction file.
+   Wall clock run time: 00:00:01.
+   End time: November 16, 2021, at 10:20 am, UTC.

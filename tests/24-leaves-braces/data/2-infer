@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+pb -f -T time.unrooted.tree -d data.phylip -lg -uni -x 1 4000 test

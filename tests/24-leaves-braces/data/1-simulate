@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -e
+
+tlynx -f -o time simulate -t 1 -n 24 -S "[12345123]" birthdeath -l 1.0 -m 0.8 -r 0.0 --mrca 1.0
+# Need to relabel (Phylobayes complains when using numbers).
+newick-relabel-alpha < time.tree > time.relabelled.tree
+slynx -f -o data simulate -S "[182739478361]" -t time.relabelled.tree -s LG -l 5000
+fasta-to-phylip data.fasta > data.phylip
+# We also need the unrooted tree for Phylobayes.
+newick-unroot < time.relabelled.tree > time.unrooted.tree

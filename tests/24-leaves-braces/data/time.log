@@ -1,0 +1,27 @@
+   ------------------------------------------------------------------------------
+   ELynx Suite version 0.6.1.0.
+   Developed by Dominik Schrempf.
+   Compiled on November 9, 2021, at 09:49 am, UTC.
+   ------------------------------------------------------------------------------
+   Command name: simulate
+   Simulate phylogenetic trees using a birth and death or coalescent process.
+   Starting time: November 16, 2021, at 10:20 am, UTC.
+   Command line: tlynx -f -o time simulate -t 1 -n 24 -S [12345123] birthdeath -l 1.0 -m 0.8 -r 0.0 --mrca 1.0
+   ------------------------------------------------------------------------------
+   Seed: fixed to [12345123].
+   == Arguments
+   Number of simulated trees: 1
+   Number of leaves per tree: 24
+   Model: Birth and death process
+     Birth rate: 1.0
+     Death rate: 0.8
+     Sampling probability: 0.0
+     Height specification: Condition on height of MRCA: 1.0
+   Perform sub-sampling: No
+   Summary statistics only: False
+   == Simulation
+   Number of used cores: 4
+   Write simulated trees to file 'time.tree'.
+   Write ELynx reproduction file.
+   Wall clock run time: 00:00:00.
+   End time: November 16, 2021, at 10:20 am, UTC.
