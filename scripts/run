@@ -8,6 +8,7 @@ usage() {
     echo "Usage: $(basename "$0") [OPTIONS] COMMANDS"
     echo
     echo "Available options:"
+    echo "-b Activate braces"
     echo "-c Activate calibrations"
     echo "-k Activate constraints"
     echo "-p Activate profiling"
@@ -19,20 +20,23 @@ usage() {
     echo "c  Continue"
     echo "m  Marginal likelihood"
     echo
-    echo "A configuration file \"analysis.conf\" specifying the following variables is expected."
+    echo "A configuration file \"analysis.conf\" is required."
     echo "For reference, see the sample configuration file."
 }
 
+braces_activated=0
 calibrations_activated=0
 constraints_activated=0
 profiling_activated=0
 use_stack=0
 OPTIND=1
-while getopts "h?ckps" opt; do
+while getopts "h?bckps" opt; do
     case "$opt" in
         h|\?)
             usage
             exit 0
+            ;;
+        b)  braces_activated=1
             ;;
         c)  calibrations_activated=1
             ;;
@@ -89,6 +93,20 @@ fi
 
 outdir="results"
 c_flags=()
+
+if [[ $braces_activated -eq 1 ]]
+then
+    if [[ -z $braces ]]
+    then
+        echo "Braces activated but brace file not available."
+        exit 1
+    else
+        echo "Braces: ${braces}."
+        outdir="${outdir}-braces"
+        c_flags+=(--braces "../$braces")
+    fi
+fi
+
 if [[ $calibrations_activated -eq 1 ]]
 then
     if [[ -z $calibrations ]]
@@ -98,7 +116,7 @@ then
     else
         echo "Calibrations: ${calibrations}."
         outdir="${outdir}-calibrations"
-        c_flags+=(-c "../$calibrations")
+        c_flags+=(--calibrations "../$calibrations")
     fi
 fi
 
@@ -111,7 +129,7 @@ then
     else
         echo "Constraints: ${constraints}."
         outdir="${outdir}-constraints"
-        c_flags+=(-k "../$constraints")
+        c_flags+=(--constraints "../$constraints")
     fi
 fi
 

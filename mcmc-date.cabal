@@ -138,5 +138,6 @@ executable mcmc-date
     , mcmc-date
     , mwc-random
     , optparse-applicative
+    , statistics
     , vector
   default-language: Haskell2010

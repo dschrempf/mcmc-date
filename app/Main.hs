@@ -214,9 +214,9 @@ runMetropolisHastingsGreen (Spec an cls cns brs prof) = do
       lh' = likelihoodFunction mu sigmaInv logDetSigma
       -- Proposal cycle.
       gradient = gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma
-      cc' = proposals (isJust cls) start' gradient
+      cc' = proposals (VB.toList bs) (isJust cls) start' gradient
       -- Monitor.
-      mon' = monitor (VB.toList cb) (VB.toList cs)
+      mon' = monitor (VB.toList cb) (VB.toList cs) (VB.toList bs)
 
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For
@@ -287,9 +287,9 @@ continueMetropolisHastingsGreen (Spec an cls cns brs prof) = do
       lh' = likelihoodFunction mu sigmaInv logDetSigma
       -- Proposal cycle.
       gradient = gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma
-      cc' = proposals (isJust cls) start' gradient
+      cc' = proposals (VB.toList bs) (isJust cls) start' gradient
       -- Monitor.
-      mon' = monitor (VB.toList cb) (VB.toList cs)
+      mon' = monitor (VB.toList cb) (VB.toList cs) (VB.toList bs)
 
   -- Load the MCMC settings and the algorithm.
   let an' = AnalysisName an
@@ -325,9 +325,9 @@ runMarginalLikelihood (Spec an cls cns brs prof) = do
       lh' = likelihoodFunction mu sigmaInv logDetSigma
       -- Proposal cycle.
       gradient = gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma
-      cc' = proposals (isJust cls) start' gradient
+      cc' = proposals (VB.toList bs) (isJust cls) start' gradient
       -- Monitor.
-      mon' = monitor (VB.toList cb) (VB.toList cs)
+      mon' = monitor (VB.toList cb) (VB.toList cs) (VB.toList bs)
 
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For

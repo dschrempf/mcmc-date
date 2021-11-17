@@ -29,6 +29,7 @@ module Mcmc.Tree
     module Mcmc.Tree.Prior.Node.Combined,
 
     -- * Proposals
+    module Mcmc.Tree.Proposal.Brace,
     module Mcmc.Tree.Proposal.Contrary,
     module Mcmc.Tree.Proposal.Unconstrained,
     module Mcmc.Tree.Proposal.Ultrametric,
@@ -50,6 +51,7 @@ import Mcmc.Tree.Prior.Node.Brace
 import Mcmc.Tree.Prior.Node.Calibration
 import Mcmc.Tree.Prior.Node.Combined
 import Mcmc.Tree.Prior.Node.Constraint
+import Mcmc.Tree.Proposal.Brace
 import Mcmc.Tree.Proposal.Contrary
 import Mcmc.Tree.Proposal.Ultrametric
 import Mcmc.Tree.Proposal.Unconstrained

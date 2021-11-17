@@ -15,11 +15,13 @@ function analyze_tree_monitor() {
     trees-monitor-summary "${1}" 0.25
 }
 
+shopt -s extglob
+
 for d in results*
 do
     ( cd "$d"
       echo "Current directory: ${PWD}."
-      for m in *timetree.00.monitor
+      for m in *timetree.@(00.|)monitor
       do
           echo "Analyze monitor file ${m}."
           analyze_tree_monitor "$m"

@@ -124,11 +124,11 @@ checkBraces (Brace nX nsX) (Brace nY nsY) =
 
 -- | Load and validate braces from file.
 --
--- The brace file is a comma separated values (CSV) file with rows of the
--- following format:
+-- The brace file is a JSON file in the following format:
 --
 -- @
--- BraceName,NodeXLeafA,NodeXLeafB,NodeYLeafA,NodeYLeafB
+-- [{"braceDataName":"Brace1","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]]},
+--  {"braceDataName":"Brace2","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]]}]
 -- @
 --
 -- The braced nodes are uniquely defined as the most recent common ancestors
