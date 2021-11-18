@@ -37,6 +37,7 @@ import GHC.Generics
 import Mcmc
 import Mcmc.Tree.Lens
 import Mcmc.Tree.Mrca
+import Mcmc.Tree.Prior.Node.Internal
 import Mcmc.Tree.Types
 
 -- | Brace.
@@ -77,14 +78,23 @@ brace ::
 brace t n xss
   | null xss = err "No node found."
   | length xss == 1 = err "Only one node found."
+  | any null ps = err "Cannot brace root node."
   | length (nub is) /= length is = err "Some nodes have equal indices."
-  | length (nub ps) /= length ps = err "some nodes have equal paths."
+  | length (nub ps) /= length ps = err "Some nodes have equal paths."
+  | not $ null psErrs = error $ unlines $ psErrs ++ ["brace: Errors detected (see above)."]
   | otherwise = Brace n $ sort (zipWith NodeInfo is ps)
   where
-    err msg = error $ "brace: " ++ n ++ ": " ++ msg
+    msg m = "brace: " ++ n ++ ": " ++ m
+    err m = error $ msg m
     iTr = identify t
     ps = map (\xs -> either err id $ mrca xs t) xss
     is = map (\p -> label $ getSubTreeUnsafe p iTr) ps
+    -- We also check for equal paths above, but well.
+    getErr Equal = Just $ msg "Bogus brace; two nodes are equal (?)."
+    getErr LeftIsAncestorOfRight = Just $ msg "Bogus brace; two nodes are direct ancestors (?)."
+    getErr LeftIsDescendantOfRight = Just $ msg "Bogus brace; two nodes are direct ancestors (?)."
+    getErr Unrelated = Nothing
+    psErrs = catMaybes [getErr $ areDirectDescendants x y | (x : ys) <- tails ps, y <- ys]
 
 data BraceData = BraceData
   { braceDataName :: String,

@@ -69,6 +69,7 @@ library
       Mcmc.Tree.Types
   other-modules:
       Mcmc.Tree.Prior.Branch.Internal
+      Mcmc.Tree.Prior.Node.Internal
       Mcmc.Tree.Proposal.Internal
       Statistics.Distribution.TruncatedNormal
       Paths_mcmc_date

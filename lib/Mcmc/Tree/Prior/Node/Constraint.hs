@@ -35,6 +35,7 @@ import Mcmc.Prior
 import Mcmc.Statistics.Types
 import Mcmc.Tree.Lens
 import Mcmc.Tree.Mrca
+import Mcmc.Tree.Prior.Node.Internal
 import Mcmc.Tree.Types
 
 -- | Constraints define node orders.
@@ -54,6 +55,7 @@ import Mcmc.Tree.Types
 data Constraint = Constraint
   { constraintName :: String,
     -- TODO: Use 'NodeInfo'.
+
     -- | Path to younger node (closer to the leaves).
     constraintYoungNodePath :: Path,
     -- | Index of younger node.
@@ -81,36 +83,6 @@ prettyPrintConstraint (Constraint n yP yI oP oI) =
     <> show oI
     <> ", "
     <> show oP
-
--- Is the left node an ancestor of the right node?
-isAncestor :: Eq a => [a] -> [a] -> Bool
-isAncestor = isPrefixOf
-
--- Is the left node a descdant of the right node?
-isDescendant :: Eq a => [a] -> [a] -> Bool
-isDescendant = flip isPrefixOf
-
--- Relationship of two nodes.
-data Relationship
-  = Equal
-  | -- Same as RightIsDescendentOfLeft.
-    LeftIsAncestorOfRight
-  | -- Same as RightIsAncestorOfLeft.
-    LeftIsDescendantOfRight
-  | Unrelated
-  deriving (Eq, Show, Read)
-
--- Fast function avoiding two consecutive uses of `isPrefixOf`.
---
--- Are the two nodes direct descent of each other? Basically check both:
--- 'isAncestor' and 'isDescendent'.
-areDirectDescendants :: Eq a => [a] -> [a] -> Relationship
-areDirectDescendants [] [] = Equal
-areDirectDescendants (x : xs) (y : ys)
-  | x == y = areDirectDescendants xs ys
-  | otherwise = Unrelated
-areDirectDescendants (_ : _) [] = LeftIsDescendantOfRight
-areDirectDescendants [] (_ : _) = LeftIsAncestorOfRight
 
 -- Check if a constraint is valid.
 --
