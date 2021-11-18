@@ -79,6 +79,8 @@ slideBracedNodesUltrametric ::
   Tune ->
   Proposal (HeightTree Double)
 slideBracedNodesUltrametric tr b s
+  | any null paths =
+    error $ "slideBracedNodesUltrametric: Braced root node: Brace: " <> show n <> ", Paths: " <> show paths <> "."
   | not $ all (isValidPath tr) paths =
     error $ "slideBracedNodesUltrametric: Path of a node is invalid: Brace: " <> show n <> ", Paths: " <> show paths <> "."
   | any (isLeafPath tr) paths =
@@ -172,6 +174,8 @@ slideBracedNodesContrarily ::
   Tune ->
   Proposal (HeightTree Double, LengthTree Double)
 slideBracedNodesContrarily tr b s
+  | any null paths =
+    error $ "slideBracedNodesContrarily: Braced root node: Brace: " <> show n <> ", Paths: " <> show paths <> "."
   | not $ all (isValidPath tr) paths =
     error $
       "slideBracedNodesContrarily: Path of a node is invalid: Brace: "
