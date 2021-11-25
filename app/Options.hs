@@ -10,7 +10,8 @@
 --
 -- Creation date: Mon Mar  1 18:06:05 2021.
 module Options
-  ( Spec (..),
+  ( Algorithm (..),
+    Spec (..),
     PrepSpec (..),
     Mode (..),
     parseArgs,
@@ -20,6 +21,9 @@ where
 import Data.Version (showVersion)
 import Options.Applicative
 import Paths_mcmc_date (version)
+
+data Algorithm = MhgA | Mc3A
+  deriving (Eq, Read, Show)
 
 data Spec = Spec
   { analysisName :: String,
@@ -67,6 +71,16 @@ bracesP =
         <> long "braces"
         <> help "File name specifying braces"
         <> metavar "FILE"
+    )
+
+algorithmP :: Parser Algorithm
+algorithmP =
+  flag
+    MhgA
+    Mc3A
+    ( short 'm'
+        <> long "mc3"
+        <> help "Use MC3 instead of MHG algorithm"
     )
 
 profileP :: Parser Bool
@@ -123,8 +137,8 @@ prepSpecP = PrepSpec <$> analysisNameP <*> prepInRootedTreeP <*> prepInTreesP
 
 data Mode
   = Prepare PrepSpec
-  | Run Spec
-  | Continue Spec
+  | Run Spec Algorithm
+  | Continue Spec Algorithm
   | MarginalLikelihood Spec
   deriving (Eq, Show, Read)
 
@@ -132,10 +146,10 @@ prepareP :: Parser Mode
 prepareP = Prepare <$> prepSpecP
 
 runP :: Parser Mode
-runP = Run <$> specP
+runP = Run <$> specP <*> algorithmP
 
 continueP :: Parser Mode
-continueP = Continue <$> specP
+continueP = Continue <$> specP <*> algorithmP
 
 marginalLikelihoodP :: Parser Mode
 marginalLikelihoodP = MarginalLikelihood <$> specP

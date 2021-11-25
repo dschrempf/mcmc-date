@@ -52,6 +52,7 @@ import Mcmc.Tree
 -- Local modules (see comment above).
 import Definitions
 import Probability
+import State
 import Tools
 {- ORMOLU_ENABLE -}
 
@@ -187,9 +188,17 @@ getBraces :: Tree e Name -> Maybe FilePath -> IO (VB.Vector Brace)
 getBraces _ Nothing = return VB.empty
 getBraces t (Just f) = loadBraces t f
 
--- Run the Metropolis-Hastings-Green algorithm.
-runMetropolisHastingsGreen :: Spec -> IO ()
-runMetropolisHastingsGreen (Spec an cls cns brs prof) = do
+getMcmcProps ::
+  Spec ->
+  IO
+    ( I,
+      PriorFunctionG (IG Double) Double,
+      LikelihoodFunction I,
+      Cycle I,
+      Monitor I,
+      Settings
+    )
+getMcmcProps (Spec an cls cns brs prof) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logDetSigma) <- getData an
@@ -217,11 +226,6 @@ runMetropolisHastingsGreen (Spec an cls cns brs prof) = do
       cc' = proposals (VB.toList bs) (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs) (VB.toList bs)
-
-  -- Create a seed value for the random number generator. Actually, the
-  -- 'create' function is deterministic, but useful during development. For
-  -- real analyses, use 'createSystemRandom'.
-  g <- create
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
   let burnIn' = if prof then burnInProf else burnIn
@@ -238,15 +242,27 @@ runMetropolisHastingsGreen (Spec an cls cns brs prof) = do
           Save
           LogStdOutAndFile
           Debug
-  -- -- Either use the MC3 algorithm.
-  -- let mc3S = MC3Settings (NChains 4) (SwapPeriod 2) (NSwaps 3)
-  -- a <- mc3 mc3S mcmcS pr' lh' cc' mon' start' g
 
-  -- Or the standard MHG algorithm.
-  a <- mhg mcmcS pr' lh' cc' mon' start' g
+  return (start', pr', lh', cc', mon', mcmcS)
 
-  -- Run the Markov chain.
-  void $ mcmc mcmcS a
+-- Run the Metropolis-Hastings-Green algorithm.
+runMetropolisHastingsGreen :: Spec -> Algorithm -> IO ()
+runMetropolisHastingsGreen spec alg = do
+  (i, p, l, c, m, s) <- getMcmcProps spec
+
+  -- Create a seed value for the random number generator. Actually, the
+  -- 'create' function is deterministic, but useful during development. For
+  -- real analyses, use 'createSystemRandom'.
+  g <- create
+
+  case alg of
+    MhgA -> do
+      a <- mhg s p l c m i g
+      void $ mcmc s a
+    Mc3A -> do
+      let mc3S = MC3Settings (NChains 4) (SwapPeriod 2) (NSwaps 3)
+      a <- mc3 mc3S s p l c m i g
+      void $ mcmc s a
 
 -- -- Test automatic differentiation.
 --
@@ -261,87 +277,37 @@ runMetropolisHastingsGreen (Spec an cls cns brs prof) = do
 -- putStrLn $ "NUM: " <> show dNm
 -- error "Debug."
 
-continueMetropolisHastingsGreen :: Spec -> IO ()
-continueMetropolisHastingsGreen (Spec an cls cns brs prof) = do
-  -- Read the mean tree and the posterior means and covariances.
-  meanTree <- getMeanTree an
-  (mu, sigmaInv, logDetSigma) <- getData an
-  let muBoxed = VB.convert mu
-      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
-
-  -- Use the mean tree, and the posterior means and covariances to initialize
-  -- various objects.
-  --
-  -- Calibrations.
-  cb <- getCalibrations meanTree cls
-  -- Constraints.
-  cs <- getConstraints meanTree cns
-  -- Braces.
-  bs <- getBraces meanTree brs
-  let -- Starting state.
-      start' = initWith meanTree
-      -- Prior function.
-      pr' = priorFunction cb cs bs
-      -- Likelihood function.
-      -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
-      lh' = likelihoodFunction mu sigmaInv logDetSigma
-      -- Proposal cycle.
-      gradient = gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma
-      cc' = proposals (VB.toList bs) (isJust cls) start' gradient
-      -- Monitor.
-      mon' = monitor (VB.toList cb) (VB.toList cs) (VB.toList bs)
-
-  -- Load the MCMC settings and the algorithm.
-  let an' = AnalysisName an
-  s <- settingsLoad an'
-  -- a <- mc3Load pr' lh' cc' mon' an'
-  a <- mhgLoad pr' lh' cc' mon' an'
-  let iterations' = if prof then iterationsProf else iterations
-  void $ mcmcContinue iterations' s a
+continueMetropolisHastingsGreen :: Spec -> Algorithm -> IO ()
+continueMetropolisHastingsGreen spec alg = do
+  (_, p, l, c, m, _) <- getMcmcProps spec
+  let an = AnalysisName $ analysisName spec
+  s <- settingsLoad an
+  let is = if profile spec then iterationsProf else iterations
+  case alg of
+    MhgA -> do
+      a <- mhgLoad p l c m an
+      void $ mcmcContinue is s a
+    Mc3A -> do
+      a <- mc3Load p l c m an
+      void $ mcmcContinue is s a
 
 runMarginalLikelihood :: Spec -> IO ()
-runMarginalLikelihood (Spec an cls cns brs prof) = do
-  -- Read the mean tree and the posterior means and covariances.
-  meanTree <- getMeanTree an
-  (mu, sigmaInv, logDetSigma) <- getData an
-  let muBoxed = VB.convert mu
-      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
-
-  -- Use the mean tree, and the posterior means and covariances to initialize
-  -- various objects.
-  --
-  -- Calibrations.
-  cb <- getCalibrations meanTree cls
-  -- Constraints.
-  cs <- getConstraints meanTree cns
-  -- Braces.
-  bs <- getBraces meanTree brs
-  let -- Starting state.
-      start' = initWith meanTree
-      -- Prior function.
-      pr' = priorFunction cb cs bs
-      -- Likelihood function.
-      -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
-      lh' = likelihoodFunction mu sigmaInv logDetSigma
-      -- Proposal cycle.
-      gradient = gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma
-      cc' = proposals (VB.toList bs) (isJust cls) start' gradient
-      -- Monitor.
-      mon' = monitor (VB.toList cb) (VB.toList cs) (VB.toList bs)
-
+runMarginalLikelihood spec = do
+  (i, p, l, c, m, _) <- getMcmcProps spec
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For
   -- real analyses, use 'createSystemRandom'.
   g <- create
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
-  let nPoints' = if prof then nPointsProf else nPoints
+  let prof = profile spec
+      nPoints' = if prof then nPointsProf else nPoints
       burnIn' = if prof then burnInProf else burnIn
       repetitiveBurnIn' = if prof then repetitiveBurnInProf else repetitiveBurnIn
       iterations' = if prof then iterationsProf else iterations
       mlS =
         MLSettings
-          (AnalysisName an)
+          (AnalysisName $ analysisName spec)
           SteppingStoneSampling
           nPoints'
           burnIn'
@@ -352,13 +318,13 @@ runMarginalLikelihood (Spec an cls cns brs prof) = do
           Debug
 
   -- Run the Markov chain.
-  void $ marginalLikelihood mlS pr' lh' cc' mon' start' g
+  void $ marginalLikelihood mlS p l c m i g
 
 main :: IO ()
 main = do
   cmd <- parseArgs
   case cmd of
     Prepare p -> prepare p
-    Run s -> runMetropolisHastingsGreen s
-    Continue s -> continueMetropolisHastingsGreen s
+    Run s a -> runMetropolisHastingsGreen s a
+    Continue s a -> continueMetropolisHastingsGreen s a
     MarginalLikelihood s -> runMarginalLikelihood s
