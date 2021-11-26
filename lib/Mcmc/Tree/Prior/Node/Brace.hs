@@ -46,6 +46,10 @@ import Mcmc.Tree.Types
 
 -- | Brace.
 --
+-- The weight is a positive floating number that specifies the steepness of the
+-- decline of the posterior function when the braced nodes have different
+-- heights. If unsure, use a weight of 1.0.
+--
 -- Abstract data type to ensure brace validity. Braces can be created using
 -- 'brace' or 'loadBraces'.
 data Brace a = Brace

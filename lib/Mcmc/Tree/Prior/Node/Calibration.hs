@@ -134,8 +134,10 @@ transformInterval x (Interval a b)
 _ >* Infinity = False
 h >* Positive b = h > b
 
--- | A calibration is specified by a name, a node at given path, and height
--- boundaries.
+-- | Calibrate node heights.
+--
+-- A calibration is specified by a name, a node at given path, height
+-- boundaries, and a weight.
 --
 -- For example,
 --
@@ -144,6 +146,10 @@ h >* Positive b = h > b
 -- @
 --
 -- ensures that the root node is older than @YOUNG@, and younger than @OLD@.
+--
+-- The weight is a positive floating number that specifies the steepness of the
+-- decline of the posterior function when the calibration is dishonored. If
+-- unsure, use a weight of 1.0.
 --
 -- Calibrations are abstract data types and can be created using 'calibration'
 -- or 'loadCalibrations'. The reason is that finding the nodes on the tree is a

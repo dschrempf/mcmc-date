@@ -58,6 +58,10 @@ import Mcmc.Tree.Types
 -- ensures that the node with path @YOUNGER@ is younger than the node with path
 -- @OLDER@.
 --
+-- The weight is a positive floating number that specifies the steepness of the
+-- decline of the posterior function when the constraint is dishonored. If
+-- unsure, use a weight of 1.0.
+--
 -- Constraints can be created using 'constraint' or 'loadConstraints'. The
 -- reason is that finding the nodes on the tree is a slow process not to be
 -- repeated at each proposal.
