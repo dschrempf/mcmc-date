@@ -38,10 +38,10 @@ import Tools
 priorFunction ::
   (RealFloat a, Show a) =>
   VB.Vector (Calibration Double) ->
-  VB.Vector Constraint ->
-  VB.Vector Brace ->
+  VB.Vector (Constraint Double) ->
+  VB.Vector (Brace Double) ->
   PriorFunctionG (IG a) a
-priorFunction cb' cs bs (I l m h t mu va r) =
+priorFunction cb' cs' bs' (I l m h t mu va r) =
   product' $
     calibrateConstrainBraceSoft 1e-4 h cb 1e-4 cs 1e-4 bs t :
     -- -- Usually, the combined treatment is faster.
@@ -68,12 +68,14 @@ priorFunction cb' cs bs (I l m h t mu va r) =
       uncorrelatedGamma WithoutStem 1.0 va r
     ]
   where
-    cb = VB.map realToFracC cb'
+    cb = VB.map realToFracCalibration cb'
+    cs = VB.map realToFracConstraint cs'
+    bs = VB.map realToFracBrace bs'
     t' = heightTreeToLengthTree t
 {-# SPECIALIZE priorFunction ::
   VB.Vector (Calibration Double) ->
-  VB.Vector Constraint ->
-  VB.Vector Brace ->
+  VB.Vector (Constraint Double) ->
+  VB.Vector (Brace Double) ->
   PriorFunction I
   #-}
 
@@ -132,7 +134,6 @@ reduceVMV vl m vr =
   where
     nl = VB.length vl
     nr = VB.length vr
-
 
 -- Generalized multivariate normal.
 --
@@ -207,8 +208,8 @@ likelihoodFunctionG mu' sigmaInv' logDetSigma' x =
 posteriorFunction ::
   (RealFloat a, Show a) =>
   VB.Vector (Calibration Double) ->
-  VB.Vector Constraint ->
-  VB.Vector Brace ->
+  VB.Vector (Constraint Double) ->
+  VB.Vector (Brace Double) ->
   -- Mean  vector.
   VB.Vector Double ->
   -- Inverted covariance matrix.
@@ -240,8 +241,8 @@ posteriorFunction cs ks bs mu sigmaInv logDetSigma xs =
 gradLogPosteriorFunc ::
   (RealFloat a, Show a) =>
   VB.Vector (Calibration Double) ->
-  VB.Vector Constraint ->
-  VB.Vector Brace ->
+  VB.Vector (Constraint Double) ->
+  VB.Vector (Brace Double) ->
   -- | Mean  vector.
   VB.Vector Double ->
   -- | Inverted covariance matrix.

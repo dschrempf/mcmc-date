@@ -35,7 +35,7 @@ import Mcmc.Tree.Types
 import Numeric.Log hiding (sum)
 
 slideBracedNodesUltrametricSimple ::
-  Brace ->
+  Brace Double ->
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (HeightTree Double)
@@ -72,7 +72,7 @@ slideBracedNodesUltrametricSimple b s t tr g = do
 slideBracedNodesUltrametric ::
   -- | The topology of the tree is used to check the paths.
   Tree e a ->
-  Brace ->
+  Brace Double ->
   StandardDeviation Double ->
   PName ->
   PWeight ->
@@ -95,7 +95,7 @@ slideBracedNodesUltrametric tr b s
     description = PDescription $ "Slide braced nodes ultrametric; sd: " ++ show s
 
 slideBracedNodesContrarilySimple ::
-  Brace ->
+  Brace Double ->
   StandardDeviation Double ->
   TuningParameter ->
   ProposalSimple (HeightTree Double, LengthTree Double)
@@ -167,7 +167,7 @@ slideBracedNodesContrarilySimple b s t (tTr, rTr) g
 -- - A node height or branch length is zero.
 slideBracedNodesContrarily ::
   Tree e a ->
-  Brace ->
+  Brace Double ->
   StandardDeviation Double ->
   PName ->
   PWeight ->

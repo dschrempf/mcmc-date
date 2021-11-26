@@ -35,7 +35,7 @@ module Mcmc.Tree.Prior.Node.Calibration
     transformCalibration,
 
     -- * Misc
-    realToFracC,
+    realToFracCalibration,
   )
 where
 
@@ -153,7 +153,7 @@ data Calibration a = Calibration
     calibrationNodePath :: Path,
     calibrationNodeIndex :: Int,
     calibrationInterval :: Interval a,
-    calibrationWeight :: Double
+    calibrationWeight :: a
   }
   deriving (Eq, Show)
 
@@ -174,7 +174,7 @@ getCalibrationInterval :: Calibration a -> Interval a
 getCalibrationInterval = calibrationInterval
 
 -- | Get weight.
-getCalibrationWeight :: Calibration a -> Double
+getCalibrationWeight :: Calibration a -> a
 getCalibrationWeight = calibrationWeight
 
 prettyPrintCalibration :: Show a => Calibration a -> String
@@ -197,7 +197,7 @@ prettyPrintCalibration (Calibration n p i l w) =
 --
 -- Call 'error' if the node cannot be found on the tree.
 calibration ::
-  (Ord a, Show a) =>
+  (Ord a, Show a, Num b, Ord b) =>
   Tree e a ->
   -- | Name.
   String ->
@@ -205,10 +205,10 @@ calibration ::
   [a] ->
   Interval b ->
   -- | Weight.
-  Double ->
+  b ->
   Calibration b
 calibration t n xs l w
-  | w <= 0 = err $ "Weight is zero or negative: " <> show w <> "."
+  | w <= 0 = err "Weight is zero or negative."
   | otherwise = Calibration n p i l w
   where
     err msg = error $ "calibration: " ++ n ++ ": " ++ msg
@@ -234,7 +234,7 @@ data CalibrationData a
       String -- Leaf b.
       a -- Leaf boundary.
       (Maybe a) -- Maybe right boundary.
-      Double -- Weight.
+      a -- Weight.
   deriving (Generic, Show)
 
 instance FromField a => FromRecord (CalibrationData a)
@@ -357,9 +357,18 @@ calibrateSoftS s c (HeightTree t) = calibrateSoftF s l w h
 {-# SPECIALIZE calibrateSoftS :: Double -> Calibration Double -> PriorFunction (HeightTree Double) #-}
 
 -- | See 'calibrateSoftS'.
-calibrateSoftF :: RealFloat a => StandardDeviation a -> Interval a -> Double -> PriorFunctionG a a
+calibrateSoftF ::
+  RealFloat a =>
+  StandardDeviation a ->
+  Interval a ->
+  -- | Weight.
+  a ->
+  PriorFunctionG a a
 calibrateSoftF s (Interval a' b) w h
   | s <= 0 = error "calibrateSoftF: Standard deviation is zero or negative."
+  -- Should not be necessary because we use an abstract data type, and the check
+  -- is performed in 'calibration'.
+  | w <= 0 = error "calibrateSoftF: Weight is zero or negative."
   | h <= a = d (a - h) / d 0
   | h >* b = case b of
     Infinity -> 1
@@ -367,7 +376,7 @@ calibrateSoftF s (Interval a' b) w h
   | otherwise = 1
   where
     a = fromNonNegative a'
-    d = normal 0 s
+    d = normal 0 (s / w)
 {-# SPECIALIZE calibrateSoftF :: Double -> Interval Double -> Double -> PriorFunction Double #-}
 
 -- | Calibrate nodes of a tree using 'calibrateSoftS'.
@@ -423,8 +432,9 @@ realToFracI (Interval (NonNegative a) Infinity) =
 -- | Convert a calibration on 'Double' to a more general one.
 --
 -- Useful for automatic differentiation.
-realToFracC :: Fractional a => Calibration Double -> Calibration a
-realToFracC c = c {calibrationInterval = i'}
+realToFracCalibration :: Fractional a => Calibration Double -> Calibration a
+realToFracCalibration c = c {calibrationInterval = i', calibrationWeight = w'}
   where
     i' = realToFracI $ calibrationInterval c
-{-# SPECIALIZE realToFracC :: Calibration Double -> Calibration Double #-}
+    w' = realToFrac $ calibrationWeight c
+{-# SPECIALIZE realToFracCalibration :: Calibration Double -> Calibration Double #-}

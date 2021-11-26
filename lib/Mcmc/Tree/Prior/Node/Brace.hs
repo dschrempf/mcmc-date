@@ -16,12 +16,16 @@ module Mcmc.Tree.Prior.Node.Brace
     Brace,
     getBraceName,
     getBraceNodes,
+    getBraceWeight,
     brace,
     loadBraces,
     braceHardS,
     braceSoftS,
     braceSoftF,
     braceSoft,
+
+    -- * Misc
+    realToFracBrace,
   )
 where
 
@@ -44,20 +48,24 @@ import Mcmc.Tree.Types
 --
 -- Abstract data type to ensure brace validity. Braces can be created using
 -- 'brace' or 'loadBraces'.
-data Brace = Brace
+data Brace a = Brace
   { braceName :: String,
     braceNodes :: [NodeInfo],
-    braceWeight :: Double
+    braceWeight :: a
   }
   deriving (Eq, Read, Show)
 
 -- | Name.
-getBraceName :: Brace -> String
+getBraceName :: Brace a -> String
 getBraceName = braceName
 
 -- | Node infos.
-getBraceNodes :: Brace -> [NodeInfo]
+getBraceNodes :: Brace a -> [NodeInfo]
 getBraceNodes = braceNodes
+
+-- | Weight.
+getBraceWeight :: Brace a -> a
+getBraceWeight = braceWeight
 
 -- | Create a brace.
 --
@@ -69,15 +77,15 @@ getBraceNodes = braceNodes
 --
 -- - The leaf list is empty or a singleton.
 brace ::
-  (Ord a, Show a) =>
+  (Ord a, Show a, Num b, Ord b) =>
   Tree e a ->
   -- | Name.
   String ->
   -- | The most recent common ancestors of the given leaf lists will be braced.
   [[a]] ->
   -- | Weight.
-  Double ->
-  Brace
+  b ->
+  Brace b
 brace t n xss w
   | null xss = err "No node found."
   | length xss == 1 = err "Only one node found."
@@ -100,26 +108,27 @@ brace t n xss w
     getErr Unrelated = Nothing
     psErrs = catMaybes [getErr $ areDirectDescendants x y | (x : ys) <- tails ps, y <- ys]
     ns = sort (zipWith NodeInfo is ps)
+{-# SPECIALIZE brace :: (Ord a, Show a) => Tree e a -> String -> [[a]] -> Double -> Brace Double #-}
 
-data BraceData = BraceData
+data BraceData a = BraceData
   { braceDataName :: String,
     -- List of leaf pairs defining nodes.
     braceDataNodes :: [(String, String)],
-    braceDataWeight :: Double
+    braceDataWeight :: a
   }
   deriving (Generic, Show)
 
-instance ToJSON BraceData
+instance ToJSON a => ToJSON (BraceData a)
 
-instance FromJSON BraceData
+instance FromJSON a => FromJSON (BraceData a)
 
-braceDataToBrace :: Tree e Name -> BraceData -> Brace
+braceDataToBrace :: (Num a, Ord a) => Tree e Name -> BraceData a -> Brace a
 braceDataToBrace t (BraceData n lvss w) = brace t n [[pn lvA, pn lvB] | (lvA, lvB) <- lvss] w
   where
     pn = Name . BL.pack
 
 -- Check if two braces conflict or are duplicates.
-checkBraces :: Brace -> Brace -> [String]
+checkBraces :: Brace a -> Brace a -> [String]
 checkBraces (Brace nX nsX _) (Brace nY nsY _) =
   catMaybes $
     equalNodeIndices :
@@ -160,10 +169,10 @@ checkBraces (Brace nX nsX _) (Brace nY nsY _) =
 -- - Node X and Y of a brace are equal.
 --
 -- - There are duplicate braces.
-loadBraces :: Tree e Name -> FilePath -> IO (VB.Vector Brace)
+loadBraces :: Tree e Name -> FilePath -> IO (VB.Vector (Brace Double))
 loadBraces t f = do
   d <- BL.readFile f
-  let mr = eitherDecode d :: Either String (VB.Vector BraceData)
+  let mr = eitherDecode d :: Either String (VB.Vector (BraceData Double))
       bs = either error id mr
   when (VB.null bs) $ error $ "loadBraces: No braces found in file: " <> f <> "."
   let bsAll = VB.map (braceDataToBrace t) bs
@@ -190,13 +199,13 @@ allEqual xs = all (== head xs) (tail xs)
 -- If the node heights are equal, the prior is 1. Otherwise, the prior is 0.
 --
 -- Call 'error' if a path is invalid.
-braceHardS :: RealFloat a => Brace -> PriorFunctionG (HeightTree a) a
+braceHardS :: RealFloat a => Brace a -> PriorFunctionG (HeightTree a) a
 braceHardS (Brace _ xs _) (HeightTree t)
   | allEqual hs = 1
   | otherwise = 0
   where
     hs = map (\ni -> t ^. subTreeAtL (nodePath ni) . branchL) xs
-{-# SPECIALIZE braceHardS :: Brace -> PriorFunctionG (HeightTree Double) Double #-}
+{-# SPECIALIZE braceHardS :: Brace Double -> PriorFunctionG (HeightTree Double) Double #-}
 
 -- | Brace a single list of nodes.
 --
@@ -208,29 +217,33 @@ braceHardS (Brace _ xs _) (HeightTree t)
 braceSoftS ::
   RealFloat a =>
   StandardDeviation a ->
-  Brace ->
+  Brace a ->
   PriorFunctionG (HeightTree a) a
-braceSoftS s (Brace _ xs w) (HeightTree t) = braceSoftF s hs
+braceSoftS s (Brace _ xs w) (HeightTree t) = braceSoftF s w hs
   where
     hs = map (\ni -> t ^. subTreeAtL (nodePath ni) . branchL) xs
-{-# SPECIALIZE braceSoftS :: Double -> Brace -> PriorFunctionG (HeightTree Double) Double #-}
+{-# SPECIALIZE braceSoftS :: Double -> Brace Double -> PriorFunctionG (HeightTree Double) Double #-}
 
 -- | See 'braceSoftS'.
 braceSoftF ::
   RealFloat a =>
   StandardDeviation a ->
+  -- | Weight.
+  a ->
   PriorFunctionG [a] a
-braceSoftF s' hs
+braceSoftF s w hs
   | s <= 0 = error "braceSoftF: Standard deviation is zero or negative."
+  -- Should not be necessary because we use an abstract data type, and the check
+  -- is performed in 'brace'.
+  | w <= 0 = error "braceSoftF: Weight is zero or negative."
   | allEqual hs = 1
   | otherwise = product $ map f hs
   where
-    s = realToFrac s'
-    d = normal 0 s
+    d = normal 0 (s / w)
     d0 = d 0
     hMean = sum hs / fromIntegral (length hs)
     f x = d (x - hMean) / d0
-{-# SPECIALIZE braceSoftF :: Double -> PriorFunction [Double] #-}
+{-# SPECIALIZE braceSoftF :: Double -> Double -> PriorFunction [Double] #-}
 
 -- | Brace pairs of nodes using 'braceSoftS'.
 --
@@ -239,8 +252,17 @@ braceSoft ::
   RealFloat a =>
   -- | NOTE: The same standard deviation is used for all braces.
   StandardDeviation a ->
-  VB.Vector Brace ->
+  VB.Vector (Brace a) ->
   PriorFunctionG (HeightTree a) a
 braceSoft s bs t = VB.product $ VB.map (\b -> braceSoftS s b t) bs
 
-{-# SPECIALIZE braceSoftS :: Double -> Brace -> PriorFunctionG (HeightTree Double) Double #-}
+{-# SPECIALIZE braceSoftS :: Double -> Brace Double -> PriorFunctionG (HeightTree Double) Double #-}
+
+-- | Convert a brace on 'Double' to a more general one.
+--
+-- Useful for automatic differentiation.
+realToFracBrace :: Fractional a => Brace Double -> Brace a
+realToFracBrace c = c {braceWeight = w'}
+  where
+    w' = realToFrac $ braceWeight c
+{-# SPECIALIZE realToFracBrace :: Brace Double -> Brace Double #-}

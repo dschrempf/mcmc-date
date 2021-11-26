@@ -155,7 +155,7 @@ otherNodes :: HandleNode
 otherNodes = (> 1) . length
 
 -- Proposals on the time tree.
-proposalsTimeTree :: [Brace] -> Tree e a -> [Proposal I]
+proposalsTimeTree :: [Brace Double] -> Tree e a -> [Proposal I]
 proposalsTimeTree bs t =
   map (liftProposalWith jacobianRootBranch timeTree) psAtRoot
     ++ map (liftProposal timeTree) psOthers
@@ -210,7 +210,7 @@ proposalsRateTree t =
     psOthers = ps otherNodes nO
 
 -- Contrary proposals on the time and rate trees.
-proposalsTimeRateTreeContra :: Show a => [Brace] -> Tree e a -> [Proposal I]
+proposalsTimeRateTreeContra :: Show a => [Brace Double] -> Tree e a -> [Proposal I]
 proposalsTimeRateTreeContra bs t =
   map (liftProposalWith jacobianRootBranch timeRateTreesL) psAtRoot
     ++ map (liftProposal timeRateTreesL) psOthers
@@ -259,7 +259,7 @@ proposalsChangingTimeHeight t =
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
 -- | The proposal cycle includes proposals for the other parameters.
-proposals :: [Brace] -> Bool -> I -> (I -> I) -> Cycle I
+proposals :: [Brace Double] -> Bool -> I -> (I -> I) -> Cycle I
 proposals bs calibrationsAvailable x gradient =
   cycleFromList $
     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
@@ -325,7 +325,7 @@ getTimeTreeDeltaNodeHeight :: Path -> Path -> I -> Double
 getTimeTreeDeltaNodeHeight y o x = getTimeTreeNodeHeight o x - getTimeTreeNodeHeight y x
 
 -- Monitor the heights of constrained nodes.
-monConstrainedNodes :: [Constraint] -> [MonitorParameter I]
+monConstrainedNodes :: [Constraint Double] -> [MonitorParameter I]
 monConstrainedNodes cs =
   [ getTimeTreeDeltaNodeHeight y o >$< monitorDouble (name n)
     | c <- cs,
@@ -341,7 +341,7 @@ getBraceVariance ps x = S.variance $ VU.fromList ts
   where
     ts = map (`getTimeTreeNodeHeight` x) ps
 
-monBracedNodes :: [Brace] -> [MonitorParameter I]
+monBracedNodes :: [Brace Double] -> [MonitorParameter I]
 monBracedNodes bs =
   [ getBraceVariance (map nodePath ns) >$< monitorDouble (name n)
     | b <- bs,
@@ -352,7 +352,7 @@ monBracedNodes bs =
     name s = "Brace " ++ s ++ " variance"
 
 -- The file monitor is more verbose.
-monFileParams :: [Calibration Double] -> [Constraint] -> [Brace] -> MonitorFile I
+monFileParams :: [Calibration Double] -> [Constraint Double] -> [Brace Double] -> MonitorFile I
 monFileParams cb cs bs =
   monitorFile
     "params"
@@ -381,7 +381,7 @@ monFileRateTree :: MonitorFile I
 monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorLengthTree "RateTree"] 2
 
 -- | Monitor to standard output and files. Do not use any batch monitors for now.
-monitor :: [Calibration Double] -> [Constraint] -> [Brace] -> Monitor I
+monitor :: [Calibration Double] -> [Constraint Double] -> [Brace Double] -> Monitor I
 monitor cb cs bs =
   Monitor monStdOut [monFileParams cb cs bs, monFileTimeTree, monFileRateTree] []
 

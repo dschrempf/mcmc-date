@@ -180,11 +180,11 @@ getCalibrations :: Tree e Name -> Maybe FilePath -> IO (VB.Vector (Calibration D
 getCalibrations _ Nothing = return VB.empty
 getCalibrations t (Just f) = loadCalibrations t f
 
-getConstraints :: Tree e Name -> Maybe FilePath -> IO (VB.Vector Constraint)
+getConstraints :: Tree e Name -> Maybe FilePath -> IO (VB.Vector (Constraint Double))
 getConstraints _ Nothing = return VB.empty
 getConstraints t (Just f) = loadConstraints t f
 
-getBraces :: Tree e Name -> Maybe FilePath -> IO (VB.Vector Brace)
+getBraces :: Tree e Name -> Maybe FilePath -> IO (VB.Vector (Brace Double))
 getBraces _ Nothing = return VB.empty
 getBraces t (Just f) = loadBraces t f
 

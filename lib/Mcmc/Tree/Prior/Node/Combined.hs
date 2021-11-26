@@ -42,7 +42,7 @@ calibrateV s c hs = calibrateSoftF s l w h
 constrainV ::
   (RealFloat a) =>
   StandardDeviation a ->
-  Constraint ->
+  Constraint a ->
   PriorFunctionG (VB.Vector a) a
 constrainV s k hs = constrainSoftF s w (hY, hO)
   where
@@ -55,12 +55,13 @@ constrainV s k hs = constrainSoftF s w (hY, hO)
 braceV ::
   (RealFloat a) =>
   StandardDeviation a ->
-  Brace ->
+  Brace a ->
   PriorFunctionG (VB.Vector a) a
-braceV s b hs = braceSoftF s nHs
+braceV s b hs = braceSoftF s w nHs
   where
     nIs = map nodeIndex $ getBraceNodes b
     nHs = map (hs VB.!) nIs
+    w = getBraceWeight b
 
 -- | Calibrate, constrain, and brace nodes.
 --
@@ -80,10 +81,10 @@ calibrateConstrainBraceSoft ::
   VB.Vector (Calibration a) ->
   -- | Standard deviation of constraints.
   StandardDeviation a ->
-  VB.Vector Constraint ->
+  VB.Vector (Constraint a) ->
   -- | Standard deviation of braces.
   StandardDeviation a ->
-  VB.Vector Brace ->
+  VB.Vector (Brace a) ->
   PriorFunctionG (HeightTree a) a
 calibrateConstrainBraceSoft sdC h cs sdK ks sdB bs t
   | sdC <= 0 = error "calibrateConstrainBraceSoft: Standard deviation of calibrations is zero or negative."
@@ -101,8 +102,8 @@ calibrateConstrainBraceSoft sdC h cs sdK ks sdB bs t
   Double ->
   VB.Vector (Calibration Double) ->
   Double ->
-  VB.Vector Constraint ->
+  VB.Vector (Constraint Double) ->
   Double ->
-  VB.Vector Brace ->
+  VB.Vector (Brace Double) ->
   PriorFunction (HeightTree Double)
   #-}
