@@ -13,7 +13,13 @@
 -- Creation date: Mon Jul 27 10:49:11 2020.
 module Mcmc.Tree.Prior.Node.Constraint
   ( -- * Constraints
-    Constraint (..),
+    Constraint,
+    getConstraintName,
+    getConstraintYoungNodeIndex,
+    getConstraintYoungNodePath,
+    getConstraintOldNodeIndex,
+    getConstraintOldNodePath,
+    getConstraintWeight,
     constraint,
     loadConstraints,
     constrainHardS,
@@ -54,8 +60,6 @@ import Mcmc.Tree.Types
 -- repeated at each proposal.
 data Constraint = Constraint
   { constraintName :: String,
-    -- TODO: Use 'NodeInfo'.
-
     -- | Path to younger node (closer to the leaves).
     constraintYoungNodePath :: Path,
     -- | Index of younger node.
@@ -63,16 +67,42 @@ data Constraint = Constraint
     -- | Path to older node (closer to the root).
     constraintOldNodePath :: Path,
     -- | Index of older node.
-    constraintOldNodeIndex :: Int
+    constraintOldNodeIndex :: Int,
+    -- | Weight.
+    constraintWeight :: Double
   }
   deriving (Eq, Read, Show)
 
+-- | Get name.
+getConstraintName :: Constraint -> String
+getConstraintName = constraintName
+
+-- | Get index of younger node.
+getConstraintYoungNodeIndex :: Constraint -> Int
+getConstraintYoungNodeIndex = constraintYoungNodeIndex
+
+-- | Get path to younger node.
+getConstraintYoungNodePath :: Constraint -> Path
+getConstraintYoungNodePath = constraintYoungNodePath
+
+-- | Get index of older node.
+getConstraintOldNodeIndex :: Constraint -> Int
+getConstraintOldNodeIndex = constraintOldNodeIndex
+
+-- | Get path to older node.
+getConstraintOldNodePath :: Constraint -> Path
+getConstraintOldNodePath = constraintOldNodePath
+
+-- | Get weight.
+getConstraintWeight :: Constraint -> Double
+getConstraintWeight = constraintWeight
+
 -- Do the constraints affect the same nodes?
 duplicate :: Constraint -> Constraint -> Bool
-duplicate (Constraint _ _ yL _ oL) (Constraint _ _ yR _ oR) = (yL == yR) && (oL == oR)
+duplicate (Constraint _ _ yL _ oL _) (Constraint _ _ yR _ oR _) = (yL == yR) && (oL == oR)
 
 prettyPrintConstraint :: Constraint -> String
-prettyPrintConstraint (Constraint n yP yI oP oI) =
+prettyPrintConstraint (Constraint n yP yI oP oI w) =
   "Constraint: "
     <> n
     <> "\n  Young node index and path: "
@@ -83,6 +113,8 @@ prettyPrintConstraint (Constraint n yP yI oP oI) =
     <> show oI
     <> ", "
     <> show oP
+    <> "\n Weight: "
+    <> show w
 
 -- Check if a constraint is valid.
 --
@@ -133,11 +165,15 @@ constraint ::
   [a] ->
   -- | The most recent common ancestor of the given leave is the older node.
   [a] ->
+  -- | Weight.
+  Double ->
   Constraint
-constraint t n ys os =
-  either error id $
-    validateConstraint $
-      Constraint n pY iY pO iO
+constraint t n ys os w
+  | w <= 0 = err "Weight is zero or negative."
+  | otherwise =
+    either error id $
+      validateConstraint $
+        Constraint n pY iY pO iO w
   where
     err msg = error $ "constraint: " ++ show n ++ ": " ++ msg
     -- NOTE: Identifying the tree multiple times may be slow when creating many
@@ -148,14 +184,14 @@ constraint t n ys os =
     pO = either err id $ mrca os t
     iO = label $ getSubTreeUnsafe pO iTr
 
-data ConstraintData = ConstraintData String String String String String
+data ConstraintData = ConstraintData String String String String String Double
   deriving (Generic, Show)
 
 instance FromRecord ConstraintData
 
 constraintDataToConstraint :: Tree e Name -> ConstraintData -> Constraint
-constraintDataToConstraint t (ConstraintData n yL yR oL oR) =
-  constraint t n [f yL, f yR] [f oL, f oR]
+constraintDataToConstraint t (ConstraintData n yL yR oL oR w) =
+  constraint t n [f yL, f yR] [f oL, f oR] w
   where
     f = Name . BL.pack
 
@@ -169,7 +205,7 @@ constraintDataToConstraint t (ConstraintData n yL yR oL oR) =
 --
 -- The right constraint is redundant iff: D(c,a) AND A(d,b).
 isRedundantWith :: Constraint -> Constraint -> Bool
-isRedundantWith (Constraint _ a _ b _) (Constraint _ c _ d _) =
+isRedundantWith (Constraint _ a _ b _ _) (Constraint _ c _ d _ _) =
   (c `isDescendant` a) && (d `isAncestor` b)
 
 -- Given a left constraint, check if a right constraint is conflicting.
@@ -178,7 +214,7 @@ isRedundantWith (Constraint _ a _ b _) (Constraint _ c _ d _) =
 --
 -- The right constraint is conflicting iff: A(c,b) AND ( D(d,a) OR D(d,b) ).
 isConflictingWith :: Constraint -> Constraint -> Bool
-isConflictingWith (Constraint _ a _ b _) (Constraint _ c _ d _) =
+isConflictingWith (Constraint _ a _ b _ _) (Constraint _ c _ d _ _) =
   (c `isAncestor` b) && ((d `isDescendant` a) || (d `isDescendant` b))
 
 -- Pairwise comparison using a given function. Keep comparisons returning 'True'.
@@ -211,7 +247,7 @@ describeRedundant (l, r) =
 -- following format:
 --
 -- @
--- ConstraintName,YoungLeafA,YoungLeafB,OldLeafA,OldLeafB
+-- ConstraintName,YoungLeafA,YoungLeafB,OldLeafA,OldLeafB,Weight
 -- @
 --
 -- The young and old nodes are uniquely defined as the most recent common
@@ -222,7 +258,7 @@ describeRedundant (l, r) =
 -- is younger than the ancestor of leaves C and D:
 --
 -- @
--- ExampleConstraint,A,B,C,D
+-- ExampleConstraint,A,B,C,D,1.0
 -- @
 --
 -- Redundant constraints are removed.
@@ -328,27 +364,29 @@ constrainSoftS ::
   StandardDeviation a ->
   Constraint ->
   PriorFunctionG (HeightTree a) a
-constrainSoftS s c (HeightTree t) = constrainSoftF s (hY, hO)
+constrainSoftS s c (HeightTree t) = constrainSoftF s w (hY, hO)
   where
     hY = t ^. subTreeAtL y . branchL
     hO = t ^. subTreeAtL o . branchL
     y = constraintYoungNodePath c
     o = constraintOldNodePath c
+    w = constraintWeight c
 {-# SPECIALIZE constrainSoftS :: Double -> Constraint -> PriorFunction (HeightTree Double) #-}
 
 -- | See 'constrainSoftS'.
 constrainSoftF ::
   RealFloat a =>
   StandardDeviation a ->
+  Double ->
   PriorFunctionG (a, a) a
-constrainSoftF s' (hY, hO)
+constrainSoftF s' w (hY, hO)
   | s <= 0 = error "constrainSoftF: Standard deviation is zero or negative."
   | hY < hO = 1
   | otherwise = d (hY - hO) / d 0
   where
     s = realToFrac s'
     d = normal 0 s
-{-# SPECIALIZE constrainSoftF :: Double -> PriorFunction (Double, Double) #-}
+{-# SPECIALIZE constrainSoftF :: Double -> Double -> PriorFunction (Double, Double) #-}
 
 -- | Constrain nodes of a tree using 'constrainSoftS'.
 --

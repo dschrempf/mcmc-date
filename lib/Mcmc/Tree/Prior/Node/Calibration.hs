@@ -18,16 +18,21 @@ module Mcmc.Tree.Prior.Node.Calibration
     Interval,
     properInterval,
     lowerBoundOnly,
-    transformInterval,
 
     -- * Calibrations
-    Calibration (..),
+    Calibration,
+    getCalibrationName,
+    getCalibrationPath,
+    getCalibrationNodeIndex,
+    getCalibrationInterval,
+    getCalibrationWeight,
     calibration,
     loadCalibrations,
     calibrateHardS,
     calibrateSoftS,
     calibrateSoftF,
     calibrateSoft,
+    transformCalibration,
 
     -- * Misc
     realToFracC,
@@ -140,28 +145,50 @@ h >* Positive b = h > b
 --
 -- ensures that the root node is older than @YOUNG@, and younger than @OLD@.
 --
--- Calibrations can be created using 'calibration' or 'loadCalibrations'. The
--- reason is that finding the nodes on the tree is a slow process not to be
--- repeated at each proposal.
+-- Calibrations are abstract data types and can be created using 'calibration'
+-- or 'loadCalibrations'. The reason is that finding the nodes on the tree is a
+-- slow process not to be repeated at each proposal.
 data Calibration a = Calibration
   { calibrationName :: String,
-    -- TODO: Use 'NodeInfo'.
     calibrationNodePath :: Path,
     calibrationNodeIndex :: Int,
-    calibrationInterval :: Interval a
+    calibrationInterval :: Interval a,
+    calibrationWeight :: Double
   }
   deriving (Eq, Show)
 
+-- | Get name.
+getCalibrationName :: Calibration a -> String
+getCalibrationName = calibrationName
+
+-- | Get path.
+getCalibrationPath :: Calibration a -> Path
+getCalibrationPath = calibrationNodePath
+
+-- | Get node index.
+getCalibrationNodeIndex :: Calibration a -> Int
+getCalibrationNodeIndex = calibrationNodeIndex
+
+-- | Get interval.
+getCalibrationInterval :: Calibration a -> Interval a
+getCalibrationInterval = calibrationInterval
+
+-- | Get weight.
+getCalibrationWeight :: Calibration a -> Double
+getCalibrationWeight = calibrationWeight
+
 prettyPrintCalibration :: Show a => Calibration a -> String
-prettyPrintCalibration (Calibration n p i l) =
+prettyPrintCalibration (Calibration n p i l w) =
   "Calibration: "
     <> n
     <> " with path "
     <> show p
     <> ", index "
     <> show i
-    <> ", and interval "
+    <> ", interval "
     <> show l
+    <> ", and weight "
+    <> show w
     <> "."
 
 -- | Create a calibration.
@@ -177,8 +204,12 @@ calibration ::
   -- | The most recent common ancestor of the given leaves is the calibrated node.
   [a] ->
   Interval b ->
+  -- | Weight.
+  Double ->
   Calibration b
-calibration t n xs = Calibration n p i
+calibration t n xs l w
+  | w <= 0 = err $ "Weight is zero or negative: " <> show w <> "."
+  | otherwise = Calibration n p i l w
   where
     err msg = error $ "calibration: " ++ n ++ ": " ++ msg
     p = either err id $ mrca xs t
@@ -191,23 +222,25 @@ calibration t n xs = Calibration n p i
   String ->
   [a] ->
   Interval Double ->
+  Double ->
   Calibration Double
   #-}
 
 -- Used to decode the CSV file.
 data CalibrationData a
   = CalibrationData
-      String -- Calibration name.
+      String -- Name.
       String -- Leaf a.
       String -- Leaf b.
       a -- Leaf boundary.
       (Maybe a) -- Maybe right boundary.
+      Double -- Weight.
   deriving (Generic, Show)
 
 instance FromField a => FromRecord (CalibrationData a)
 
 calibrationDataToCalibration :: (Ord a, Num a) => Tree e Name -> CalibrationData a -> Calibration a
-calibrationDataToCalibration t (CalibrationData n a b l mr) = calibration t n [a', b'] i
+calibrationDataToCalibration t (CalibrationData n a b l mr w) = calibration t n [a', b'] i w
   where
     a' = Name $ BL.pack a
     b' = Name $ BL.pack b
@@ -228,7 +261,7 @@ findDupsBy eq (x : xs) = case partition (eq x) xs of
 -- following format:
 --
 -- @
--- CalibrationName,LeafA,LeafB,LowerBoundary,UpperBoundary
+-- CalibrationName,LeafA,LeafB,LowerBoundary,UpperBoundary,Weight
 -- @
 --
 -- The calibrated node is uniquely defined as the most recent common ancestor
@@ -237,7 +270,7 @@ findDupsBy eq (x : xs) = case partition (eq x) xs of
 -- The following line defines a calibration with a lower boundary only:
 --
 -- @
--- Primates,Human,Chimpanzees,1e6,
+-- Primates,Human,Chimpanzees,1e6,,1.0
 -- @
 --
 -- Call 'error' if:
@@ -315,16 +348,17 @@ calibrateSoftS ::
   StandardDeviation a ->
   Calibration a ->
   PriorFunctionG (HeightTree a) a
-calibrateSoftS s c (HeightTree t) = calibrateSoftF s l h
+calibrateSoftS s c (HeightTree t) = calibrateSoftF s l w h
   where
     p = calibrationNodePath c
     h = t ^. subTreeAtL p . branchL
     l = calibrationInterval c
+    w = calibrationWeight c
 {-# SPECIALIZE calibrateSoftS :: Double -> Calibration Double -> PriorFunction (HeightTree Double) #-}
 
 -- | See 'calibrateSoftS'.
-calibrateSoftF :: RealFloat a => StandardDeviation a -> Interval a -> PriorFunctionG a a
-calibrateSoftF s (Interval a' b) h
+calibrateSoftF :: RealFloat a => StandardDeviation a -> Interval a -> Double -> PriorFunctionG a a
+calibrateSoftF s (Interval a' b) w h
   | s <= 0 = error "calibrateSoftF: Standard deviation is zero or negative."
   | h <= a = d (a - h) / d 0
   | h >* b = case b of
@@ -334,7 +368,7 @@ calibrateSoftF s (Interval a' b) h
   where
     a = fromNonNegative a'
     d = normal 0 s
-{-# SPECIALIZE calibrateSoftF :: Double -> Interval Double -> PriorFunction Double #-}
+{-# SPECIALIZE calibrateSoftF :: Double -> Interval Double -> Double -> PriorFunction Double #-}
 
 -- | Calibrate nodes of a tree using 'calibrateSoftS'.
 --
@@ -361,15 +395,24 @@ calibrateSoft sd h cs t
   | h <= 0 = error "calibrateSoft: Height multiplier is zero or negative."
   | otherwise = VB.product $ VB.map f cs
   where
-    f (Calibration n x i l) =
-      let l' = if h == 1 then l else transformInterval (recip h) l
-       in calibrateSoftS sd (Calibration n x i l') t
+    f c = calibrateSoftS sd (transformCalibration h c) t
 {-# SPECIALIZE calibrateSoft ::
   Double ->
   Double ->
   VB.Vector (Calibration Double) ->
   PriorFunction (HeightTree Double)
   #-}
+
+-- | Transform a duplication using a height multiplier.
+--
+-- See 'calibrateSoft'.
+--
+-- Call 'error' if the height multiplier is zero or negative.
+transformCalibration :: RealFloat a => a -> Calibration a -> Calibration a
+transformCalibration h c
+  | h <= 0 = error "transformCalibration: Height multiplier is zero or negative."
+  | h == 1 = c
+  | otherwise = c {calibrationInterval = transformInterval (recip h) $ calibrationInterval c}
 
 realToFracI :: Fractional a => Interval Double -> Interval a
 realToFracI (Interval (NonNegative a) (Positive b)) =

@@ -46,7 +46,8 @@ import Mcmc.Tree.Types
 -- 'brace' or 'loadBraces'.
 data Brace = Brace
   { braceName :: String,
-    braceNodes :: [NodeInfo]
+    braceNodes :: [NodeInfo],
+    braceWeight :: Double
   }
   deriving (Eq, Read, Show)
 
@@ -74,15 +75,18 @@ brace ::
   String ->
   -- | The most recent common ancestors of the given leaf lists will be braced.
   [[a]] ->
+  -- | Weight.
+  Double ->
   Brace
-brace t n xss
+brace t n xss w
   | null xss = err "No node found."
   | length xss == 1 = err "Only one node found."
   | any null ps = err "Cannot brace root node."
   | length (nub is) /= length is = err "Some nodes have equal indices."
   | length (nub ps) /= length ps = err "Some nodes have equal paths."
   | not $ null psErrs = error $ unlines $ psErrs ++ ["brace: Errors detected (see above)."]
-  | otherwise = Brace n $ sort (zipWith NodeInfo is ps)
+  | w <= 0 = err "Weight is zero or negative."
+  | otherwise = Brace n ns w
   where
     msg m = "brace: " ++ n ++ ": " ++ m
     err m = error $ msg m
@@ -95,11 +99,13 @@ brace t n xss
     getErr LeftIsDescendantOfRight = Just $ msg "Bogus brace; two nodes are direct ancestors (?)."
     getErr Unrelated = Nothing
     psErrs = catMaybes [getErr $ areDirectDescendants x y | (x : ys) <- tails ps, y <- ys]
+    ns = sort (zipWith NodeInfo is ps)
 
 data BraceData = BraceData
   { braceDataName :: String,
     -- List of leaf pairs defining nodes.
-    braceDataNodes :: [(String, String)]
+    braceDataNodes :: [(String, String)],
+    braceDataWeight :: Double
   }
   deriving (Generic, Show)
 
@@ -108,13 +114,13 @@ instance ToJSON BraceData
 instance FromJSON BraceData
 
 braceDataToBrace :: Tree e Name -> BraceData -> Brace
-braceDataToBrace t (BraceData n lvss) = brace t n [[pn lvA, pn lvB] | (lvA, lvB) <- lvss]
+braceDataToBrace t (BraceData n lvss w) = brace t n [[pn lvA, pn lvB] | (lvA, lvB) <- lvss] w
   where
     pn = Name . BL.pack
 
 -- Check if two braces conflict or are duplicates.
 checkBraces :: Brace -> Brace -> [String]
-checkBraces (Brace nX nsX) (Brace nY nsY) =
+checkBraces (Brace nX nsX _) (Brace nY nsY _) =
   catMaybes $
     equalNodeIndices :
     [indicesMismatch x y | x <- nsX, y <- nsY]
@@ -137,8 +143,8 @@ checkBraces (Brace nX nsX) (Brace nY nsY) =
 -- The brace file is a JSON file in the following format:
 --
 -- @
--- [{"braceDataName":"Brace1","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]]},
---  {"braceDataName":"Brace2","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]]}]
+-- [{"braceDataName":"Brace1","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]],"braceDataWeight":1.0},
+--  {"braceDataName":"Brace2","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]],"braceDataWeight":1.0}]
 -- @
 --
 -- The braced nodes are uniquely defined as the most recent common ancestors
@@ -185,7 +191,7 @@ allEqual xs = all (== head xs) (tail xs)
 --
 -- Call 'error' if a path is invalid.
 braceHardS :: RealFloat a => Brace -> PriorFunctionG (HeightTree a) a
-braceHardS (Brace _ xs) (HeightTree t)
+braceHardS (Brace _ xs _) (HeightTree t)
   | allEqual hs = 1
   | otherwise = 0
   where
@@ -204,7 +210,7 @@ braceSoftS ::
   StandardDeviation a ->
   Brace ->
   PriorFunctionG (HeightTree a) a
-braceSoftS s (Brace _ xs) (HeightTree t) = braceSoftF s hs
+braceSoftS s (Brace _ xs w) (HeightTree t) = braceSoftF s hs
   where
     hs = map (\ni -> t ^. subTreeAtL (nodePath ni) . branchL) xs
 {-# SPECIALIZE braceSoftS :: Double -> Brace -> PriorFunctionG (HeightTree Double) Double #-}

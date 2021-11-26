@@ -32,10 +32,11 @@ calibrateV ::
   StandardDeviation a ->
   Calibration a ->
   PriorFunctionG (VB.Vector a) a
-calibrateV s c hs = calibrateSoftF s l h
+calibrateV s c hs = calibrateSoftF s l w h
   where
-    l = calibrationInterval c
-    i = calibrationNodeIndex c
+    l = getCalibrationInterval c
+    i = getCalibrationNodeIndex c
+    w = getCalibrationWeight c
     h = hs VB.! i
 
 constrainV ::
@@ -43,12 +44,13 @@ constrainV ::
   StandardDeviation a ->
   Constraint ->
   PriorFunctionG (VB.Vector a) a
-constrainV s k hs = constrainSoftF s (hY, hO)
+constrainV s k hs = constrainSoftF s w (hY, hO)
   where
-    iY = constraintYoungNodeIndex k
+    iY = getConstraintYoungNodeIndex k
     hY = hs VB.! iY
-    iO = constraintOldNodeIndex k
+    iO = getConstraintOldNodeIndex k
     hO = hs VB.! iO
+    w = getConstraintWeight k
 
 braceV ::
   (RealFloat a) =>
@@ -91,10 +93,7 @@ calibrateConstrainBraceSoft sdC h cs sdK ks sdB bs t
   | otherwise = VB.product csPr * VB.product ksPr * VB.product bsPr
   where
     hs = getAllHeights t
-    transform (Calibration n x i l) =
-      let l' = if h == 1 then l else transformInterval (recip h) l
-       in Calibration n x i l'
-    csPr = VB.map ((\c -> calibrateV sdC c hs) . transform) cs
+    csPr = VB.map ((\c -> calibrateV sdC c hs) . transformCalibration h) cs
     ksPr = VB.map (\k -> constrainV sdK k hs) ks
     bsPr = VB.map (\b -> braceV sdB b hs) bs
 {-# SPECIALIZE calibrateConstrainBraceSoft ::

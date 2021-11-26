@@ -63,9 +63,9 @@ where
 
 import Control.Lens
 import Data.Bifunctor
+import qualified Data.Vector.Unboxed as VU
 import Numeric.Log hiding (sum)
 import qualified Statistics.Sample as S
-import qualified Data.Vector.Unboxed as VU
 
 -- import Debug.Trace
 
@@ -177,7 +177,7 @@ proposalsTimeTree bs t =
     nO = PName "Time tree [O]"
     psOthers = ps otherNodes nO
     nPB = PName "Time tree [B]"
-    psBraces = [ slideBracedNodesUltrametric t b 0.01 nPB (pWeight 5) Tune | b <- bs ]
+    psBraces = [slideBracedNodesUltrametric t b 0.01 nPB (pWeight 5) Tune | b <- bs]
 
 -- Lens for proposals on the rate mean and rate tree.
 rateMeanRateTreeL :: Lens' I (Double, LengthTree Double)
@@ -227,7 +227,7 @@ proposalsTimeRateTreeContra bs t =
     nO = PName "Trees [C] [O]"
     psOthers = ps otherNodes nO
     nPB = PName "Trees [C] [B]"
-    psBraces = [ slideBracedNodesContrarily t b 0.1 nPB (pWeight 5) Tune | b <- bs ]
+    psBraces = [slideBracedNodesContrarily t b 0.1 nPB (pWeight 5) Tune | b <- bs]
 
 -- Lens for a contrary proposal on the time height and rate mean.
 timeHeightRateMeanL :: Lens' I (Double, Double)
@@ -311,7 +311,10 @@ getTimeTreeNodeHeight p x = (* h) $ t ^. subTreeAtL p . branchL
 monCalibratedNodes :: [Calibration Double] -> [MonitorParameter I]
 monCalibratedNodes cb =
   [ getTimeTreeNodeHeight p >$< monitorDouble (name n l)
-    | Calibration n p _ l <- cb
+    | c <- cb,
+      let n = getCalibrationName c
+          p = getCalibrationPath c
+          l = getCalibrationInterval c
   ]
   where
     name nm iv = "Calibration " <> nm <> " " <> show iv
@@ -325,7 +328,10 @@ getTimeTreeDeltaNodeHeight y o x = getTimeTreeNodeHeight o x - getTimeTreeNodeHe
 monConstrainedNodes :: [Constraint] -> [MonitorParameter I]
 monConstrainedNodes cs =
   [ getTimeTreeDeltaNodeHeight y o >$< monitorDouble (name n)
-    | Constraint n y _ o _ <- cs
+    | c <- cs,
+      let n = getConstraintName c
+          y = getConstraintYoungNodePath c
+          o = getConstraintOldNodePath c
   ]
   where
     name s = "Constraint " ++ s
