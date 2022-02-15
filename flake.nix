@@ -31,68 +31,67 @@
     , nixpkgs
     , pava
     }:
-      flake-utils.lib.eachDefaultSystem (
-        system:
+    flake-utils.lib.eachDefaultSystem (
+      system:
+      let
+        haskell-overlay = (
+          selfn: supern: {
+            haskellPackages = supern.haskellPackages.override {
+              overrides = selfh: superh:
+                {
+                  circular = circular.defaultPackage.${system};
+                  covariance = covariance.defaultPackage.${system};
+                  dirichlet = dirichlet.defaultPackage.${system};
+                  mcmc = mcmc.defaultPackage.${system};
+                  pava = pava.defaultPackage.${system};
+                } // elynx.packages.${system};
+            };
+          }
+        );
+        overlays = [ haskell-overlay ];
+        pkgs = import nixpkgs {
+          inherit system overlays;
+        };
+        # When changing the package set, the override above also has to be amended.
+        hpkgs = pkgs.haskellPackages;
+        dschrempf = import dschrempf-nur {
+          inherit pkgs;
+        };
+        mcmc-date-package =
           let
-            haskell-overlay = (
-              selfn: supern: {
-                haskellPackages = supern.haskellPackages.override {
-                  overrides = selfh: superh:
-                    {
-                      circular = circular.defaultPackage.${system};
-                      covariance = covariance.defaultPackage.${system};
-                      dirichlet = dirichlet.defaultPackage.${system};
-                      mcmc = mcmc.defaultPackage.${system};
-                      pava = pava.defaultPackage.${system};
-                    } // elynx.packages.${system};
-                };
-              }
-            );
-            overlays = [ haskell-overlay ];
-            pkgs = import nixpkgs {
-              inherit system overlays;
-            };
-            # When changing the package set, the override above also has to be amended.
-            hpkgs = pkgs.haskellPackages;
-            dschrempf = import dschrempf-nur {
-              inherit pkgs;
-            };
-            mcmc-date-package =
-              let
-                p = hpkgs.callCabal2nix "mcmc-date" ./. rec {};
-              in
-                pkgs.haskell.lib.doBenchmark p;
+            p = hpkgs.callCabal2nix "mcmc-date" ./. rec { };
           in
-            {
-              defaultPackage = mcmc-date-package;
+          pkgs.haskell.lib.doBenchmark p;
+      in
+      {
+        defaultPackage = mcmc-date-package;
 
-              devShell = hpkgs.shellFor {
-                shellHook =
-                  let
-                    scripts = ./scripts;
-                  in
-                    ''
-                      export PATH="${scripts}:$PATH"
-                    '';
-                packages = _: [ mcmc-date-package ];
-                buildInputs = with pkgs; [
-                  bashInteractive
-                  dschrempf.beast2
-                  dschrempf.figtree
-                  dschrempf.iqtree2
-                  dschrempf.phylobayes
-                  dschrempf.tracer
-                  hpkgs.elynx
-                  hpkgs.slynx
-                  hpkgs.tlynx
+        devShell = hpkgs.shellFor {
+          shellHook =
+            let
+              scripts = ./scripts;
+            in
+            ''
+              export PATH="${scripts}:$PATH"
+            '';
+          packages = _: [ mcmc-date-package ];
+          buildInputs = with pkgs; [
+            bashInteractive
+            dschrempf.beast2
+            dschrempf.figtree
+            dschrempf.iqtree2
+            dschrempf.phylobayes
+            dschrempf.tracer
+            hpkgs.elynx
+            hpkgs.slynx
+            hpkgs.tlynx
 
-                  hpkgs.cabal-install
-                  hpkgs.haskell-language-server
-                  hpkgs.stack
-                ];
-                doBenchmark = true;
-                withHoogle = true;
-              };
-            }
-      );
+            hpkgs.cabal-install
+            hpkgs.haskell-language-server
+          ];
+          doBenchmark = true;
+          withHoogle = true;
+        };
+      }
+    );
 }
