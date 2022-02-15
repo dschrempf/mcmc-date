@@ -12,8 +12,9 @@ usage() {
     echo "-c Activate calibrations"
     echo "-k Activate constraints"
     echo
-    echo "Proposal options:"
+    echo "Algorithm options:"
     echo "-H Activate Hamiltonian proposal (slow, but great convergence)"
+    echo "-m Use Mc3 algorithm insteahd of Mhg"
     echo
     echo "-p Activate profiling"
     echo "-s Use stack instead of cabal-install"
@@ -33,12 +34,13 @@ calibrations_activated=0
 constraints_activated=0
 
 hamiltonian_activated=0
+mc3_activated=0
 
 profiling_activated=0
 use_stack=0
 
 OPTIND=1
-while getopts "h?bckHps" opt; do
+while getopts "h?bckHmps" opt; do
     case "$opt" in
         h|\?)
             usage
@@ -51,6 +53,8 @@ while getopts "h?bckHps" opt; do
         k)  constraints_activated=1
             ;;
         H)  hamiltonian_activated=1
+            ;;
+        m)  mc3_activated=1
             ;;
         p)  profiling_activated=1
             ;;
@@ -147,6 +151,12 @@ if [[ $hamiltonian_activated -eq 1 ]]
 then
     echo "Hamiltonian proposal activated."
     c_flags+=(--hamiltonian)
+fi
+
+if [[ $mc3_activated -eq 1 ]]
+then
+    echo "Mc3 algorithm activated."
+    c_flags+=(--mc3)
 fi
 
 p_flags=()
