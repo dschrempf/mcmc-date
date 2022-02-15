@@ -1,9 +1,10 @@
 resolver: lts-18.25
 
 packages:
-- .
+  - .
 
 extra-deps:
+  - glasso-0.1.0@sha256:abf1b0cb0b9cc8c106f833a2549e2be95111a58296d6cc01c39e18c03abef797,930
   - ../circular
   - ../covariance
   - ../dirichlet
