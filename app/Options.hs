@@ -33,15 +33,16 @@ data Spec = Spec
     constraints :: Maybe FilePath,
     braces :: Maybe FilePath,
     -- | Activate profiling (change the number of iterations).
-    profile :: Bool
+    profile :: Bool,
+    -- | Activate Hamiltonian proposal.
+    hamiltonian :: Bool
   }
   deriving (Eq, Show, Read)
 
 analysisNameP :: Parser String
 analysisNameP =
   strOption
-    ( short 'a'
-        <> long "analysis-name"
+    ( long "analysis-name"
         <> help "Analysis name"
         <> metavar "NAME"
     )
@@ -49,8 +50,7 @@ analysisNameP =
 calibrationsP :: Parser FilePath
 calibrationsP =
   strOption
-    ( short 'c'
-        <> long "calibrations"
+    ( long "calibrations"
         <> help "File name specifying calibrations"
         <> metavar "FILE"
     )
@@ -58,8 +58,7 @@ calibrationsP =
 constraintsP :: Parser FilePath
 constraintsP =
   strOption
-    ( short 'k'
-        <> long "constraints"
+    ( long "constraints"
         <> help "File name specifying constraints"
         <> metavar "FILE"
     )
@@ -67,8 +66,7 @@ constraintsP =
 bracesP :: Parser FilePath
 bracesP =
   strOption
-    ( short 'b'
-        <> long "braces"
+    ( long "braces"
         <> help "File name specifying braces"
         <> metavar "FILE"
     )
@@ -78,17 +76,22 @@ algorithmP =
   flag
     MhgA
     Mc3A
-    ( short 'm'
-        <> long "mc3"
+    ( long "mc3"
         <> help "Use MC3 instead of MHG algorithm"
     )
 
 profileP :: Parser Bool
 profileP =
   switch
-    ( short 'p'
-        <> long "profile"
+    ( long "profile"
         <> help "Activate profiling"
+    )
+
+hamiltonianP :: Parser Bool
+hamiltonianP =
+  switch
+    ( long "hamiltonian"
+        <> help "Activate Hamiltonian proposal"
     )
 
 specP :: Parser Spec
@@ -99,6 +102,7 @@ specP =
     <*> optional constraintsP
     <*> optional bracesP
     <*> profileP
+    <*> hamiltonianP
 
 data PrepSpec = PrepSpec
   { prepAnalysisName :: String,
@@ -117,8 +121,7 @@ data PrepSpec = PrepSpec
 prepInRootedTreeP :: Parser FilePath
 prepInRootedTreeP =
   strOption
-    ( short 't'
-        <> long "rooted-tree"
+    ( long "rooted-tree"
         <> help "Rooted tree to be dated (Newick format)"
         <> metavar "FILE"
     )
@@ -126,8 +129,7 @@ prepInRootedTreeP =
 prepInTreesP :: Parser FilePath
 prepInTreesP =
   strOption
-    ( short 'd'
-        <> long "in-trees"
+    ( long "trees"
         <> help "Posterior distribution of trees (one tree per line, Newick format)"
         <> metavar "FILE"
     )

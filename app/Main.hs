@@ -198,7 +198,7 @@ getMcmcProps ::
       Monitor I,
       Settings
     )
-getMcmcProps (Spec an cls cns brs prof) = do
+getMcmcProps (Spec an cls cns brs prof ham) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
   (mu, sigmaInv, logDetSigma) <- getData an
@@ -222,7 +222,10 @@ getMcmcProps (Spec an cls cns brs prof) = do
       -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
       lh' = likelihoodFunction mu sigmaInv logDetSigma
       -- Proposal cycle.
-      gradient = gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma
+      gradient =
+        if ham
+          then Just (gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma)
+          else Nothing
       cc' = proposals (VB.toList bs) (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs) (VB.toList bs)

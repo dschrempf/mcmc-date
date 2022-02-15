@@ -7,10 +7,14 @@ source ./analysis.conf
 usage() {
     echo "Usage: $(basename "$0") [OPTIONS] COMMANDS"
     echo
-    echo "Available options:"
+    echo "Prior options:"
     echo "-b Activate braces"
     echo "-c Activate calibrations"
     echo "-k Activate constraints"
+    echo
+    echo "Proposal options:"
+    echo "-H Activate Hamiltonian proposal (slow, but great convergence)"
+    echo
     echo "-p Activate profiling"
     echo "-s Use stack instead of cabal-install"
     echo
@@ -27,10 +31,14 @@ usage() {
 braces_activated=0
 calibrations_activated=0
 constraints_activated=0
+
+hamiltonian_activated=0
+
 profiling_activated=0
 use_stack=0
+
 OPTIND=1
-while getopts "h?bckps" opt; do
+while getopts "h?bckHps" opt; do
     case "$opt" in
         h|\?)
             usage
@@ -41,6 +49,8 @@ while getopts "h?bckps" opt; do
         c)  calibrations_activated=1
             ;;
         k)  constraints_activated=1
+            ;;
+        H)  hamiltonian_activated=1
             ;;
         p)  profiling_activated=1
             ;;
@@ -133,13 +143,19 @@ then
     fi
 fi
 
+if [[ $hamiltonian_activated -eq 1 ]]
+then
+    echo "Hamiltonian proposal activated."
+    c_flags+=(--hamiltonian)
+fi
+
 p_flags=()
 p_flags_prog=()
 p_flags_rts=()
 if [[ $profiling_activated -eq 1 ]]
 then
     p_flags+=("${prog_profiling_flag}")
-    p_flags_prog+=(-p)
+    p_flags_prog+=(--profile)
     p_flags_rts+=(-p)
     outdir="${outdir}-profile"
 fi
@@ -150,21 +166,21 @@ mkdir -p $outdir; cd $outdir
 if [[ "$command" == "p" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} prepare \
-          -a "$analysis_name" -t "../$rooted_tree" -d "../$trees"
+          --analysis-name "$analysis_name" --rooted-tree "../$rooted_tree" --trees "../$trees"
 elif [[ "$command" == "r" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} run \
-          -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
            +RTS -N5 "${p_flags_rts[@]}"
 elif [[ "$command" == "c" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} continue \
-          -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           +RTS -N5 "${p_flags_rts[@]}"
 elif [[ "$command" == "m" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} marginal-likelihood \
-          -a "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          --aanalysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           +RTS -N5 "${p_flags_rts[@]}"
 else
     usage

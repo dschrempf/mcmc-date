@@ -67,9 +67,6 @@ import qualified Data.Vector.Unboxed as VU
 import Numeric.Log hiding (sum)
 import qualified Statistics.Sample as S
 
--- import Debug.Trace
-
--- Disable the syntax formatter Ormolu to highlight relevant module imports.
 {- ORMOLU_DISABLE -}
 -- ELynx tree library.
 import ELynx.Tree
@@ -259,15 +256,15 @@ proposalsChangingTimeHeight t =
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
 -- | The proposal cycle includes proposals for the other parameters.
-proposals :: [Brace Double] -> Bool -> I -> (I -> I) -> Cycle I
-proposals bs calibrationsAvailable x gradient =
+proposals :: [Brace Double] -> Bool -> I -> Maybe (I -> I) -> Cycle I
+proposals bs calibrationsAvailable x mGradient =
   cycleFromList $
     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
       timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
       rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
-      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune,
-      liftProposalWith jacobianRootBranch id $ hmc calibrationsAvailable x gradient
+      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
     ]
+      ++ maybeHamiltonianProposal
       ++ proposalsTimeTree bs t
       ++ proposalsRateTree t
       ++ proposalsTimeRateTreeContra bs t
@@ -276,6 +273,9 @@ proposals bs calibrationsAvailable x gradient =
   where
     t = getLengthTree $ _rateTree x
     w = weightNBranches $ length t
+    maybeHamiltonianProposal = case mGradient of
+      Nothing -> []
+      Just gradient -> [liftProposalWith jacobianRootBranch id $ hmc calibrationsAvailable x gradient]
 
 -- -- Hamiltonian proposal only.
 
