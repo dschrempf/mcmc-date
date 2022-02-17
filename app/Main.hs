@@ -138,24 +138,29 @@ prepare (PrepSpec an rt ts) = do
   putStrLn "Get the posterior means and the posterior covariance matrix."
   let pmR = getPosteriorMatrixMergeBranchesToRoot $ map (first fromLength) treesRooted
       (mu, sigma) = second L.unSym $ L.meanCov pmR
+  putStrLn $ "Number of branches: " <> show (L.size mu) <> "."
   putStrLn "The mean branch lengths are:"
   print mu
   putStrLn $ "Minimum mean branch length: " <> show (VS.minimum mu)
   putStrLn $ "Maximum mean branch length: " <> show (VS.maximum mu)
-  putStrLn $
-    "Minimum value of absolute values of covariance matrix: "
-      ++ show (L.minElement $ L.cmap abs sigma)
-  putStrLn $
-    "Maximum value of absolute values of covariance matrix: "
-      ++ show (L.maxElement $ L.cmap abs sigma)
+  putStrLn $ "Minimum absolute covariance: " ++ show (L.minElement $ L.cmap abs sigma)
+  putStrLn $ "Maximum absolute covariance: " ++ show (L.maxElement $ L.cmap abs sigma)
   let variances = L.takeDiag sigma
   putStrLn "The variances are: "
   print variances
-  putStrLn $ "Minimum variance: " ++ show (L.minElement variances)
+  let minVariance = L.minElement variances
+  when (minVariance <= 0) $ error "prepare: Minimum variance is zero or negative."
+  putStrLn $ "Minimum variance: " ++ show minVariance
   putStrLn $ "Maximum variance: " ++ show (L.maxElement variances)
+  putStrLn "Comparison with complete covariance matrix:"
+  let f x = if abs x >= minVariance then (1.0 :: Double) else 0.0
+      nSmaller = L.sumElements $ L.cmap f sigma
+  putStrLn $ "Number of elements of complete covariance matrix that are smaller than the minimum variance: " <> show nSmaller <> "."
   putStrLn "Prepare the covariance matrix for the likelihood calculation."
   let (sigmaInv, (logDetSigma, sign)) = L.invlndet sigma
   when (sign /= 1.0) $ error "prepare: Determinant of covariance matrix is negative?"
+  let (n, m) = L.size sigmaInv
+  putStrLn $ "Average element size of inverse covariance matrix: " <> show (L.sumElements sigmaInv / fromIntegral (n * m)) <> "."
   putStrLn $ "The logarithm of the determinant of the covariance matrix is: " ++ show logDetSigma
   putStrLn $ "Save the posterior means and covariances to " <> getDataFn an <> "."
   encodeFile (getDataFn an) (mu, L.toRows sigmaInv, logDetSigma)

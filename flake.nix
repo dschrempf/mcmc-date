@@ -36,9 +36,12 @@
       let
         haskell-overlay = (
           selfn: supern: {
-            haskellPackages = supern.haskellPackages.override {
+            haskellPackages = supern.haskell.packages.ghc921.override {
               overrides = selfh: superh:
                 {
+                  # TODO: Doctest fails.
+                  ad = supern.haskell.lib.dontCheck superh.ad;
+
                   circular = circular.defaultPackage.${system};
                   covariance = covariance.defaultPackage.${system};
                   dirichlet = dirichlet.defaultPackage.${system};
@@ -52,7 +55,6 @@
         pkgs = import nixpkgs {
           inherit system overlays;
         };
-        # When changing the package set, the override above also has to be amended.
         hpkgs = pkgs.haskellPackages;
         dschrempf = import dschrempf-nur {
           inherit pkgs;
