@@ -22,9 +22,8 @@ where
 import Codec.Compression.GZip
 import Control.Lens
 import Data.Attoparsec.Lazy
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Builder as BB
+import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.List
 import ELynx.Tree
 
@@ -44,16 +43,18 @@ parseFileWith :: Parser a -> FilePath -> IO a
 parseFileWith p f = do
   l <-
     if "gz" `isSuffixOf` f
-      then BL.toStrict . decompress <$> BL.readFile f
-      else BS.readFile f
+      then decompress <$> BL.readFile f
+      else BL.readFile f
   return $ either error id $ parseOnly p l
 
 -- Set node labels to integers.
 setNodeLabels :: Tree e Name -> Tree e Name
-setNodeLabels t = snd $ mapAccumL (\i n -> (i+1, f i n)) (0 :: Int) t
-  where f j (Name nm) = if BL.null nm
-          then Name $ BB.toLazyByteString $ BB.intDec j
-          else Name nm
+setNodeLabels t = snd $ mapAccumL (\i n -> (i + 1, f i n)) (0 :: Int) t
+  where
+    f j (Name nm) =
+      if BL.null nm
+        then Name $ BB.toLazyByteString $ BB.intDec j
+        else Name nm
 
 -- | Parse first Newick tree in file.
 oneTree :: NewickFormat -> FilePath -> IO (Tree Length Name)
@@ -65,4 +66,4 @@ oneTree fm f = do
 someTrees :: NewickFormat -> FilePath -> IO [Tree Length Name]
 someTrees fm fn = do
   pts <- parseFileWith (someNewick fm) fn
-  return $ map (either error id . toLengthTree. setNodeLabels) pts
+  return $ map (either error id . toLengthTree . setNodeLabels) pts
