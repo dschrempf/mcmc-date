@@ -176,7 +176,8 @@ mkdir -p $outdir; cd $outdir
 if [[ "$command" == "p" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} prepare \
-          --analysis-name "$analysis_name" --rooted-tree "../$rooted_tree" --trees "../$trees"
+          --analysis-name "$analysis_name" --rooted-tree "../$rooted_tree" --trees "../$trees" \
+          | tee prepare.log
 elif [[ "$command" == "r" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} run \
