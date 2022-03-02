@@ -86,6 +86,38 @@ getPosteriorMatrixMergeBranchesToRoot = L.fromRows . map (sumFirstTwo . getBranc
 getPosteriorMatrix :: [Tree Length a] -> L.Matrix Double
 getPosteriorMatrix = L.fromRows . map (VS.fromList . map fromLength . branches)
 
+-- Check if value is large enough to be kept in the sparse matrix.
+keepValueWith :: Double -> Int -> Int -> L.Matrix Double -> Maybe ((Int, Int), Double)
+keepValueWith r i j m =
+  if (abs x < (vI * r)) && (abs x < (vJ * r))
+    then Nothing
+    else Just ((i, j), x)
+  where
+    x = m `L.atIndex` (i, j)
+    vI = abs $ m `L.atIndex` (i, i)
+    vJ = abs $ m `L.atIndex` (j, j)
+
+makeSparseWith ::
+  -- Relative threshold ratio used to erase offdiagonal elements of the covariance
+  -- matrix.
+  Double ->
+  L.Matrix Double ->
+  -- Also return the association list (because otherise I cannot convert it back
+  -- to a dense matrix); and the proportion of elements kept.
+  (L.GMatrix, L.AssocMatrix, Double)
+makeSparseWith r sigma
+  | n /= m = error "makeSparse: Matrix not square."
+  | otherwise = (L.mkSparse xs', xs', fromIntegral (length xs') / fromIntegral (n * n))
+  where
+    n = L.rows sigma
+    m = L.cols sigma
+    xs' =
+      catMaybes $
+        [ keepValueWith r i j sigma
+          | i <- [0 .. (n - 1)],
+            j <- [0 .. (n - 1)]
+        ]
+
 -- Read in all trees, calculate posterior means and covariances of the branch
 -- lengths, and find the midpoint root of the mean tree.
 prepare :: PrepSpec -> IO ()
@@ -156,7 +188,9 @@ prepare (PrepSpec an rt ts) = do
   let f x = if abs x >= minVariance then (1.0 :: Double) else 0.0
       nSmaller = L.sumElements $ L.cmap f sigma
   putStrLn $ "Number of elements of complete covariance matrix that are smaller than the minimum variance: " <> show nSmaller <> "."
-  putStrLn "Prepare the covariance matrix for the likelihood calculation."
+
+  putStrLn ""
+  putStrLn "Prepare the covariance matrix for likelihood calculation."
   let (sigmaInv, (logDetSigma, sign)) = L.invlndet sigma
   when (sign /= 1.0) $ error "prepare: Determinant of covariance matrix is negative?"
   let (n, m) = L.size sigmaInv
@@ -164,6 +198,26 @@ prepare (PrepSpec an rt ts) = do
   putStrLn $ "The logarithm of the determinant of the covariance matrix is: " ++ show logDetSigma
   putStrLn $ "Save the posterior means and covariances to " <> getDataFn an <> "."
   encodeFile (getDataFn an) (mu, L.toRows sigmaInv, logDetSigma)
+
+  putStrLn ""
+  putStrLn "Prepare sparse covariance matrix for likelihood calculation."
+  putStrLn "Table of \"Relative threshold, proportion of entries kept\"."
+  let rs = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-8, 1e-16]
+  putStrLn $
+    intercalate "\n" $
+      [ show r ++ ", " ++ show p
+        | r <- rs,
+          let (_, _, p) = makeSparseWith r sigmaInv
+      ]
+  -- TODO: Which relative threshold. Perform tests.
+  let r = 0.1
+  -- TODO: We have the sparse inverted sigma. Now we need to get the log of the
+  -- determinant (with sign) of the original sigma. To do so, we have to invert
+  -- the matrix back and calculate the determinant again.
+  --
+  -- Use 'L.inv', and then 'L.invlndet', but throw away the double inverse.
+  putStrLn $ "Use a relative threshold of: " <> show r <> "."
+  let (sigmaInvS, sigmaInvSL, _) = makeSparseWith r sigmaInv
 
   putStrLn "Prepare the rooted tree with mean branch lengths (used as initial state)."
   -- Use one of the trees of the tree list in case the given rooted tree has a
