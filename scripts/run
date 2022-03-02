@@ -60,6 +60,9 @@ while getopts "h?bckHmps" opt; do
             ;;
         s)  use_stack=1
             ;;
+        *) usage
+           exit 1
+           ;;
     esac
 done
 shift $((OPTIND-1))
@@ -73,6 +76,7 @@ then
 fi
 
 command=$1
+shift
 
 if [[ -z $analysis_name || -z $rooted_tree || -z $trees ]]
 then
@@ -102,8 +106,6 @@ else
     echo "Error: use_stack is neither 0 nor 1: ${use_stack}."
     exit 1
 fi
-
-
 
 outdir="results"
 c_flags=()
@@ -175,8 +177,22 @@ mkdir -p $outdir; cd $outdir
 
 if [[ "$command" == "p" ]]
 then
+    prepare_flags=()
+    OPTIND=1
+    while getopts "s" opt; do
+        case "$opt" in
+            s)  prepare_flags+=(--sparse)
+                ;;
+            *) usage
+               exit 1
+               ;;
+        esac
+    done
+    shift $((OPTIND-1))
+    [ "${1:-}" = "--" ] && shift
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} prepare \
           --analysis-name "$analysis_name" --rooted-tree "../$rooted_tree" --trees "../$trees" \
+          "${prepare_flags[@]}" \
           | tee prepare.log
 elif [[ "$command" == "r" ]]
 then

@@ -69,13 +69,20 @@ getDataFn s = s <> ".data"
 
 -- Get the posterior branch length means, the inverted covariance matrix, and
 -- the determinant of the covariance matrix.
-getData :: String -> IO (VS.Vector Double, L.Herm Double, Double)
+getData :: String -> IO (VS.Vector Double, Either (L.Herm Double) L.GMatrix, Double)
 getData s = do
-  (Just (mu, sigmaInvRows, logDetSigma)) <- decodeFileStrict' $ getDataFn s
-  -- We can trust that the matrix is symmetric here, because the matrix was
-  -- created by 'meanCov'.
-  let sigmaInv = L.trustSym $ L.fromRows sigmaInvRows
-  return (mu, sigmaInv, logDetSigma)
+  r <- decodeFileStrict' $ getDataFn s
+  case r of
+    Nothing -> error $ "getData: Could not decode data file: " <> getDataFn s <> "."
+    Just (mu, ematrix, logDetSigma) -> case ematrix of
+      Left sigmaInvRows -> do
+        -- We can trust that the matrix is symmetric here, because the matrix was
+        -- created by 'meanCov'.
+        let sigmaInv = L.trustSym $ L.fromRows sigmaInvRows
+        pure (mu, Left sigmaInv, logDetSigma)
+      Right sigmaInvSparseAssocList -> do
+        let sigmaInv = L.mkSparse sigmaInvSparseAssocList
+        pure (mu, Right sigmaInv, logDetSigma)
 
 -- Get the posterior matrix of branch lengths. Merge the two branch lengths
 -- leading to the root.
@@ -121,7 +128,7 @@ makeSparseWith r sigma
 -- Read in all trees, calculate posterior means and covariances of the branch
 -- lengths, and find the midpoint root of the mean tree.
 prepare :: PrepSpec -> IO ()
-prepare (PrepSpec an rt ts) = do
+prepare (PrepSpec an rt ts sp) = do
   putStrLn "Read trees."
   treesAll <- someTrees Standard ts
   let nTrees = length treesAll
@@ -196,28 +203,32 @@ prepare (PrepSpec an rt ts) = do
   let (n, m) = L.size sigmaInv
   putStrLn $ "Average element size of inverse covariance matrix: " <> show (L.sumElements sigmaInv / fromIntegral (n * m)) <> "."
   putStrLn $ "The logarithm of the determinant of the covariance matrix is: " ++ show logDetSigma
-  putStrLn $ "Save the posterior means and covariances to " <> getDataFn an <> "."
-  encodeFile (getDataFn an) (mu, L.toRows sigmaInv, logDetSigma)
 
   putStrLn ""
-  putStrLn "Prepare sparse covariance matrix for likelihood calculation."
-  putStrLn "Table of \"Relative threshold, proportion of entries kept\"."
-  let rs = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-8, 1e-16]
-  putStrLn $
-    intercalate "\n" $
-      [ show r ++ ", " ++ show p
-        | r <- rs,
-          let (_, _, p) = makeSparseWith r sigmaInv
-      ]
-  -- TODO: Which relative threshold. Perform tests.
-  let r = 0.1
-  -- TODO: We have the sparse inverted sigma. Now we need to get the log of the
-  -- determinant (with sign) of the original sigma. To do so, we have to invert
-  -- the matrix back and calculate the determinant again.
-  --
-  -- Use 'L.inv', and then 'L.invlndet', but throw away the double inverse.
-  putStrLn $ "Use a relative threshold of: " <> show r <> "."
-  let (sigmaInvS, sigmaInvSL, _) = makeSparseWith r sigmaInv
+  (sigmaInvToStore, logDetSigmaToStore) <-
+    if sp
+      then do
+        putStrLn "Use a sparse covariance matrix to speed up likelihood calculation."
+        putStrLn "Table of \"Relative threshold, proportion of entries kept\"."
+        let rs = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-8, 1e-16]
+        putStrLn $
+          intercalate "\n" $
+            [ show r ++ ", " ++ show p
+              | r <- rs,
+                let (_, _, p) = makeSparseWith r sigmaInv
+            ]
+        -- TODO: Choose relative threshold. Perform tests.
+        let r = 0.1
+        putStrLn $ "Use a relative threshold of: " <> show r <> "."
+        let (_, sigmaInvSL, _) = makeSparseWith r sigmaInv
+            sigmaS = L.inv (L.toDense sigmaInvSL)
+            (_, (logDetSigmaS, signS)) = L.invlndet sigmaS
+        when (signS /= 1.0) $ error "prepare: Determinant of sparse covariance matrix is negative?"
+        pure (Right $ sigmaInvSL, logDetSigmaS)
+      else do
+        pure (Left $ L.toRows $ sigmaInv, logDetSigma)
+  putStrLn $ "Save the posterior means and covariances to " <> getDataFn an <> "."
+  encodeFile (getDataFn an) (mu, sigmaInvToStore, logDetSigmaToStore)
 
   putStrLn "Prepare the rooted tree with mean branch lengths (used as initial state)."
   -- Use one of the trees of the tree list in case the given rooted tree has a
@@ -260,9 +271,12 @@ getMcmcProps ::
 getMcmcProps (Spec an cls cns brs prof ham) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
-  (mu, sigmaInv, logDetSigma) <- getData an
+  (mu, eSigmaInv, logDetSigma) <- getData an
   let muBoxed = VB.convert mu
-      sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
+      sigmaInvBoxed = case eSigmaInv of
+        Left sigmaInv -> MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
+        -- TODO: Implement generalized likelihood function for sparse matrix.
+        Right _ -> error "getMcmcProps: Generalized likelihood function not implemented for sparse matrices."
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -279,7 +293,7 @@ getMcmcProps (Spec an cls cns brs prof ham) = do
       pr' = priorFunction cb cs bs
       -- Likelihood function.
       -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
-      lh' = likelihoodFunction mu sigmaInv logDetSigma
+      lh' = likelihoodFunction mu eSigmaInv logDetSigma
       -- Proposal cycle.
       gradient =
         if ham

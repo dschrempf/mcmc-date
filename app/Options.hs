@@ -114,7 +114,9 @@ data PrepSpec = PrepSpec
     -- phylogenetic analysis. The posterior means and covariances of the
     -- branch lengths are obtained from these trees and used to approximate
     -- the phylogenetic likelihood.
-    prepInTrees :: FilePath
+    prepInTrees :: FilePath,
+    -- | Prepare a sparse matrix.
+    sparse :: Bool
   }
   deriving (Eq, Read, Show)
 
@@ -134,8 +136,11 @@ prepInTreesP =
         <> metavar "FILE"
     )
 
+sparseP :: Parser Bool
+sparseP = switch (long "sparse" <> help "Prepare a sparse covariance matrix.")
+
 prepSpecP :: Parser PrepSpec
-prepSpecP = PrepSpec <$> analysisNameP <*> prepInRootedTreeP <*> prepInTreesP
+prepSpecP = PrepSpec <$> analysisNameP <*> prepInRootedTreeP <*> prepInTreesP <*> sparseP
 
 data Mode
   = Prepare PrepSpec

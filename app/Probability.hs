@@ -85,19 +85,24 @@ logDensityMultivariateNormal ::
   -- Mean vector.
   VS.Vector Double ->
   -- Inverted covariance matrix.
-  L.Herm Double ->
+  (Either (L.Herm Double) L.GMatrix) ->
   -- Log of determinant of covariance matrix.
   Double ->
   -- Value vector.
   VS.Vector Double ->
   Log Double
-logDensityMultivariateNormal mu sigmaInvH logDetSigma xs =
-  Exp $ c + (-0.5) * (logDetSigma + ((dxs L.<# sigmaInv) L.<.> dxs))
+logDensityMultivariateNormal mu eSigmaInv logDetSigma xs =
+  case eSigmaInv of
+    Left sigmaInvH ->
+      let sigmaInv = L.unSym sigmaInvH
+       in Exp $ c + (-0.5) * (logDetSigma + ((dxs L.<# sigmaInv) L.<.> dxs))
+    Right sigmaInvS ->
+      -- Exp $ c + (-0.5) * (logDetSigma + ((dxs L.<# sigmaInv) L.<.> dxs))
+      Exp $ c + (-0.5) * (logDetSigma + (dxs L.<.> (sigmaInvS L.!#> dxs)))
   where
     dxs = xs - mu
     k = fromIntegral $ VS.length mu
     c = negate $ m_ln_sqrt_2_pi * k
-    sigmaInv = L.unSym sigmaInvH
 
 -- | Approximation of the phylogenetic likelihood using a multivariate normal
 -- distribution.
@@ -105,7 +110,7 @@ likelihoodFunction ::
   -- | Mean vector.
   VS.Vector Double ->
   -- | Inverted covariance matrix.
-  L.Herm Double ->
+  (Either (L.Herm Double) L.GMatrix) ->
   -- | Log of determinant of covariance matrix.
   Double ->
   LikelihoodFunction I
@@ -128,8 +133,8 @@ reduceVMV vl m vr =
     (+)
     0
     [ (vl VB.! i) * (m `MB.unsafeIndex` (i, j)) * (vr VB.! j)
-      | i <- [0 .. (nl -1)],
-        j <- [0 .. (nr -1)]
+      | i <- [0 .. (nl - 1)],
+        j <- [0 .. (nr - 1)]
     ]
   where
     nl = VB.length vl
