@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -225,8 +226,8 @@ heightTreeToLengthTree t' = LengthTree $ go (branch t) t
   where
     t = getHeightTree t'
     go hParent (Node hNode lb ts) =
-      let l = hParent - hNode
+      let !l = hParent - hNode
        in -- Do not check for negative values here, because the assertion may
           -- trigger when calculating the gradient.
-          Node l lb $ map (go hNode) ts
+          Node l lb $! map (go hNode) ts
 {-# SPECIALIZE heightTreeToLengthTree :: HeightTree Double -> LengthTree Double #-}
