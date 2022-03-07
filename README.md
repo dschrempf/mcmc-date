@@ -3,21 +3,21 @@ with a multivariate normal distribution.
 
 Modules containing definitions specific to the analysis:
 
--   **[Definitions](src/Definitions.hs):** File names, state space, prior distribution, and the
-    likelihood function of the MCMC sampler, as well as the proposals and the
-    monitors.
+Modules:
 
-See the [test run](test/run).
+-   **[Definitions](app/Definitions.hs):** Proposals and monitors, configuration.
 
-Other modules:
+-   **[Hamiltonian](app/Hamiltonian.hs):** Hamiltonian proposal.
 
--   **[Main](src/Main.hs):** Functions to prepare the data, run and continue the
+-   **[Main](app/Main.hs):** Functions to prepare the data, run and continue the
     Metropolis-Hasting-Green algorithm.
 
--   **[Options](src/Options.hs):** Handle command line options.
+-   **[Options](app/Options.hs):** Handle command line options.
 
--   **[Tools](src/Tools.hs):** Miscellaneous tools.
+-   **[Probability](app/Probability.hs):** Prior and likelihood functions.
 
-If you try to understand what is going on, or if you want to change analysis
-settings, your starting point should be 'Definitions'.
+-   **[State](app/State.hs):** State space. If you try to understand what is going on, or if you
+    want to change analysis settings, your starting point should be `State`.
+
+-   **[Tools](app/Tools.hs):** Miscellaneous tools.
 
