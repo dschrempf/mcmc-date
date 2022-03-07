@@ -35,6 +35,7 @@ module Mcmc.Tree.Prior.Branch.RelaxedClock
 where
 
 import Data.Maybe
+import Data.Typeable
 import qualified Data.Vector as VB
 import ELynx.Tree
 import Mcmc.Prior
@@ -81,7 +82,7 @@ import Numeric.MathFunctions.Constants
 --
 -- - The number of partitions is smaller than two.
 gammaDirichlet ::
-  RealFloat a =>
+  (RealFloat a, Typeable a) =>
   Shape a ->
   Scale a ->
   -- | Alpha of Dirichlet distribution.
@@ -107,7 +108,7 @@ gammaDirichlet alphaMu betaMu alpha muMean xs = muPrior * dirichletDensitySymmet
 --
 -- Call 'error' if the variance is zero or negative.
 uncorrelatedGamma ::
-  RealFloat a =>
+  (RealFloat a, Typeable a) =>
   HandleStem ->
   Mean a ->
   Variance a ->
@@ -189,7 +190,7 @@ uncorrelatedLogNormal hs mu var = branchesWith hs (logNormal' mu var) . getLengt
 --
 -- - the variance is zero or negative.
 whiteNoise ::
-  RealFloat a =>
+  (RealFloat a, Typeable a) =>
   HandleStem ->
   Variance a ->
   LengthTree a ->
@@ -239,7 +240,7 @@ whiteNoise hs v (LengthTree tTr) (LengthTree rTr)
 --
 -- - the variance is zero or negative.
 autocorrelatedGamma ::
-  RealFloat a =>
+  (RealFloat a, Typeable a) =>
   HandleStem ->
   Mean a ->
   Variance a ->

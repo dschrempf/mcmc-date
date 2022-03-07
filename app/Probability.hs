@@ -19,6 +19,7 @@ where
 import Control.Lens
 import Data.Foldable
 import qualified Data.Matrix as MB
+import Data.Typeable
 import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
 import Numeric.AD
@@ -36,7 +37,7 @@ import Tools
 
 -- | Prior function.
 priorFunction ::
-  (RealFloat a, Show a) =>
+  (RealFloat a, Show a, Typeable a) =>
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
@@ -211,7 +212,7 @@ likelihoodFunctionG mu' sigmaInv' logDetSigma' x =
   #-}
 
 posteriorFunction ::
-  (RealFloat a, Show a) =>
+  (RealFloat a, Show a, Typeable a) =>
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
@@ -244,7 +245,7 @@ posteriorFunction cs ks bs mu sigmaInv logDetSigma xs =
 --   Analysis by Gelman, they suggest computing the gradient manually. We could
 --   start using univariate normal distributions.
 gradLogPosteriorFunc ::
-  (RealFloat a, Show a) =>
+  (RealFloat a, Show a, Typeable a) =>
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->

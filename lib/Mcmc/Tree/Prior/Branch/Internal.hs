@@ -16,6 +16,7 @@ module Mcmc.Tree.Prior.Branch.Internal
   )
 where
 
+import Data.Typeable
 import qualified Data.Vector as VB
 import Mcmc.Internal.Gamma
 import Numeric.Log hiding (sum)
@@ -27,22 +28,22 @@ data DirichletDistributionSymmetric a = DirichletDistributionSymmetric
   }
   deriving (Eq, Show)
 
-invBetaSym :: RealFloat a => Int -> a -> Log a
+invBetaSym :: (RealFloat a, Typeable a) => Int -> a -> Log a
 invBetaSym k a = Exp $ logDenominator - logNominator
   where
     logNominator = fromIntegral k * logGammaG a
     logDenominator = logGammaG (fromIntegral k * a)
 
 dirichletDistributionSymmetric ::
-  RealFloat a =>
+  (RealFloat a, Typeable a) =>
   Int ->
   a ->
   Either String (DirichletDistributionSymmetric a)
 dirichletDistributionSymmetric k a
   | k < 2 =
-    Left "dirichletDistributionSymmetric: The dimension is smaller than two."
+      Left "dirichletDistributionSymmetric: The dimension is smaller than two."
   | a <= 0 =
-    Left "dirichletDistributionSymmetric: The parameter is negative or zero."
+      Left "dirichletDistributionSymmetric: The parameter is negative or zero."
   | otherwise = Right $ DirichletDistributionSymmetric a k (invBetaSym k a)
 {-# SPECIALIZE dirichletDistributionSymmetric ::
   Int ->
