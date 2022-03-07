@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 -- |
 -- Module      :  Mcmc.Tree.Prior.BirthDeath
 -- Description :  Calculate probability of a tree assuming birth and death process
@@ -62,17 +64,27 @@ computeDE ::
   a ->
   -- D, E. Storage in log domain not necessary.
   (a, a)
-computeDE la mu rho dt e0 = (nomD / denom / denom, nomE / denom)
+computeDE la mu rho dt e0 = (pD, pE)
   where
     d = la - mu
-    x = exp (- d * dt)
+    x = exp (-d * dt)
     c = (1 - rho) + rho * e0
     y = (mu - c * la) * x
     nomD = d * d * x
     c' = c - 1
     nomE = mu * c' + y
     denom = la * c' + y
+    !pD = nomD / denom / denom
+    !pE = nomE / denom
 {-# INLINE computeDE #-}
+{-# SPECIALIZE computeDE ::
+  BirthRate Double ->
+  DeathRate Double ->
+  SamplingRate Double ->
+  Double ->
+  Double ->
+  (Double, Double)
+  #-}
 
 -- Compute probabilities D and E at the top of the branch for la ~= mu.
 computeDENearCritical ::
@@ -89,7 +101,7 @@ computeDENearCritical ::
   a ->
   -- D, E. Storage in log domain not necessary.
   (a, a)
-computeDENearCritical la mu rho dt e0 = (nomD / denom / denom, nomE / denom)
+computeDENearCritical la mu rho dt e0 = (pD, pE)
   where
     d = la - mu
     c = (1 - rho) + rho * e0
@@ -97,7 +109,17 @@ computeDENearCritical la mu rho dt e0 = (nomD / denom / denom, nomE / denom)
     nomD = 1 - d * dt
     nomE = c + y
     denom = 1 + y
+    !pD = nomD / denom / denom
+    !pE = nomE / denom
 {-# INLINE computeDENearCritical #-}
+{-# SPECIALIZE computeDENearCritical ::
+  BirthRate Double ->
+  DeathRate Double ->
+  SamplingRate Double ->
+  Double ->
+  Double ->
+  (Double, Double)
+  #-}
 
 -- Require near critical process if birth and death rates are closer than this value.
 epsNearCritical :: Fractional a => a
@@ -146,7 +168,7 @@ birthDeath ConditionOnTimeOfOrigin la mu rho t
   | rho <= 0 = error "birthDeath: Sampling rate is zero or negative."
   | rho > 1 = error "birthDeath: Sampling rate is larger than 1."
   | epsNearCritical > abs (la - mu) =
-    fst $ birthDeathWith computeDENearCritical la mu rho $ getLengthTree t
+      fst $ birthDeathWith computeDENearCritical la mu rho $ getLengthTree t
   | otherwise = fst $ birthDeathWith computeDE la mu rho $ getLengthTree t
 birthDeath ConditionOnTimeOfMrca la mu rho (LengthTree (Node _ _ [l, r])) =
   birthDeath ConditionOnTimeOfOrigin la mu rho (LengthTree l)
@@ -207,6 +229,22 @@ birthDeathWith f la mu rho (Node br _ [])
     -- probability here.
     (dT, eT) = f la mu rho br 0
 birthDeathWith _ _ _ _ _ = error "birthDeathWith: Tree is multifurcating."
+{-# SPECIALIZE birthDeathWith ::
+  (BirthRate Double -> DeathRate Double -> SamplingRate Double -> Double -> Double -> (Double, Double)) ->
+  BirthRate Double ->
+  DeathRate Double ->
+  SamplingRate Double ->
+  Tree Double Name ->
+  (Log Double, Double)
+  #-}
+
+-- (BirthRate a -> DeathRate a -> SamplingRate a -> a -> a -> (a, a)) ->
+-- BirthRate a ->
+-- DeathRate a ->
+-- SamplingRate a ->
+-- Tree a b ->
+-- -- Return (log D, E).
+-- (Log a, a)
 
 -- * Tests
 

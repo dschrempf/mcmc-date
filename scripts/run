@@ -16,6 +16,7 @@ usage() {
     echo "-H Activate Hamiltonian proposal (slow, but great convergence)"
     echo "-m Use Mc3 algorithm insteahd of Mhg"
     echo
+    echo "Other options:"
     echo "-p Activate profiling"
     echo "-s Use stack instead of cabal-install"
     echo
