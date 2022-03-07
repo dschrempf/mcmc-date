@@ -92,7 +92,7 @@
             hpkgs.haskell-language-server
           ];
           doBenchmark = true;
-          withHoogle = true;
+          # withHoogle = true;
         };
       }
     );
