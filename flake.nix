@@ -15,7 +15,8 @@
 
   inputs.mcmc.url = "github:dschrempf/mcmc";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/haskell-updates";
+  # inputs.nixpkgs.url = "path:/home/dominik/Nix/Nixpkgs";
 
   inputs.pava.url = "github:dschrempf/pava";
 
