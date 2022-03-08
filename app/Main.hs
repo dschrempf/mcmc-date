@@ -128,7 +128,7 @@ makeSparseWith r sigma
 -- Read in all trees, calculate posterior means and covariances of the branch
 -- lengths, and find the midpoint root of the mean tree.
 prepare :: PrepSpec -> IO ()
-prepare (PrepSpec an rt ts sp) = do
+prepare (PrepSpec an rt ts lhsp) = do
   putStrLn "Read trees."
   treesAll <- someTrees Standard ts
   let nTrees = length treesAll
@@ -206,8 +206,9 @@ prepare (PrepSpec an rt ts sp) = do
 
   putStrLn ""
   (sigmaInvToStore, logDetSigmaToStore) <-
-    if sp
-      then do
+    case lhsp of
+      FullMultivariateNormal -> pure (Left $ L.toRows $ sigmaInv, logDetSigma)
+      SparseMultivariateNormal rFix -> do
         putStrLn "Use a sparse covariance matrix to speed up likelihood calculation."
         putStrLn "Table of \"Relative threshold, proportion of entries kept\"."
         let rs = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-8, 1e-16]
@@ -217,16 +218,13 @@ prepare (PrepSpec an rt ts sp) = do
               | r <- rs,
                 let (_, _, p) = makeSparseWith r sigmaInv
             ]
-        -- TODO: Choose relative threshold. Perform tests.
-        let r = 0.1
-        putStrLn $ "Use a relative threshold of: " <> show r <> "."
-        let (_, sigmaInvSL, _) = makeSparseWith r sigmaInv
+        putStrLn $ "Use a (provided) relative threshold of: " <> show rFix <> "."
+        let (_, sigmaInvSL, _) = makeSparseWith rFix sigmaInv
             sigmaS = L.inv (L.toDense sigmaInvSL)
             (_, (logDetSigmaS, signS)) = L.invlndet sigmaS
         when (signS /= 1.0) $ error "prepare: Determinant of sparse covariance matrix is negative?"
         pure (Right $ sigmaInvSL, logDetSigmaS)
-      else do
-        pure (Left $ L.toRows $ sigmaInv, logDetSigma)
+      UnivariateNormal -> error "Univariate normal not implemented."
   putStrLn $ "Save the posterior means and covariances to " <> getDataFn an <> "."
   encodeFile (getDataFn an) (mu, sigmaInvToStore, logDetSigmaToStore)
 

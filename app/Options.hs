@@ -12,6 +12,7 @@
 module Options
   ( Algorithm (..),
     Spec (..),
+    LikelihoodSpec (..),
     PrepSpec (..),
     Mode (..),
     parseArgs,
@@ -20,6 +21,7 @@ where
 
 import Data.Version (showVersion)
 import Options.Applicative
+import Options.Applicative.Help.Pretty
 import Paths_mcmc_date (version)
 
 data Algorithm = MhgA | Mc3A
@@ -104,6 +106,13 @@ specP =
     <*> profileP
     <*> hamiltonianP
 
+data LikelihoodSpec
+  = FullMultivariateNormal
+  | -- | Sparse covariance matrix with given threshold.
+    SparseMultivariateNormal Double
+  | UnivariateNormal
+  deriving (Eq, Read, Show)
+
 data PrepSpec = PrepSpec
   { prepAnalysisName :: String,
     -- | File storing the rooted topology used for the time tree. The in
@@ -116,7 +125,7 @@ data PrepSpec = PrepSpec
     -- the phylogenetic likelihood.
     prepInTrees :: FilePath,
     -- | Prepare a sparse matrix.
-    sparse :: Bool
+    prepLikelihoodSpec :: LikelihoodSpec
   }
   deriving (Eq, Read, Show)
 
@@ -136,11 +145,11 @@ prepInTreesP =
         <> metavar "FILE"
     )
 
-sparseP :: Parser Bool
-sparseP = switch (long "sparse" <> help "Prepare a sparse covariance matrix.")
+likelihoodSpecP :: Parser LikelihoodSpec
+likelihoodSpecP = option auto (long "likelihood-spec" <> help "Likelihood specification (see below).")
 
 prepSpecP :: Parser PrepSpec
-prepSpecP = PrepSpec <$> analysisNameP <*> prepInRootedTreeP <*> prepInTreesP <*> sparseP
+prepSpecP = PrepSpec <$> analysisNameP <*> prepInRootedTreeP <*> prepInTreesP <*> likelihoodSpecP
 
 data Mode
   = Prepare PrepSpec
@@ -166,7 +175,7 @@ modeP =
   hsubparser
     ( command
         "prepare"
-        (info prepareP (progDesc "Prepare data"))
+        (info prepareP (progDesc "Prepare data" <> footerDoc f))
         <> command
           "run"
           (info runP (progDesc "Run MCMC sampler"))
@@ -177,6 +186,17 @@ modeP =
           "marginal-likelihood"
           (info marginalLikelihoodP (progDesc "Calculate marginal likelihood"))
     )
+  where
+    f =
+      Just $
+        vsep $
+          map
+            string
+            [ "Likelihood specification:",
+              "  - FullMultivariateNormal",
+              "  - SparseMultivariateNormal THRESHOLD",
+              "  - UnivariateNormal"
+            ]
 
 parseArgs :: IO Mode
 parseArgs =
