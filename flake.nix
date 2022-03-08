@@ -14,6 +14,7 @@
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   inputs.mcmc.url = "github:dschrempf/mcmc";
+  # inputs.mcmc.url = "path:/home/dominik/Shared/haskell/mcmc";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/haskell-updates";
   # inputs.nixpkgs.url = "path:/home/dominik/Nix/Nixpkgs";

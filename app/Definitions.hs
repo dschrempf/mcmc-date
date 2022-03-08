@@ -399,7 +399,7 @@ iterations = Iterations 15000
 
 -- | Number of iterations after burn in when profiling is enabled.
 iterationsProf :: Iterations
-iterationsProf = Iterations 100
+iterationsProf = Iterations 50
 
 -- | Number of points of the stepping stone sampler.
 nPoints :: NPoints
