@@ -21,10 +21,10 @@ usage() {
     echo "-s Use stack instead of cabal-install"
     echo
     echo "Available commands:"
-    echo "p  Prepare"
-    echo "r  Run"
-    echo "c  Continue"
-    echo "m  Marginal likelihood"
+    echo "p (-f|-s|-u) Prepare"
+    echo "r            Run"
+    echo "c            Continue"
+    echo "m            Marginal likelihood"
     echo
     echo "A configuration file \"analysis.conf\" is required."
     echo "For reference, see the sample configuration file."
@@ -44,23 +44,23 @@ OPTIND=1
 while getopts "h?bckHmps" opt; do
     case "$opt" in
         h|\?)
-            usage
-            exit 0
-            ;;
-        b)  braces_activated=1
-            ;;
-        c)  calibrations_activated=1
-            ;;
-        k)  constraints_activated=1
-            ;;
-        H)  hamiltonian_activated=1
-            ;;
-        m)  mc3_activated=1
-            ;;
-        p)  profiling_activated=1
-            ;;
-        s)  use_stack=1
-            ;;
+           usage
+           exit 0
+           ;;
+        b) braces_activated=1
+           ;;
+        c) calibrations_activated=1
+           ;;
+        k) constraints_activated=1
+           ;;
+        H) hamiltonian_activated=1
+           ;;
+        m) mc3_activated=1
+           ;;
+        p) profiling_activated=1
+           ;;
+        s) use_stack=1
+           ;;
         *) usage
            exit 1
            ;;
@@ -180,15 +180,23 @@ if [[ "$command" == "p" ]]
 then
     prepare_flags=()
     OPTIND=1
-    while getopts "s" opt; do
+    while getopts "fsu" opt; do
         case "$opt" in
-            s)  prepare_flags+=(--sparse)
-                ;;
+            f) prepare_flags+=(--likelihood-spec "FullMultivariateNormal")
+               ;;
+            s) prepare_flags+=(--likelihood-spec "SparseMultivariateNormal 0.1")
+               ;;
+            u) prepare_flags+=(--likelihood-spec "UnivariateNormal")
+               ;;
             *) usage
                exit 1
                ;;
         esac
     done
+    if [ ${#prepare_flags[@]} -eq 0 ]; then
+        usage
+        exit 1
+    fi
     shift $((OPTIND-1))
     [ "${1:-}" = "--" ] && shift
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} prepare \

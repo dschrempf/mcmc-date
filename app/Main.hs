@@ -207,7 +207,9 @@ prepare (PrepSpec an rt ts lhsp) = do
   putStrLn ""
   (sigmaInvToStore, logDetSigmaToStore) <-
     case lhsp of
-      FullMultivariateNormal -> pure (Left $ L.toRows $ sigmaInv, logDetSigma)
+      FullMultivariateNormal -> do
+        putStrLn "Use full covariance matrix."
+        pure (Left $ L.toRows $ sigmaInv, logDetSigma)
       SparseMultivariateNormal rFix -> do
         putStrLn "Use a sparse covariance matrix to speed up likelihood calculation."
         putStrLn "Table of \"Relative threshold, proportion of entries kept\"."
