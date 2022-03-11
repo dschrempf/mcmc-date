@@ -192,9 +192,9 @@ slideRootContrarilySimple ::
 slideRootContrarilySimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
   let tTrHeight = branch tTr
   when
-    (tTrHeight /= 1)
+    (abs (tTrHeight - 1.0) > 1e-14)
     ( error $
-        "slideRootSimple: Height of relative time tree is different from 1: "
+        "slideRootContrarilySimple: Height of relative time tree is different from 1: "
           <> show tTrHeight
           <> "."
     )

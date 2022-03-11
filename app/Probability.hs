@@ -11,7 +11,8 @@
 -- Creation date: Tue Jul 13 11:02:03 2021.
 module Probability
   ( priorFunction,
-    likelihoodFunction,
+    likelihoodFunctionFullMultivariateNormal,
+    likelihoodFunctionSparseMultivariateNormal,
     gradLogPosteriorFunc,
   )
 where
@@ -80,49 +81,81 @@ priorFunction cb' cs' bs' (I l m h t mu va r) =
   PriorFunction I
   #-}
 
--- Log of density of multivariate normal distribution with given parameters.
--- https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Density_function.
-logDensityMultivariateNormal ::
+type PhylogeneticLikelihoodFunction a =
   -- Mean vector.
   VS.Vector Double ->
-  -- Inverted covariance matrix.
-  (Either (L.Herm Double) L.GMatrix) ->
-  -- Log of determinant of covariance matrix.
-  Double ->
+  -- Other input. For example, inverted full/sparse covariance matrix with log
+  -- determinant; or variances (univariate approach).
+  a ->
   -- Value vector.
   VS.Vector Double ->
   Log Double
-logDensityMultivariateNormal mu eSigmaInv logDetSigma xs =
-  case eSigmaInv of
-    Left sigmaInvH ->
-      let sigmaInv = L.unSym sigmaInvH
-       in Exp $ c + (-0.5) * (logDetSigma + ((dxs L.<# sigmaInv) L.<.> dxs))
-    Right sigmaInvS ->
-      -- Exp $ c + (-0.5) * (logDetSigma + ((dxs L.<# sigmaInv) L.<.> dxs))
-      Exp $ c + (-0.5) * (logDetSigma + (dxs L.<.> (sigmaInvS L.!#> dxs)))
+
+-- Log of density of multivariate normal distribution with given parameters.
+-- https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Density_function.
+--
+-- Full covariance matrix.
+logDensityFullMultivariateNormal :: PhylogeneticLikelihoodFunction (L.Herm Double, Double)
+logDensityFullMultivariateNormal mu (sigmaInvH, logDetSigma) xs =
+  let sigmaInv = L.unSym sigmaInvH
+   in Exp $ c + (-0.5) * (logDetSigma + ((dxs L.<# sigmaInv) L.<.> dxs))
   where
     dxs = xs - mu
     k = fromIntegral $ VS.length mu
     c = negate $ m_ln_sqrt_2_pi * k
 
--- | Approximation of the phylogenetic likelihood using a multivariate normal
--- distribution.
-likelihoodFunction ::
-  -- | Mean vector.
+-- See 'logDensityFullMultivariateNormal'.
+--
+-- Sparse covariance matrix.
+logDensitySparseMultivariateNormal :: PhylogeneticLikelihoodFunction (L.GMatrix, Double)
+logDensitySparseMultivariateNormal mu (sigmaInvS, logDetSigma) xs =
+  Exp $ c + (-0.5) * (logDetSigma + (dxs L.<.> (sigmaInvS L.!#> dxs)))
+  where
+    dxs = xs - mu
+    k = fromIntegral $ VS.length mu
+    c = negate $ m_ln_sqrt_2_pi * k
+
+likelihoodFunctionWrapper ::
+  PhylogeneticLikelihoodFunction a ->
+  -- Mean vector.
   VS.Vector Double ->
-  -- | Inverted covariance matrix.
-  (Either (L.Herm Double) L.GMatrix) ->
-  -- | Log of determinant of covariance matrix.
-  Double ->
+  a ->
   LikelihoodFunction I
-likelihoodFunction mu sigmaInv logDetSigma x =
-  logDensityMultivariateNormal mu sigmaInv logDetSigma distances
+likelihoodFunctionWrapper f mu dt x = f mu dt distances
   where
     times = getBranches (getLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
     rates = getBranches (getLengthTree $ x ^. rateTree)
     tH = x ^. timeHeight
     rMu = x ^. rateMean
     distances = VS.map (* (tH * rMu)) $ sumFirstTwo $ VS.zipWith (*) times rates
+
+-- | Approximation of the phylogenetic likelihood using a multivariate normal
+-- distribution with full inverted covariance matrix.
+likelihoodFunctionFullMultivariateNormal ::
+  -- | Mean vector.
+  VS.Vector Double ->
+  -- | Full inverted covariance matrix.
+  L.Herm Double ->
+  -- | Log determinant of full covariance matrix.
+  Double ->
+  LikelihoodFunction I
+likelihoodFunctionFullMultivariateNormal mu sigmaInvF logDetSigmaF =
+  likelihoodFunctionWrapper logDensityFullMultivariateNormal mu (sigmaInvF, logDetSigmaF)
+
+-- | Approximation of the phylogenetic likelihood using a multivariate normal
+-- distribution with sparse inverted covariance matrix.
+likelihoodFunctionSparseMultivariateNormal ::
+  -- | Mean vector.
+  VS.Vector Double ->
+  -- | Sparse inverted covariance matrix.
+  L.GMatrix ->
+  -- | Log determinant of sparse covariance matrix.
+  Double ->
+  LikelihoodFunction I
+likelihoodFunctionSparseMultivariateNormal mu sigmaInvS logDetSigmaS =
+  likelihoodFunctionWrapper logDensitySparseMultivariateNormal mu (sigmaInvS, logDetSigmaS)
+
+-- TODO: Univariate approach.
 
 -- Vector-matrix-vector product.
 --
