@@ -47,7 +47,7 @@ common exec
   ghc-options: -Wall -Wunused-packages -threaded -rtsopts -with-rtsopts=-N
   default-language: Haskell2010
 
-library
+library mcmc-date-lib
   import: lib
   exposed-modules:
       Mcmc.Tree
@@ -136,7 +136,7 @@ executable mcmc-date
     , math-functions
     , matrices
     , mcmc
-    , mcmc-date
+    , mcmc-date-lib
     , mwc-random
     , optparse-applicative
     , statistics

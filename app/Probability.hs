@@ -13,6 +13,7 @@ module Probability
   ( priorFunction,
     likelihoodFunctionFullMultivariateNormal,
     likelihoodFunctionSparseMultivariateNormal,
+    likelihoodFunctionUnivariateNormal,
     gradLogPosteriorFunc,
   )
 where
@@ -115,6 +116,15 @@ logDensitySparseMultivariateNormal mu (sigmaInvS, logDetSigma) xs =
     k = fromIntegral $ VS.length mu
     c = negate $ m_ln_sqrt_2_pi * k
 
+logDensityUnivariateNormal :: PhylogeneticLikelihoodFunction (VS.Vector Double, Double)
+logDensityUnivariateNormal mu (vs, logSigmaSquaredProduct) xs =
+  Exp $ c + (-0.5) * (logSigmaSquaredProduct + exponentSum)
+  where
+    f x m v = ((x - m) ** 2.0) / v
+    exponentSum = VS.sum $ VS.zipWith3 f xs mu vs
+    k = fromIntegral $ VS.length mu
+    c = negate $ m_ln_sqrt_2_pi * k
+
 likelihoodFunctionWrapper ::
   PhylogeneticLikelihoodFunction a ->
   -- Mean vector.
@@ -132,7 +142,7 @@ likelihoodFunctionWrapper f mu dt x = f mu dt distances
 -- | Approximation of the phylogenetic likelihood using a multivariate normal
 -- distribution with full inverted covariance matrix.
 likelihoodFunctionFullMultivariateNormal ::
-  -- | Mean vector.
+  -- | Means.
   VS.Vector Double ->
   -- | Full inverted covariance matrix.
   L.Herm Double ->
@@ -145,7 +155,7 @@ likelihoodFunctionFullMultivariateNormal mu sigmaInvF logDetSigmaF =
 -- | Approximation of the phylogenetic likelihood using a multivariate normal
 -- distribution with sparse inverted covariance matrix.
 likelihoodFunctionSparseMultivariateNormal ::
-  -- | Mean vector.
+  -- | Means.
   VS.Vector Double ->
   -- | Sparse inverted covariance matrix.
   L.GMatrix ->
@@ -155,7 +165,18 @@ likelihoodFunctionSparseMultivariateNormal ::
 likelihoodFunctionSparseMultivariateNormal mu sigmaInvS logDetSigmaS =
   likelihoodFunctionWrapper logDensitySparseMultivariateNormal mu (sigmaInvS, logDetSigmaS)
 
--- TODO: Univariate approach.
+-- | Approximation of the phylogenetic likelihood using univariate normal
+-- distributions.
+likelihoodFunctionUnivariateNormal ::
+  -- | Means.
+  VS.Vector Double ->
+  -- | Variances.
+  VS.Vector Double ->
+  LikelihoodFunction I
+likelihoodFunctionUnivariateNormal mu vs =
+  likelihoodFunctionWrapper logDensityUnivariateNormal mu (vs, logSigmaSquaredProduct)
+  where
+    logSigmaSquaredProduct = log $ VS.product vs
 
 -- Vector-matrix-vector product.
 --
