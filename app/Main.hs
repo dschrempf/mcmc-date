@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- |
 -- Module      :  Main
@@ -20,6 +21,7 @@ where
 import Control.DeepSeq
 import Control.Monad
 import Data.Aeson
+import Data.Aeson.TH
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.List
@@ -54,6 +56,8 @@ import Definitions
 import Probability
 import State
 import Tools
+import Control.Exception
+import Data.Typeable
 {- ORMOLU_ENABLE -}
 
 getMeanTreeFn :: String -> FilePath
@@ -67,22 +71,35 @@ getMeanTree = oneTree Standard . getMeanTreeFn
 getDataFn :: String -> FilePath
 getDataFn s = s <> ".data"
 
+data LikelihoodData
+  = Full (L.Vector Double) (L.Herm Double) Double
+  | Sparse (L.Vector Double) L.GMatrix Double
+  | Univariate (L.Vector Double) (L.Vector Double)
+  deriving (Show)
+
+data LikelihoodDataStore
+  = FullS (L.Vector Double) [L.Vector Double] Double
+  | SparseS (L.Vector Double) [((Int, Int), Double)] Double
+  | UnivariateS (L.Vector Double) (L.Vector Double)
+
+$(deriveJSON defaultOptions ''LikelihoodDataStore)
+
 -- Get the posterior branch length means, the inverted covariance matrix, and
 -- the determinant of the covariance matrix.
-getData :: String -> IO (VS.Vector Double, Either (L.Herm Double) L.GMatrix, Double)
+getData :: String -> IO LikelihoodData
 getData s = do
   r <- decodeFileStrict' $ getDataFn s
   case r of
     Nothing -> error $ "getData: Could not decode data file: " <> getDataFn s <> "."
-    Just (mu, ematrix, logDetSigma) -> case ematrix of
-      Left sigmaInvRows -> do
-        -- We can trust that the matrix is symmetric here, because the matrix was
-        -- created by 'meanCov'.
-        let sigmaInv = L.trustSym $ L.fromRows sigmaInvRows
-        pure (mu, Left sigmaInv, logDetSigma)
-      Right sigmaInvSparseAssocList -> do
-        let sigmaInv = L.mkSparse sigmaInvSparseAssocList
-        pure (mu, Right sigmaInv, logDetSigma)
+    Just (FullS mu sigmaInvRows logDetSigma) -> do
+      -- We can trust that the matrix is symmetric here, because the matrix was
+      -- created by 'meanCov'.
+      let sigmaInv = L.trustSym $ L.fromRows $ sigmaInvRows
+      pure $ Full mu sigmaInv logDetSigma
+    Just (SparseS mu sigmaInvSparseAssocList logDetSigma) -> do
+      let sigmaInvS = L.mkSparse sigmaInvSparseAssocList
+      pure $ Sparse mu sigmaInvS logDetSigma
+    Just (UnivariateS mu vs) -> pure $ Univariate mu vs
 
 -- Get the posterior matrix of branch lengths. Merge the two branch lengths
 -- leading to the root.
@@ -197,7 +214,7 @@ prepare (PrepSpec an rt ts lhsp) = do
   putStrLn $ "Number of elements of complete covariance matrix that are smaller than the minimum variance: " <> show nSmaller <> "."
 
   putStrLn ""
-  putStrLn "Prepare the covariance matrix for likelihood calculation."
+  putStrLn "Prepare the covariance matrix for phylogenetic likelihood calculation."
   let (sigmaInv, (logDetSigma, sign)) = L.invlndet sigma
   when (sign /= 1.0) $ error "prepare: Determinant of covariance matrix is negative?"
   let (n, m) = L.size sigmaInv
@@ -205,30 +222,32 @@ prepare (PrepSpec an rt ts lhsp) = do
   putStrLn $ "The logarithm of the determinant of the covariance matrix is: " ++ show logDetSigma
 
   putStrLn ""
-  (sigmaInvToStore, logDetSigmaToStore) <-
-    case lhsp of
-      FullMultivariateNormal -> do
-        putStrLn "Use full covariance matrix."
-        pure (Left $ L.toRows $ sigmaInv, logDetSigma)
-      SparseMultivariateNormal rFix -> do
-        putStrLn "Use a sparse covariance matrix to speed up likelihood calculation."
-        putStrLn "Table of \"Relative threshold, proportion of entries kept\"."
-        let rs = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-8, 1e-16]
-        putStrLn $
-          intercalate "\n" $
-            [ show r ++ ", " ++ show p
-              | r <- rs,
-                let (_, _, p) = makeSparseWith r sigmaInv
-            ]
-        putStrLn $ "Use a (provided) relative threshold of: " <> show rFix <> "."
-        let (_, sigmaInvSL, _) = makeSparseWith rFix sigmaInv
-            sigmaS = L.inv (L.toDense sigmaInvSL)
-            (_, (logDetSigmaS, signS)) = L.invlndet sigmaS
-        when (signS /= 1.0) $ error "prepare: Determinant of sparse covariance matrix is negative?"
-        pure (Right $ sigmaInvSL, logDetSigmaS)
-      UnivariateNormal -> error "Univariate normal not implemented."
-  putStrLn $ "Save the posterior means and covariances to " <> getDataFn an <> "."
-  encodeFile (getDataFn an) (mu, sigmaInvToStore, logDetSigmaToStore)
+  lhd <- case lhsp of
+    FullMultivariateNormal -> do
+      putStrLn "Use full covariance matrix."
+      pure $ FullS mu (L.toRows $ sigmaInv) logDetSigma
+    SparseMultivariateNormal rFix -> do
+      putStrLn "Use a sparse covariance matrix to speed up phylogenetic likelihood calculation."
+      putStrLn "Table of \"Relative threshold, proportion of entries kept\"."
+      let rs = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-8, 1e-16]
+      putStrLn $
+        intercalate "\n" $
+          [ show r ++ ", " ++ show p
+            | r <- rs,
+              let (_, _, p) = makeSparseWith r sigmaInv
+          ]
+      putStrLn $ "Use a (provided) relative threshold of: " <> show rFix <> "."
+      let (_, sigmaInvSL, _) = makeSparseWith rFix sigmaInv
+          sigmaS = L.inv (L.toDense sigmaInvSL)
+          (_, (logDetSigmaS, signS)) = L.invlndet sigmaS
+      when (signS /= 1.0) $ error "prepare: Determinant of sparse covariance matrix is negative?"
+      pure $ SparseS mu sigmaInvSL logDetSigmaS
+    UnivariateNormal -> do
+      putStrLn "Use univariate normal distributions to speed up phylogenetic likelihood calculation."
+      let vs = L.takeDiag sigma
+      pure $ UnivariateS mu vs
+  putStrLn $ "Save the posterior means and (co)variances to " <> getDataFn an <> "."
+  encodeFile (getDataFn an) lhd
 
   putStrLn "Prepare the rooted tree with mean branch lengths (used as initial state)."
   -- Use one of the trees of the tree list in case the given rooted tree has a
@@ -258,6 +277,37 @@ getBraces :: Tree e Name -> Maybe FilePath -> IO (VB.Vector (Brace Double))
 getBraces _ Nothing = return VB.empty
 getBraces t (Just f) = loadBraces t f
 
+getLikelihoodFunction :: String -> LikelihoodSpec -> IO (LikelihoodFunction I)
+getLikelihoodFunction an lhsp = do
+  lhd <- getData an
+  case (lhsp, lhd) of
+    (FullMultivariateNormal, Full mu s d) -> pure $ likelihoodFunctionFullMultivariateNormal mu s d
+    (SparseMultivariateNormal _, Sparse mu s d) -> pure $ likelihoodFunctionSparseMultivariateNormal mu s d
+    (UnivariateNormal, Univariate mu vs) -> pure $ likelihoodFunctionUnivariateNormal mu vs
+    (l, r) -> do
+      putStrLn $ "Likelihood specification: " <> show l
+      putStrLn $ "Likelihood data: " <> show r
+      error "Likelihood specification and data do not match (see above)."
+
+getGradLogPosteriorFunction ::
+  (RealFloat a, Show a, Typeable a) =>
+  String ->
+  LikelihoodSpec ->
+  VB.Vector (Calibration Double) ->
+  VB.Vector (Constraint Double) ->
+  VB.Vector (Brace Double) ->
+  IO (IG a -> IG a)
+getGradLogPosteriorFunction an lhsp cb cs bs = do
+  lhd <- getData an
+  case (lhsp, lhd) of
+    (FullMultivariateNormal, Full mu s d) -> do
+      let muBoxed = VB.convert mu
+          sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym s
+      pure $ gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed d
+    (_, _) -> do
+      let msg = "Generalized likelihood function not implemented for sparse matrices and the univariate."
+      throwIO $ PatternMatchFail msg
+
 getMcmcProps ::
   Spec ->
   IO
@@ -268,15 +318,9 @@ getMcmcProps ::
       Monitor I,
       Settings
     )
-getMcmcProps (Spec an cls cns brs prof ham) = do
+getMcmcProps (Spec an cls cns brs prof ham lhsp) = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
-  (mu, eSigmaInv, logDetSigma) <- getData an
-  let muBoxed = VB.convert mu
-      sigmaInvBoxed = case eSigmaInv of
-        Left sigmaInv -> MB.fromRows $ map VB.convert $ L.toRows $ L.unSym sigmaInv
-        -- TODO: Implement generalized likelihood function for sparse matrix.
-        Right _ -> error "getMcmcProps: Generalized likelihood function not implemented for sparse matrices."
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -287,18 +331,18 @@ getMcmcProps (Spec an cls cns brs prof ham) = do
   cs <- getConstraints meanTree cns
   -- Braces.
   bs <- getBraces meanTree brs
+  -- Likelihood function.
+  lh' <- getLikelihoodFunction an lhsp
+  -- Generalized posterior function for Hamiltonian proposal.
+  gradient <-
+    if ham
+      then Just <$> getGradLogPosteriorFunction an lhsp cb cs bs
+      else pure Nothing
   let -- Starting state.
       start' = initWith meanTree
       -- Prior function.
       pr' = priorFunction cb cs bs
-      -- Likelihood function.
-      -- lh' = likelihoodFunction muBoxed sigmaInvBoxed logDetSigma
-      lh' = likelihoodFunction mu eSigmaInv logDetSigma
       -- Proposal cycle.
-      gradient =
-        if ham
-          then Just (gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed logDetSigma)
-          else Nothing
       cc' = proposals (VB.toList bs) (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs) (VB.toList bs)

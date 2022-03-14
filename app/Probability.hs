@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 -- |
 -- Module      :  Probability
 -- Description :  Prior and likelihood functions
@@ -176,7 +178,7 @@ likelihoodFunctionUnivariateNormal ::
 likelihoodFunctionUnivariateNormal mu vs =
   likelihoodFunctionWrapper logDensityUnivariateNormal mu (vs, logSigmaSquaredProduct)
   where
-    logSigmaSquaredProduct = log $ VS.product vs
+    !logSigmaSquaredProduct = VS.sum $ VS.map log vs
 
 -- Vector-matrix-vector product.
 --

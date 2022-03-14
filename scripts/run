@@ -5,7 +5,7 @@ set -e
 source ./analysis.conf
 
 usage() {
-    echo "Usage: $(basename "$0") [OPTIONS] COMMANDS"
+    echo "Usage: $(basename "$0") [OPTIONS] LIKELIHOOD_SPECIFICATION COMMANDS"
     echo
     echo "Prior options:"
     echo "-b Activate braces"
@@ -20,11 +20,16 @@ usage() {
     echo "-p Activate profiling"
     echo "-s Use stack instead of cabal-install"
     echo
+    echo "Likelihood specification:"
+    echo "f  Full covariance matix"
+    echo "s  Sparse covariance matrix"
+    echo "u  Univariate approach"
+    echo
     echo "Available commands:"
-    echo "p (-f|-s|-u) Prepare"
-    echo "r            Run"
-    echo "c            Continue"
-    echo "m            Marginal likelihood"
+    echo "p  Prepare"
+    echo "r  Run"
+    echo "c  Continue"
+    echo "m  Marginal likelihood"
     echo
     echo "A configuration file \"analysis.conf\" is required."
     echo "For reference, see the sample configuration file."
@@ -70,8 +75,28 @@ shift $((OPTIND-1))
 [ "${1:-}" = "--" ] && shift
 
 # Arguments.
-if [[ $# -lt 1 ]]
+if [[ $# -lt 2 ]]
 then
+    usage
+    exit 1
+fi
+
+likelihood_specification=$1
+shift
+
+likelihood_specification_flags=()
+    case "$likelihood_specification" in
+        f) likelihood_specification_flags+=(--likelihood-spec "FullMultivariateNormal")
+           ;;
+        s) likelihood_specification_flags+=(--likelihood-spec "SparseMultivariateNormal 0.1")
+           ;;
+        u) likelihood_specification_flags+=(--likelihood-spec "UnivariateNormal")
+           ;;
+        *) usage
+           exit 1
+           ;;
+    esac
+if [ ${#likelihood_specification_flags[@]} -eq 0 ]; then
     usage
     exit 1
 fi
@@ -178,45 +203,27 @@ mkdir -p $outdir; cd $outdir
 
 if [[ "$command" == "p" ]]
 then
-    prepare_flags=()
-    OPTIND=1
-    while getopts "fsu" opt; do
-        case "$opt" in
-            f) prepare_flags+=(--likelihood-spec "FullMultivariateNormal")
-               ;;
-            s) prepare_flags+=(--likelihood-spec "SparseMultivariateNormal 0.1")
-               ;;
-            u) prepare_flags+=(--likelihood-spec "UnivariateNormal")
-               ;;
-            *) usage
-               exit 1
-               ;;
-        esac
-    done
-    if [ ${#prepare_flags[@]} -eq 0 ]; then
-        usage
-        exit 1
-    fi
-    shift $((OPTIND-1))
-    [ "${1:-}" = "--" ] && shift
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} prepare \
           --analysis-name "$analysis_name" --rooted-tree "../$rooted_tree" --trees "../$trees" \
-          "${prepare_flags[@]}" \
+          "${likelihood_specification_flags[@]}" \
           | tee prepare.log
 elif [[ "$command" == "r" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} run \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          "${likelihood_specification_flags[@]}" \
            +RTS -N5 "${p_flags_rts[@]}"
 elif [[ "$command" == "c" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} continue \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          "${likelihood_specification_flags[@]}" \
           +RTS -N5 "${p_flags_rts[@]}"
 elif [[ "$command" == "m" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} marginal-likelihood \
           --aanalysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          "${likelihood_specification_flags[@]}" \
           +RTS -N5 "${p_flags_rts[@]}"
 else
     usage

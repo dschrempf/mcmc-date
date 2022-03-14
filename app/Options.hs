@@ -27,6 +27,16 @@ import Paths_mcmc_date (version)
 data Algorithm = MhgA | Mc3A
   deriving (Eq, Read, Show)
 
+data LikelihoodSpec
+  = FullMultivariateNormal
+  | -- | Sparse covariance matrix with given threshold.
+    SparseMultivariateNormal Double
+  | UnivariateNormal
+  deriving (Eq, Read, Show)
+
+likelihoodSpecP :: Parser LikelihoodSpec
+likelihoodSpecP = option auto (long "likelihood-spec" <> help "Likelihood specification (see below).")
+
 data Spec = Spec
   { analysisName :: String,
     -- | If no calibrations are given, a normalized tree with height 1.0 is
@@ -37,7 +47,9 @@ data Spec = Spec
     -- | Activate profiling (change the number of iterations).
     profile :: Bool,
     -- | Activate Hamiltonian proposal.
-    hamiltonian :: Bool
+    hamiltonian :: Bool,
+    -- | Likelihood specification.
+    likelihoodSpec :: LikelihoodSpec
   }
   deriving (Eq, Show, Read)
 
@@ -105,13 +117,7 @@ specP =
     <*> optional bracesP
     <*> profileP
     <*> hamiltonianP
-
-data LikelihoodSpec
-  = FullMultivariateNormal
-  | -- | Sparse covariance matrix with given threshold.
-    SparseMultivariateNormal Double
-  | UnivariateNormal
-  deriving (Eq, Read, Show)
+    <*> likelihoodSpecP
 
 data PrepSpec = PrepSpec
   { prepAnalysisName :: String,
@@ -124,7 +130,7 @@ data PrepSpec = PrepSpec
     -- branch lengths are obtained from these trees and used to approximate
     -- the phylogenetic likelihood.
     prepInTrees :: FilePath,
-    -- | Prepare a sparse matrix.
+    -- | Likelihood specification.
     prepLikelihoodSpec :: LikelihoodSpec
   }
   deriving (Eq, Read, Show)
@@ -144,9 +150,6 @@ prepInTreesP =
         <> help "Posterior distribution of trees (one tree per line, Newick format)"
         <> metavar "FILE"
     )
-
-likelihoodSpecP :: Parser LikelihoodSpec
-likelihoodSpecP = option auto (long "likelihood-spec" <> help "Likelihood specification (see below).")
 
 prepSpecP :: Parser PrepSpec
 prepSpecP = PrepSpec <$> analysisNameP <*> prepInRootedTreeP <*> prepInTreesP <*> likelihoodSpecP
