@@ -222,7 +222,7 @@ then
 elif [[ "$command" == "m" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} marginal-likelihood \
-          --aanalysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           "${likelihood_specification_flags[@]}" \
           +RTS -N5 "${p_flags_rts[@]}"
 else
