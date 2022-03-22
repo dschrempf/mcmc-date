@@ -29,7 +29,8 @@ data Algorithm = MhgA | Mc3A
 
 data LikelihoodSpec
   = FullMultivariateNormal
-  | -- | Sparse covariance matrix with given threshold.
+  | -- | Sparse covariance matrix with given penalty parameter. The parameter
+    --   determines the sparseness of the precision matrix.
     SparseMultivariateNormal Double
   | UnivariateNormal
   deriving (Eq, Read, Show)
@@ -197,7 +198,7 @@ modeP =
             string
             [ "Likelihood specification:",
               "  - FullMultivariateNormal",
-              "  - SparseMultivariateNormal THRESHOLD",
+              "  - SparseMultivariateNormal PENALTY",
               "  - UnivariateNormal"
             ]
 
