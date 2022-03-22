@@ -387,11 +387,17 @@ monitor cb cs bs =
 
 -- | Number of burn in iterations and auto tuning period.
 burnIn :: BurnInSettings
-burnIn = BurnInWithCustomAutoTuning $ 10 : 10 : [10, 20 .. 400]
+burnIn = BurnInWithCustomAutoTuning fast slow
+  where
+    fast = 10 : 10 : [10, 20 .. 200]
+    slow = [210, 220 .. 400]
 
 -- | Number of burn in iterations when profiling is enabled.
 burnInProf :: BurnInSettings
-burnInProf = BurnInWithCustomAutoTuning $ 10 : 10 : 20 : [20]
+burnInProf = BurnInWithCustomAutoTuning fast slow
+  where
+    fast = [10, 10]
+    slow = [20, 20]
 
 -- | Number of iterations after burn in.
 iterations :: Iterations
@@ -411,8 +417,14 @@ nPointsProf = NPoints 12
 
 -- | Repetitive burn in at each point on the path.
 repetitiveBurnIn :: BurnInSettings
-repetitiveBurnIn = BurnInWithCustomAutoTuning $ [20, 40, 60, 80] <> replicate 9 100
+repetitiveBurnIn = BurnInWithCustomAutoTuning fast slow
+  where
+    fast = [20, 40, 60, 80]
+    slow = replicate 9 100
 
 -- | Repetitive burn in at each point on the path when profiling is enabled.
 repetitiveBurnInProf :: BurnInSettings
-repetitiveBurnInProf = BurnInWithCustomAutoTuning [10, 20, 40]
+repetitiveBurnInProf = BurnInWithCustomAutoTuning fast slow
+  where
+    fast = [10, 20]
+    slow = [30, 40]

@@ -26,7 +26,7 @@ import qualified Data.Matrix as MB
 import Data.Typeable
 import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
-import Numeric.AD
+import Numeric.AD.Double
 import qualified Numeric.LinearAlgebra as L
 import Numeric.Log hiding (sum)
 import Numeric.MathFunctions.Constants
@@ -301,7 +301,6 @@ posteriorFunction cs ks bs mu sigmaInv logDetSigma xs =
 --   Analysis by Gelman, they suggest computing the gradient manually. We could
 --   start using univariate normal distributions.
 gradLogPosteriorFunc ::
-  (RealFloat a, Show a, Typeable a) =>
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
@@ -311,8 +310,8 @@ gradLogPosteriorFunc ::
   MB.Matrix Double ->
   -- | Log of determinant of covariance matrix.
   Double ->
-  IG a ->
-  IG a
+  IG Double ->
+  IG Double
 gradLogPosteriorFunc cs ks bs mu sigmaInv logDetSigma =
   -- grad (ln . priorFunction cs ks)
   -- grad (ln . likelihoodFunction mu sigmaInv logDetSigma)

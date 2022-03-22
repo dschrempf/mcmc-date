@@ -111,7 +111,7 @@ scaleTree ::
   PWeight ->
   Tune ->
   Proposal (Tree Double b)
-scaleTree tr k = createProposal description (scaleTreeSimple n k) (PDimension n)
+scaleTree tr k = createProposal description (scaleTreeSimple n k) PFast (PDimension n)
   where
     description = PDescription $ "Scale tree; shape: " ++ show k
     n = length tr
@@ -181,11 +181,11 @@ pulleyTruncatedNormalSample ::
   IO (Double, Log Double)
 pulleyTruncatedNormalSample s t (Node _ _ [l, r])
   | brL <= 0 =
-    error $
-      "pulleyTruncatedNormalSample: Left branch is zero or negative: " ++ show brL ++ "."
+      error $
+        "pulleyTruncatedNormalSample: Left branch is zero or negative: " ++ show brL ++ "."
   | brR <= 0 =
-    error $
-      "pulleyTruncatedNormalSample: Right branch is zero or negative: " ++ show brR ++ "."
+      error $
+        "pulleyTruncatedNormalSample: Right branch is zero or negative: " ++ show brR ++ "."
   | otherwise = truncatedNormalSample 0 s t a b
   where
     brL = branch l
@@ -224,7 +224,7 @@ pulley ::
   PWeight ->
   Tune ->
   Proposal (LengthTree Double)
-pulley s = createProposal description (pulleySimple s) (PDimension 2)
+pulley s = createProposal description (pulleySimple s) PFast (PDimension 2)
   where
     description = PDescription $ "Pulley; sd: " ++ show s
 
@@ -275,6 +275,7 @@ scaleNormAndTreeContrarily tr sd =
   createProposal
     description
     (scaleNormAndTreeContrarilySimple nBranches sd)
+    PFast
     (PDimension $ nBranches + 1)
   where
     description = PDescription $ "Scale norm and tree contrarily; sd: " <> show sd
@@ -358,6 +359,7 @@ scaleVarianceAndTree tr sd =
   createProposal
     description
     (scaleVarianceAndTreeSimple nBranches sd)
+    PFast
     (PDimension $ nBranches + 1)
   where
     description = PDescription $ "Scale variance and tree; sd: " <> show sd

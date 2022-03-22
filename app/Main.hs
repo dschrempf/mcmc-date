@@ -57,7 +57,7 @@ import Probability
 import State
 import Tools
 import Control.Exception
-import Data.Typeable
+import qualified Statistics.Covariance as S
 {- ORMOLU_ENABLE -}
 
 getMeanTreeFn :: String -> FilePath
@@ -110,37 +110,52 @@ getPosteriorMatrixMergeBranchesToRoot = L.fromRows . map (sumFirstTwo . getBranc
 getPosteriorMatrix :: [Tree Length a] -> L.Matrix Double
 getPosteriorMatrix = L.fromRows . map (VS.fromList . map fromLength . branches)
 
--- Check if value is large enough to be kept in the sparse matrix.
-keepValueWith :: Double -> Int -> Int -> L.Matrix Double -> Maybe ((Int, Int), Double)
-keepValueWith r i j m =
-  if (abs x < (vI * r)) && (abs x < (vJ * r))
-    then Nothing
-    else Just ((i, j), x)
-  where
-    x = m `L.atIndex` (i, j)
-    vI = abs $ m `L.atIndex` (i, i)
-    vJ = abs $ m `L.atIndex` (j, j)
+-- -- Check if value is large enough to be kept in the sparse matrix.
+-- keepValueWith :: Double -> Int -> Int -> L.Matrix Double -> Maybe ((Int, Int), Double)
+-- keepValueWith r i j m =
+--   if (abs x < (vI * r)) && (abs x < (vJ * r))
+--     then Nothing
+--     else Just ((i, j), x)
+--   where
+--     x = m `L.atIndex` (i, j)
+--     vI = abs $ m `L.atIndex` (i, i)
+--     vJ = abs $ m `L.atIndex` (j, j)
 
-makeSparseWith ::
-  -- Relative threshold ratio used to erase offdiagonal elements of the covariance
-  -- matrix.
-  Double ->
-  L.Matrix Double ->
-  -- Also return the association list (because otherise I cannot convert it back
-  -- to a dense matrix); and the proportion of elements kept.
-  (L.GMatrix, L.AssocMatrix, Double)
-makeSparseWith r sigma
-  | n /= m = error "makeSparse: Matrix not square."
-  | otherwise = (L.mkSparse xs', xs', fromIntegral (length xs') / fromIntegral (n * n))
-  where
-    n = L.rows sigma
-    m = L.cols sigma
-    xs' =
-      catMaybes $
-        [ keepValueWith r i j sigma
+-- makeSparseWith ::
+--   -- Relative threshold ratio used to erase offdiagonal elements of the covariance
+--   -- matrix.
+--   Double ->
+--   L.Matrix Double ->
+--   -- Also return the association list (because otherise I cannot convert it back
+--   -- to a dense matrix); and the proportion of elements kept.
+--   (L.GMatrix, L.AssocMatrix, Double)
+-- makeSparseWith r sigma
+--   | n /= m = error "makeSparse: Matrix not square."
+--   | otherwise = (L.mkSparse xs', xs', fromIntegral (length xs') / fromIntegral (n * n))
+--   where
+--     n = L.rows sigma
+--     m = L.cols sigma
+--     xs' =
+--       catMaybes $
+--         [ keepValueWith r i j sigma
+--           | i <- [0 .. (n - 1)],
+--             j <- [0 .. (n - 1)]
+--         ]
+
+toAssocMatrix :: L.Matrix Double -> L.AssocMatrix
+toAssocMatrix xs
+  | n /= m = error "toAssocMatrix: Matrix not square."
+  | otherwise =
+      catMaybes
+        [ if abs e > eps then Just ((i, j), e) else Nothing
           | i <- [0 .. (n - 1)],
-            j <- [0 .. (n - 1)]
+            j <- [0 .. (n - 1)],
+            let e = xs `L.atIndex` (i, j)
         ]
+  where
+    n = L.rows xs
+    m = L.cols xs
+    eps = 1e-8
 
 -- Read in all trees, calculate posterior means and covariances of the branch
 -- lengths, and find the midpoint root of the mean tree.
@@ -226,22 +241,43 @@ prepare (PrepSpec an rt ts lhsp) = do
     FullMultivariateNormal -> do
       putStrLn "Use full covariance matrix."
       pure $ FullS mu (L.toRows $ sigmaInv) logDetSigma
-    SparseMultivariateNormal rFix -> do
-      putStrLn "Use a sparse covariance matrix to speed up phylogenetic likelihood calculation."
-      putStrLn "Table of \"Relative threshold, proportion of entries kept\"."
-      let rs = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-8, 1e-16]
-      putStrLn $
-        intercalate "\n" $
-          [ show r ++ ", " ++ show p
-            | r <- rs,
-              let (_, _, p) = makeSparseWith r sigmaInv
-          ]
-      putStrLn $ "Use a (provided) relative threshold of: " <> show rFix <> "."
-      let (_, sigmaInvSL, _) = makeSparseWith rFix sigmaInv
-          sigmaS = L.inv (L.toDense sigmaInvSL)
-          (_, (logDetSigmaS, signS)) = L.invlndet sigmaS
+    -- SparseMultivariateNormal rho -> do
+    --   putStrLn "Use a sparse covariance matrix to speed up phylogenetic likelihood calculation."
+    --   putStrLn "Table of \"Relative threshold, proportion of entries kept\"."
+    --   let rs = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-8, 1e-16]
+    --   putStrLn $
+    --     intercalate "\n" $
+    --       [ show r ++ ", " ++ show p
+    --         | r <- rs,
+    --           let (_, _, p) = makeSparseWith r sigmaInv
+    --       ]
+    --   putStrLn $ "Use a (provided) relative threshold of: " <> show rho <> "."
+    --   let (_, sigmaInvSL, _) = makeSparseWith rho sigmaInv
+    --       sigmaS = L.inv (L.toDense sigmaInvSL)
+    --       (_, (logDetSigmaS, signS)) = L.invlndet sigmaS
+    --   when (signS /= 1.0) $ error "prepare: Determinant of sparse covariance matrix is negative?"
+    --   pure $ SparseS mu sigmaInvSL logDetSigmaS
+    SparseMultivariateNormal rho -> do
+      putStrLn "Use a sparse covariance/precision matrix to speed up phylogenetic likelihood calculation."
+      putStrLn "Estimate amtrices with glasso (graphical lasso)."
+      putStrLn $ "Use a (provided) penalty parameter of: " <> show rho <> "."
+      let (muS, ssS, xsNormalizedS) = S.scale pmR
+          -- The precision matrix is the inverted correlation matrix sigma.
+          (sigmaNormalizedSparse, precNormalizedSparse) = either error id $ S.graphicalLasso rho xsNormalizedS
+          sigmaSparse = S.rescaleSWith ssS $ L.unSym sigmaNormalizedSparse
+          precSparse = S.rescalePWith ssS $ L.unSym precNormalizedSparse
+      let -- Get log of determinant of sparse sigma.
+          (_, (logDetSigmaS, signS)) = L.invlndet sigmaSparse
       when (signS /= 1.0) $ error "prepare: Determinant of sparse covariance matrix is negative?"
-      pure $ SparseS mu sigmaInvSL logDetSigmaS
+      let -- Need an association list.
+          precSparseList = toAssocMatrix precSparse
+      let -- Some debug output.
+          nFull = L.rows sigmaSparse * L.rows sigmaSparse
+          nSparse = length precSparseList
+      putStrLn $ "Number of elements of full matrix: " <> show nFull
+      putStrLn $ "Number of elements of sparse matrix: " <> show nSparse
+      putStrLn $ "Proportion of elements kept: " <> show (fromIntegral nSparse / fromIntegral nFull :: Double)
+      pure $ SparseS muS precSparseList logDetSigmaS
     UnivariateNormal -> do
       putStrLn "Use univariate normal distributions to speed up phylogenetic likelihood calculation."
       let vs = L.takeDiag sigma
@@ -290,13 +326,12 @@ getLikelihoodFunction an lhsp = do
       error "Likelihood specification and data do not match (see above)."
 
 getGradLogPosteriorFunction ::
-  (RealFloat a, Show a, Typeable a) =>
   String ->
   LikelihoodSpec ->
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
-  IO (IG a -> IG a)
+  IO (IG Double -> IG Double)
 getGradLogPosteriorFunction an lhsp cb cs bs = do
   lhd <- getData an
   case (lhsp, lhd) of

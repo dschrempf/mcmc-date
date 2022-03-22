@@ -38,34 +38,34 @@ slideNodesAtContrarilySimple ::
   ProposalSimple (HeightTree Double, LengthTree Double)
 slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
   | null rTrChildren =
-    error "slideNodesAtContrarilySimple: Sub tree of unconstrained tree is a leaf."
+      error "slideNodesAtContrarilySimple: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
-    (hNode', q) <- truncatedNormalSample hNode sd t hMaxChild hParent g
-    -- Time tree.
-    let tTr' = toTree $ tTrPos & currentTreeL . branchL .~ assertWith (> 0) hNode'
-    -- Rate tree.
-    let -- Scaling factors of rate tree stems (inversely proportional to scaling
-        -- factors of height tree).
-        xiStemR =
-          if null pth
-            then 1
-            else assertWith (> 0) $ (hParent - hNode) / (hParent - hNode')
-        -- Scaling factors of rate tree daughter branches excluding the stem.
-        getXiR hChild = assertWith (> 0) (hNode - hChild) / (hNode' - hChild)
-        xisR = map getXiR hsChildren
-        scaleDaughterBranches (Node br lb trs) =
-          Node br lb $ zipWith (modifyStem . (*)) xisR trs
-        -- If the root node is handled, do not scale the stem because no upper
-        -- bound is set.
-        f =
-          if null pth
-            then scaleDaughterBranches
-            else modifyStem (* xiStemR) . scaleDaughterBranches
-        rTr' = toTree $ modifyTree f rTrPos
-    -- New state.
-    let x' = (HeightTree tTr', LengthTree rTr')
-        jacobian = Exp $ sum (map log xisR) + log xiStemR
-    return (x', q, jacobian)
+      (hNode', q) <- truncatedNormalSample hNode sd t hMaxChild hParent g
+      -- Time tree.
+      let tTr' = toTree $ tTrPos & currentTreeL . branchL .~ assertWith (> 0) hNode'
+      -- Rate tree.
+      let -- Scaling factors of rate tree stems (inversely proportional to scaling
+          -- factors of height tree).
+          xiStemR =
+            if null pth
+              then 1
+              else assertWith (> 0) $ (hParent - hNode) / (hParent - hNode')
+          -- Scaling factors of rate tree daughter branches excluding the stem.
+          getXiR hChild = assertWith (> 0) (hNode - hChild) / (hNode' - hChild)
+          xisR = map getXiR hsChildren
+          scaleDaughterBranches (Node br lb trs) =
+            Node br lb $ zipWith (modifyStem . (*)) xisR trs
+          -- If the root node is handled, do not scale the stem because no upper
+          -- bound is set.
+          f =
+            if null pth
+              then scaleDaughterBranches
+              else modifyStem (* xiStemR) . scaleDaughterBranches
+          rTr' = toTree $ modifyTree f rTrPos
+      -- New state.
+      let x' = (HeightTree tTr', LengthTree rTr')
+          jacobian = Exp $ sum (map log xisR) + log xiStemR
+      return (x', q, jacobian)
   where
     -- Time tree.
     (HeightBoundaryData tTrPos hNode hsChildren hMaxChild hParent) =
@@ -122,13 +122,14 @@ slideNodesAtContrarily tr pth sd
   | not $ isValidPath tr pth = error $ "slideNodesAtContrarily: Path is invalid: " <> show pth <> "."
   | isLeafPath tr pth = error $ "slideNodesAtContrarily: Path leads to a leaf: " <> show pth <> "."
   | otherwise =
-    createProposal
-      description
-      (slideNodesAtContrarilySimple pth sd)
-      -- 1 for ultrametric node.
-      -- 0 or 1 for unconstrained stem.
-      -- n for unconstrained daughters.
-      (PDimension $ 1 + nStem + nDaughters)
+      createProposal
+        description
+        (slideNodesAtContrarilySimple pth sd)
+        PFast
+        -- 1 for ultrametric node.
+        -- 0 or 1 for unconstrained stem.
+        -- n for unconstrained daughters.
+        (PDimension $ 1 + nStem + nDaughters)
   where
     description = PDescription $ "Slide nodes contrarily; sd: " <> show sd
     nStem = if null pth then 0 else 1
@@ -180,7 +181,7 @@ slideRootContrarilyJacobian n u xis =
   Exp $
     sum $
       -- Minus n: Scaling the time tree node heights contrarily.
-      fromIntegral (- n) * log u :
+      fromIntegral (-n) * log u :
       -- Scaling the rate branches.
       map log xis
 
@@ -251,6 +252,7 @@ slideRootContrarily tr s =
   createProposal
     description
     (slideRootContrarilySimple n s)
+    PFast
     -- 1: Slide absolute time height.
     -- n: Scale inner nodes of time tree.
     -- k: Scale the rate tree branches leading to the root.
@@ -272,49 +274,59 @@ scaleSubTreeAtContrarilySimple ::
   ProposalSimple (HeightTree Double, LengthTree Double)
 scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, LengthTree rTr) g
   | null tTrChildren =
-    error "scaleSubTreeAtContrarilySimple: Sub tree of ultrametric tree is a leaf."
+      error "scaleSubTreeAtContrarilySimple: Sub tree of ultrametric tree is a leaf."
   | null rTrChildren =
-    error "scaleSubTreeAtContrarilySimple: Sub tree of unconstrained tree is a leaf."
+      error "scaleSubTreeAtContrarilySimple: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
-    (hTTrNode', q) <- truncatedNormalSample hTTrNode sd t 0 hTTrParent g
-    let -- Scaling factor of time tree nodes heights (xi, not x_i).
-        xiT = let x = hTTrNode' / hTTrNode in assertWith (> 0) x
-        tTr' = toTree $ tTrPos & currentTreeL %~ scaleUltrametricTreeF hTTrNode' xiT
-    -- Rate tree.
-    let -- Scaling factor of rate tree branches excluding the stem.
-        xiR = recip xiT
-        -- Scaling factor of rate tree stem.
-        xiStemR =
-          if null pth
-            then 1
-            else
-              let x = (hTTrParent - hTTrNode) / (hTTrParent - hTTrNode')
-               in assertWith (> 0) x
-        -- If the root node is handled, do not scale the stem because no upper
-        -- bound is set.
-        f =
-          if null pth
-            then scaleUnconstrainedTreeWithoutStemF xiR
-            else modifyStem (* xiStemR) . scaleUnconstrainedTreeWithoutStemF xiR
-        rTr' = toTree $ rTrPos & currentTreeL %~ f
-    -- New state.
-    let x' = (HeightTree tTr', LengthTree rTr')
-        -- jacobianTimeTree = Exp $ fromIntegral (nNodes - 1) * log xi
-        -- jacobianRateTree = Exp $ fromIntegral (nBranches -1) * log xi' + log xiStem
-        jacobian = Exp $ fromIntegral (nNodes - nBranches) * log xiT + log xiStemR
-    let
-    return (x', q, jacobian)
+      (hTTrNode', q) <- truncatedNormalSample hTTrNode sd t 0 hTTrParent g
+      let -- Scaling factor of time tree nodes heights (xi, not x_i).
+          xiT = let x = hTTrNode' / hTTrNode in assertWith (> 0) x
+          tTr' = toTree $ tTrPos & currentTreeL %~ scaleUltrametricTreeF hTTrNode' xiT
+      -- Rate tree.
+      let -- Scaling factor of rate tree branches excluding the stem.
+          xiR = recip xiT
+          -- Scaling factor of rate tree stem.
+          xiStemR =
+            if null pth
+              then 1
+              else
+                let x = (hTTrParent - hTTrNode) / (hTTrParent - hTTrNode')
+                 in assertWith (> 0) x
+          -- If the root node is handled, do not scale the stem because no upper
+          -- bound is set.
+          f =
+            if null pth
+              then scaleUnconstrainedTreeWithoutStemF xiR
+              else modifyStem (* xiStemR) . scaleUnconstrainedTreeWithoutStemF xiR
+          rTr' = toTree $ rTrPos & currentTreeL %~ f
+      -- New state.
+      let x' = (HeightTree tTr', LengthTree rTr')
+          -- jacobianTimeTree = Exp $ fromIntegral (nNodes - 1) * log xi
+          -- jacobianRateTree = Exp $ fromIntegral (nBranches -1) * log xi' + log xiStem
+          jacobian = Exp $ fromIntegral (nNodes - nBranches) * log xiT + log xiStemR
+      let -- Time tree.
+
+          -- If the root node is handled, set the upper bound to +Infinity because no
+          -- parent node exists.
+
+          -- Rate tree.
+
+          -- Subtract 2 because leaves have depth one and are not scaled.
+
+          -- Do not scale the leaves.
+
+          -- Filter other nodes.
+
+      return (x', q, jacobian)
   where
-    -- Time tree.
     tTrPos = goPathUnsafe pth $ fromTree tTr
     tTrFocus = current tTrPos
     tTrParent = current $ goParentUnsafe tTrPos
     tTrChildren = forest tTrFocus
     hTTrNode = branch tTrFocus
-    -- If the root node is handled, set the upper bound to +Infinity because no
-    -- parent node exists.
+
     hTTrParent = if null pth then 1 / 0 else branch tTrParent
-    -- Rate tree.
+
     rTrPos = goPathUnsafe pth $ fromTree rTr
     rTrFocus = current rTrPos
     rTrChildren = forest rTrFocus
@@ -367,10 +379,11 @@ scaleSubTreesAtContrarily tr pth sd
   | not $ isValidPath tr pth = error $ "scaleSubTreesAtContrarily: Path is invalid: " <> show pth <> "."
   | isLeafPath tr pth = error $ "scaleSubTreesAtContrarily: Path leads to a leaf: " <> show pth <> "."
   | otherwise =
-    createProposal
-      description
-      (scaleSubTreeAtContrarilySimple nNodes nBranches pth sd)
-      (PDimension $ nNodes + nBranches)
+      createProposal
+        description
+        (scaleSubTreeAtContrarilySimple nNodes nBranches pth sd)
+        PFast
+        (PDimension $ nNodes + nBranches)
   where
     description = PDescription $ "Scale sub trees contrarily; sd: " <> show sd
     subtree = current $ goPathUnsafe pth $ fromTree tr
@@ -400,11 +413,8 @@ scaleSubTreesContrarily tr hn s n wMin wMax t =
     | (pth, lb) <- itoList $ identify tr,
       let focus = tr ^. subTreeAtL pth,
       let currentDepth = depth focus,
-      -- Subtract 2 because leaves have depth one and are not scaled.
       let w = pWeight $ minimum [fromPWeight wMin + currentDepth - 2, fromPWeight wMax],
-      -- Do not scale the leaves.
       not $ null $ forest focus,
-      -- Filter other nodes.
       hn pth
   ]
   where

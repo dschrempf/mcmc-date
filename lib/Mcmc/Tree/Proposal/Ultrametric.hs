@@ -94,7 +94,7 @@ slideNodeAtUltrametric ::
 slideNodeAtUltrametric tr pth s
   | not $ isValidPath tr pth = error $ "slideNodeAtUltrametric: Path is invalid: " <> show pth <> "."
   | isLeafPath tr pth = error $ "slideNodeAtUltrametric: Path leads to a leaf: " <> show pth <> "."
-  | otherwise = createProposal description (slideNodeAtUltrametricSimple pth s) (PDimension 1)
+  | otherwise = createProposal description (slideNodeAtUltrametricSimple pth s) PFast (PDimension 1)
   where
     description = PDescription $ "Slide node ultrametric; sd: " ++ show s
 
@@ -133,13 +133,13 @@ scaleSubTreeAtUltrametricSimple ::
 scaleSubTreeAtUltrametricSimple n pth sd t tr g
   | null children = error "scaleSubTreeAtUltrametricSimple: Sub tree is a leaf."
   | otherwise = do
-    (hNode', q) <- truncatedNormalSample hNode sd t 0 hParent g
-    -- Scaling factor (xi, not x_i).
-    let xi = let x = hNode' / hNode in assertWith (> 0) x
-        -- (-1) because the root height has an additive change.
-        jacobian = Exp $ fromIntegral (n - 1) * log xi
-        tr' = toTree $ trPos & currentTreeL %~ scaleUltrametricTreeF hNode' xi
-    return (HeightTree tr', q, jacobian)
+      (hNode', q) <- truncatedNormalSample hNode sd t 0 hParent g
+      -- Scaling factor (xi, not x_i).
+      let xi = let x = hNode' / hNode in assertWith (> 0) x
+          -- (-1) because the root height has an additive change.
+          jacobian = Exp $ fromIntegral (n - 1) * log xi
+          tr' = toTree $ trPos & currentTreeL %~ scaleUltrametricTreeF hNode' xi
+      return (HeightTree tr', q, jacobian)
   where
     trPos = goPathUnsafe pth $ fromTree $ getHeightTree tr
     focus = current trPos
@@ -178,10 +178,11 @@ scaleSubTreeAtUltrametric tr pth sd
   | not $ isValidPath tr pth = error $ "scaleSubTreeAtUltrametric: Path is invalid: " <> show pth <> "."
   | isLeafPath tr pth = error $ "scaleSubTreeAtUltrametric: Path leads to a leaf: " <> show pth <> "."
   | otherwise =
-    createProposal
-      description
-      (scaleSubTreeAtUltrametricSimple n pth sd)
-      (PDimension n)
+      createProposal
+        description
+        (scaleSubTreeAtUltrametricSimple n pth sd)
+        PFast
+        (PDimension n)
   where
     description = PDescription $ "Scale sub tree ultrametrc; sd: " ++ show sd
     n = nInnerNodes $ current $ goPathUnsafe pth $ fromTree tr
@@ -232,11 +233,11 @@ pulleyUltrametricTruncatedNormalSample ::
   IO (Double, Log Double)
 pulleyUltrametricTruncatedNormalSample s t (HeightTree (Node ht _ [l, r]))
   | brL <= 0 =
-    error $
-      "pulleyUltrametricTruncatedNormalSample: Left branch is zero or negative: " ++ show brL ++ "."
+      error $
+        "pulleyUltrametricTruncatedNormalSample: Left branch is zero or negative: " ++ show brL ++ "."
   | brR <= 0 =
-    error $
-      "pulleyUltrametricTruncatedNormalSample: Right branch is zero or negative: " ++ show brR ++ "."
+      error $
+        "pulleyUltrametricTruncatedNormalSample: Right branch is zero or negative: " ++ show brR ++ "."
   | otherwise = truncatedNormalSample 0 s t a b
   where
     -- The new branch lengths are not allowed to exceed the height of the node.
@@ -307,7 +308,7 @@ pulleyUltrametric ::
 pulleyUltrametric (Node _ _ [l, r]) d
   | null (forest l) = error "pulleyUltrametric: Left sub tree is a leaf."
   | null (forest r) = error "pulleyUltrametric: Right sub tree is a leaf."
-  | otherwise = createProposal description (pulleyUltrametricSimple nL nR d) (PDimension $ nL + nR)
+  | otherwise = createProposal description (pulleyUltrametricSimple nL nR d) PFast (PDimension $ nL + nR)
   where
     description = PDescription $ "Pulley ultrametric; sd: " ++ show d
     nL = nInnerNodes l

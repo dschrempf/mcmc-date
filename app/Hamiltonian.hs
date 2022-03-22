@@ -51,13 +51,14 @@ toVector mask xs = L.fromList $ snd $ foldl' f (mask, []) xs
 fromVectorWith :: [Bool] -> I -> L.Vector Double -> I
 fromVectorWith mask x xs = snd $ mapAccumL f (mask, L.size xs - 1) x
   where
-    f (True : ms, i) _ = ((ms, i -1), xs VS.! i)
+    f (True : ms, i) _ = ((ms, i - 1), xs VS.! i)
     f (False : ms, i) z = ((ms, i), z)
     f (_, _) _ = error "fromVectorWith: Mask is too short or traversable structure is too long."
 
 hmcSettingsWith :: [Bool] -> I -> (I -> I) -> HSettings I
 hmcSettingsWith mask x gradient =
   HSettings
+    x
     toVector'
     (fromVectorWith mask)
     gradient
@@ -72,7 +73,7 @@ hmcSettingsWith mask x gradient =
 
 -- | The Hamiltonian proposal.
 hmc :: Bool -> I -> (I -> I) -> Proposal I
-hmc calibrationsAvailable x gradient = hamiltonian x s (PName "All parameters") (pWeight 1)
+hmc calibrationsAvailable x gradient = hamiltonian s (PName "All parameters") (pWeight 1)
   where
     mask = getMask calibrationsAvailable x
     s = hmcSettingsWith mask x gradient
