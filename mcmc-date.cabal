@@ -1,25 +1,28 @@
-cabal-version:  3.0
-name:           mcmc-date
-version:        0.1.0.0
-synopsis:       Phylogenetic dating using Markov chain Monte Carlo algorithms
-description:    Please see the README at <https://github.com/dschrempf/mcmc-date#readme>
-category:       Math, Statistics
-homepage:       https://github.com/dschrempf/mcmc-date#readme
-bug-reports:    https://github.com/dschrempf/mcmc-date/issues
-author:         Dominik Schrempf
-maintainer:     dominik.schrempf@gmail.com
-copyright:      Dominik Schrempf (2021)
-license:        GPL-3.0-or-later
-license-file:   LICENSE
-build-type:     Simple
+cabal-version:      3.0
+name:               mcmc-date
+version:            0.1.0.0
+synopsis:
+  Phylogenetic dating using Markov chain Monte Carlo algorithms
 
+description:
+  Please see the README at <https://github.com/dschrempf/mcmc-date#readme>
+
+category:           Math, Statistics
+homepage:           https://github.com/dschrempf/mcmc-date#readme
+bug-reports:        https://github.com/dschrempf/mcmc-date/issues
+author:             Dominik Schrempf
+maintainer:         dominik.schrempf@gmail.com
+copyright:          Dominik Schrempf (2021)
+license:            GPL-3.0-or-later
+license-file:       LICENSE
+build-type:         Simple
 extra-source-files:
-  README.md
-  ChangeLog.md
   bench/bench.tree
+  ChangeLog.md
+  README.md
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/dschrempf/mcmc-date
 
 flag ignore-asserts
@@ -28,58 +31,64 @@ flag ignore-asserts
   manual:      True
 
 common lib
-  ghc-options: -Wall -Wunused-packages
+  ghc-options:      -Wall -Wunused-packages
+
   if flag(ignore-asserts)
     ghc-options: -fignore-asserts
+
   else
     ghc-options: -fno-ignore-asserts
+
   default-language: Haskell2010
 
 common test
-  ghc-options: -Wall -Werror -Wunused-packages
+  ghc-options:      -Wall -Werror -Wunused-packages
   default-language: Haskell2010
 
 common bench
-  ghc-options: -Wall -Werror -Wunused-packages
+  ghc-options:      -Wall -Werror -Wunused-packages
   default-language: Haskell2010
 
 common exec
-  ghc-options: -Wall -Wunused-packages -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:
+    -Wall -Wunused-packages -threaded -rtsopts -with-rtsopts=-N
+
   default-language: Haskell2010
 
 library mcmc-date-lib
-  import: lib
+  import:          lib
   exposed-modules:
-      Mcmc.Tree
-      Mcmc.Tree.Import
-      Mcmc.Tree.Lens
-      Mcmc.Tree.Monitor
-      Mcmc.Tree.Mrca
-      Mcmc.Tree.Prior.BirthDeath
-      Mcmc.Tree.Prior.Branch
-      Mcmc.Tree.Prior.Branch.RelaxedClock
-      Mcmc.Tree.Prior.Node.Brace
-      Mcmc.Tree.Prior.Node.Calibration
-      Mcmc.Tree.Prior.Node.Combined
-      Mcmc.Tree.Prior.Node.Constraint
-      Mcmc.Tree.Proposal.Brace
-      Mcmc.Tree.Proposal.Contrary
-      Mcmc.Tree.Proposal.Ultrametric
-      Mcmc.Tree.Proposal.Unconstrained
-      Mcmc.Tree.Types
+    Mcmc.Tree
+    Mcmc.Tree.Import
+    Mcmc.Tree.Lens
+    Mcmc.Tree.Monitor
+    Mcmc.Tree.Mrca
+    Mcmc.Tree.Prior.BirthDeath
+    Mcmc.Tree.Prior.Branch
+    Mcmc.Tree.Prior.Branch.RelaxedClock
+    Mcmc.Tree.Prior.Node.Brace
+    Mcmc.Tree.Prior.Node.Calibration
+    Mcmc.Tree.Prior.Node.Combined
+    Mcmc.Tree.Prior.Node.Constraint
+    Mcmc.Tree.Proposal.Brace
+    Mcmc.Tree.Proposal.Contrary
+    Mcmc.Tree.Proposal.Ultrametric
+    Mcmc.Tree.Proposal.Unconstrained
+    Mcmc.Tree.Types
+
   other-modules:
-      Mcmc.Tree.Prior.Branch.Internal
-      Mcmc.Tree.Prior.Node.Internal
-      Mcmc.Tree.Proposal.Internal
-      Statistics.Distribution.TruncatedNormal
-      Paths_mcmc_date
-  autogen-modules:
-      Paths_mcmc_date
-  hs-source-dirs: lib
+    Mcmc.Tree.Prior.Branch.Internal
+    Mcmc.Tree.Prior.Node.Internal
+    Mcmc.Tree.Proposal.Internal
+    Paths_mcmc_date
+    Statistics.Distribution.TruncatedNormal
+
+  autogen-modules: Paths_mcmc_date
+  hs-source-dirs:  lib
   build-depends:
-      aeson
+    , aeson
     , attoparsec
-    , base >=4.7 && <5
+    , base            >=4.7 && <5
     , bytestring
     , cassava
     , containers
@@ -94,40 +103,39 @@ library mcmc-date-lib
     , zlib
 
 benchmark mcmc-date-bench
-  import: bench
-  type: exitcode-stdio-1.0
-  main-is: Bench.hs
-  other-modules:
-      Paths_mcmc_date
-  autogen-modules:
-      Paths_mcmc_date
-  hs-source-dirs: bench
+  import:          bench
+  type:            exitcode-stdio-1.0
+  main-is:         Bench.hs
+  other-modules:   Paths_mcmc_date
+  autogen-modules: Paths_mcmc_date
+  hs-source-dirs:  bench
   build-depends:
-      base >=4.7 && <5
+    , base        >=4.7 && <5
     , criterion
     , elynx-tree
     , lens
     , mcmc-date
 
 executable mcmc-date
-  import: exec
-  main-is: Main.hs
+  import:           exec
+  main-is:          Main.hs
   other-modules:
-      Definitions
-      Hamiltonian
-      Options
-      Probability
-      State
-      Tools
-      Paths_mcmc_date
-  autogen-modules:
-      Paths_mcmc_date
-  hs-source-dirs: app
+    Definitions
+    Hamiltonian
+    Options
+    Paths_mcmc_date
+    Probability
+    State
+    Tools
+
+  autogen-modules:  Paths_mcmc_date
+  hs-source-dirs:   app
   build-depends:
-      ad
+    , ad
     , aeson
-    , base >=4.7 && <5
+    , base                  >=4.7 && <5
     , bytestring
+    , covariance
     , deepseq
     , elynx-tree
     , hmatrix
@@ -141,4 +149,5 @@ executable mcmc-date
     , optparse-applicative
     , statistics
     , vector
+
   default-language: Haskell2010
