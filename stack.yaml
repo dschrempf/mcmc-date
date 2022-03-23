@@ -13,9 +13,9 @@ extra-deps:
   - ../elynx/elynx-tree
   - ../mcmc/mcmc
 
-# ghc-options:
-#   # Optimizations.
-#   "$everything": -fllvm -O2
+ghc-options:
+  #   # Optimizations.
+  "$everything": -fllvm -O2
 #   # # Profiling.
 #   # "$locals": -eventlog
 #   # Weeder 2.0.
