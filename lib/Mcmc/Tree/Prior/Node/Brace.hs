@@ -155,10 +155,8 @@ checkBraces (Brace nX nsX _) (Brace nY nsY _) =
 --
 -- The brace file is a JSON file in the following format:
 --
--- @
--- [{"braceDataName":"Brace1","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]],"braceDataWeight":1.0},
---  {"braceDataName":"Brace2","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]],"braceDataWeight":1.0}]
--- @
+-- > [{"braceDataName":"Brace1","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]],"braceDataWeight":1.0},
+-- >  {"braceDataName":"Brace2","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]],"braceDataWeight":1.0}]
 --
 -- The braced nodes are uniquely defined as the most recent common ancestors
 -- (MRCA) of @NodeXLeafA@ and @NodeXLeafB@, as well as @NodeYLeafA@ and

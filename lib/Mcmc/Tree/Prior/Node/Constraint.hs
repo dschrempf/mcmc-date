@@ -262,9 +262,7 @@ describeRedundant (l, r) =
 -- The constraint file is a comma separated values (CSV) file with rows of the
 -- following format:
 --
--- @
--- ConstraintName,YoungLeafA,YoungLeafB,OldLeafA,OldLeafB,Weight
--- @
+-- > ConstraintName,YoungLeafA,YoungLeafB,OldLeafA,OldLeafB,Weight
 --
 -- The young and old nodes are uniquely defined as the most recent common
 -- ancestors (MRCA) @YoungLeafA@ and @YoungLeafB@, as well as @OldLeafA@ and
@@ -273,9 +271,7 @@ describeRedundant (l, r) =
 -- The following line defines a constraint where the ancestor of leaves A and B
 -- is younger than the ancestor of leaves C and D:
 --
--- @
--- ExampleConstraint,A,B,C,D,1.0
--- @
+-- > ExampleConstraint,A,B,C,D,1.0
 --
 -- Redundant constraints are removed.
 --

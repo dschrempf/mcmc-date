@@ -266,18 +266,14 @@ findDupsBy eq (x : xs) = case partition (eq x) xs of
 -- The calibration file is a comma separated values (CSV) file with rows of the
 -- following format:
 --
--- @
--- CalibrationName,LeafA,LeafB,LowerBoundary,UpperBoundary,Weight
--- @
+-- > CalibrationName,LeafA,LeafB,LowerBoundary,UpperBoundary,Weight
 --
 -- The calibrated node is uniquely defined as the most recent common ancestor
 -- (MRCA) of @LeafA@ and @LeafB@. The UpperBoundary can be omitted.
 --
 -- The following line defines a calibration with a lower boundary only:
 --
--- @
--- Primates,Human,Chimpanzees,1e6,,1.0
--- @
+-- > Primates,Human,Chimpanzees,1e6,,1.0
 --
 -- Call 'error' if:
 --
