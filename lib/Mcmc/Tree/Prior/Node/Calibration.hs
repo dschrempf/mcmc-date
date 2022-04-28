@@ -13,13 +13,13 @@
 -- Creation date: Mon Jul 27 10:49:11 2020.
 module Mcmc.Tree.Prior.Node.Calibration
   ( -- * Calibrations
+    ProbabilityMass,
     Interval,
     Calibration,
     getCalibrationName,
     getCalibrationPath,
     getCalibrationNodeIndex,
     getCalibrationInterval,
-    calibration,
     loadCalibrations,
     calibrateSoftS,
     calibrateSoftF,
@@ -126,19 +126,13 @@ transformInterval x (Interval l r)
 
 -- | Calibrate node heights.
 --
+-- That is, ensure that a node height is within a given interval.
+--
 -- A calibration is specified by a name, a node at given path, height
--- boundaries, and two probability masses.
-
--- For example,
+-- boundaries, and an 'Interval'.
 --
--- @
---   let c = Calibration "Root" [] YoungAge YoungProbabilityMass OldAge OldProbabilityMass
--- @
---
--- ensures that the root node is older than @YOUNG@, and younger than @OLD@.
---
--- Calibrations are abstract data types and can be created using 'calibration'
--- or 'loadCalibrations'. The reason is that finding the nodes on the tree is a
+-- Calibrations are abstract data types and can be created using
+-- 'loadCalibrations'. The reason is that finding the nodes on the tree is a
 -- slow process not to be repeated at each proposal.
 data Calibration a = Calibration
   { calibrationName :: String,
@@ -176,7 +170,7 @@ prettyPrintCalibration (Calibration n p i l) =
     <> show l
     <> "."
 
--- | Create a calibration.
+-- Create a calibration.
 --
 -- See also 'loadCalibrations' which validates calibrations against each other.
 --
@@ -266,14 +260,17 @@ findDupsBy eq (x : xs) = case partition (eq x) xs of
 -- The calibration file is a comma separated values (CSV) file with rows of the
 -- following format:
 --
--- > CalibrationName,LeafA,LeafB,LowerBoundary,UpperBoundary,Weight
+-- > CalibrationName,LeafA,LeafB,LowerBoundary,LowerBoundaryProbabilityMass,UpperBoundary,UpperBoundaryProbabilityMass
 --
 -- The calibrated node is uniquely defined as the most recent common ancestor
--- (MRCA) of @LeafA@ and @LeafB@. The UpperBoundary can be omitted.
+-- (MRCA) of @LeafA@ and @LeafB@. A boundary comes with a corresponding
+-- 'ProbabilityMass'. Either boundary and their corresponding probability mass
+-- can be omitted.
 --
--- The following line defines a calibration with a lower boundary only:
+-- The following line defines a calibration with a lower boundary at 1e6 with
+-- probability mass 0.025 only:
 --
--- > Primates,Human,Chimpanzees,1e6,,1.0
+-- > Primates,Human,Chimpanzees,1e6,0.025,,
 --
 -- Call 'error' if:
 --
