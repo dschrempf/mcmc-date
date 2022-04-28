@@ -16,7 +16,7 @@ module Mcmc.Tree.Prior.Node.Brace
     Brace,
     getBraceName,
     getBraceNodes,
-    getBraceWeight,
+    getBraceStandardDeviation,
     brace,
     loadBraces,
     braceHardS,
@@ -46,16 +46,16 @@ import Mcmc.Tree.Types
 
 -- | Brace.
 --
--- The weight is a positive floating number that specifies the steepness of the
--- decline of the posterior function when the braced nodes have different
--- heights. If unsure, use a weight of 1.0.
+-- The standard deviation is a positive floating number that specifies the
+-- steepness of the decline of the prior function when the braced nodes have
+-- different heights.
 --
 -- Abstract data type to ensure brace validity. Braces can be created using
 -- 'brace' or 'loadBraces'.
 data Brace a = Brace
   { braceName :: String,
     braceNodes :: [NodeInfo],
-    braceWeight :: a
+    braceStandardDeviation :: StandardDeviation a
   }
   deriving (Eq, Read, Show)
 
@@ -67,9 +67,9 @@ getBraceName = braceName
 getBraceNodes :: Brace a -> [NodeInfo]
 getBraceNodes = braceNodes
 
--- | Weight.
-getBraceWeight :: Brace a -> a
-getBraceWeight = braceWeight
+-- | Standard deviation.
+getBraceStandardDeviation :: Brace a -> StandardDeviation a
+getBraceStandardDeviation = braceStandardDeviation
 
 -- | Create a brace.
 --
@@ -87,18 +87,17 @@ brace ::
   String ->
   -- | The most recent common ancestors of the given leaf lists will be braced.
   [[a]] ->
-  -- | Weight.
-  b ->
+  StandardDeviation b ->
   Brace b
-brace t n xss w
+brace t n xss s
   | null xss = err "No node found."
   | length xss == 1 = err "Only one node found."
   | any null ps = err "Cannot brace root node."
   | length (nub is) /= length is = err "Some nodes have equal indices."
   | length (nub ps) /= length ps = err "Some nodes have equal paths."
   | not $ null psErrs = error $ unlines $ psErrs ++ ["brace: Errors detected (see above)."]
-  | w <= 0 = err "Weight is zero or negative."
-  | otherwise = Brace n ns w
+  | s <= 0 = err "Standard deviation is zero or negative."
+  | otherwise = Brace n ns s
   where
     msg m = "brace: " ++ n ++ ": " ++ m
     err m = error $ msg m
@@ -118,7 +117,7 @@ data BraceData a = BraceData
   { braceDataName :: String,
     -- List of leaf pairs defining nodes.
     braceDataNodes :: [(String, String)],
-    braceDataWeight :: a
+    braceDataStandardDeviation :: StandardDeviation a
   }
   deriving (Generic, Show)
 
@@ -155,8 +154,8 @@ checkBraces (Brace nX nsX _) (Brace nY nsY _) =
 --
 -- The brace file is a JSON file in the following format:
 --
--- > [{"braceDataName":"Brace1","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]],"braceDataWeight":1.0},
--- >  {"braceDataName":"Brace2","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]],"braceDataWeight":1.0}]
+-- > [{"braceDataName":"Brace1","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]],"braceDataStandardDeviation":1e-4},
+-- >  {"braceDataName":"Brace2","braceDataNodes":[["NodeXLeafA","NodeXLeafB"],["NodeYLeafA","NodeYLeafB"],["NodeZLeafA","NodeZLeafB"]],"braceDataStandardDeviation":1e-4}]
 --
 -- The braced nodes are uniquely defined as the most recent common ancestors
 -- (MRCA) of @NodeXLeafA@ and @NodeXLeafB@, as well as @NodeYLeafA@ and
@@ -218,53 +217,45 @@ braceHardS (Brace _ xs _) (HeightTree t)
 -- Call 'error' if a path is invalid.
 braceSoftS ::
   RealFloat a =>
-  StandardDeviation a ->
   Brace a ->
   PriorFunctionG (HeightTree a) a
-braceSoftS s (Brace _ xs w) (HeightTree t) = braceSoftF s w hs
+braceSoftS (Brace _ xs s) (HeightTree t) = braceSoftF s hs
   where
     hs = map (\ni -> t ^. subTreeAtL (nodePath ni) . branchL) xs
-{-# SPECIALIZE braceSoftS :: Double -> Brace Double -> PriorFunctionG (HeightTree Double) Double #-}
+{-# SPECIALIZE braceSoftS :: Brace Double -> PriorFunctionG (HeightTree Double) Double #-}
 
 -- | See 'braceSoftS'.
 braceSoftF ::
   RealFloat a =>
   StandardDeviation a ->
-  -- | Weight.
-  a ->
   PriorFunctionG [a] a
-braceSoftF s w hs
+braceSoftF s hs
   | s <= 0 = error "braceSoftF: Standard deviation is zero or negative."
-  -- Should not be necessary because we use an abstract data type, and the check
-  -- is performed in 'brace'.
-  | w <= 0 = error "braceSoftF: Weight is zero or negative."
   | allEqual hs = 1
   | otherwise = product $ map f hs
   where
-    d = normal 0 (s / w)
+    d = normal 0 s
     d0 = d 0
     hMean = sum hs / fromIntegral (length hs)
     f x = d (x - hMean) / d0
-{-# SPECIALIZE braceSoftF :: Double -> Double -> PriorFunction [Double] #-}
+{-# SPECIALIZE braceSoftF :: Double -> PriorFunction [Double] #-}
 
 -- | Brace pairs of nodes using 'braceSoftS'.
 --
 -- Call 'error' if a path is invalid.
 braceSoft ::
   RealFloat a =>
-  -- | NOTE: The same standard deviation is used for all braces.
-  StandardDeviation a ->
   VB.Vector (Brace a) ->
   PriorFunctionG (HeightTree a) a
-braceSoft s bs t = VB.product $ VB.map (\b -> braceSoftS s b t) bs
+braceSoft bs t = VB.product $ VB.map (\b -> braceSoftS b t) bs
 
-{-# SPECIALIZE braceSoftS :: Double -> Brace Double -> PriorFunctionG (HeightTree Double) Double #-}
+{-# SPECIALIZE braceSoftS :: Brace Double -> PriorFunctionG (HeightTree Double) Double #-}
 
 -- | Convert a brace on 'Double' to a more general one.
 --
 -- Useful for automatic differentiation.
 realToFracBrace :: Fractional a => Brace Double -> Brace a
-realToFracBrace c = c {braceWeight = w'}
+realToFracBrace c = c {braceStandardDeviation = s'}
   where
-    w' = realToFrac $ braceWeight c
+    s' = realToFrac $ braceStandardDeviation c
 {-# SPECIALIZE realToFracBrace :: Brace Double -> Brace Double #-}

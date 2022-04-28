@@ -32,6 +32,7 @@ import Statistics.Distribution hiding (Mean)
 import Statistics.Distribution.TruncatedNormal
 import System.Random.MWC
 
+-- | Height boundary data.
 data HeightBoundaryData = HeightBoundaryData
   { hbdTreePosition :: TreePos Double Name,
     hbdNodeHeight :: Double,
@@ -45,7 +46,7 @@ assertWith :: (a -> Bool) -> a -> a
 assertWith f x = assert (f x) x
 {-# INLINE assertWith #-}
 
--- Calculate boundaries for sliding a node at given path.
+-- | Calculate boundaries for sliding a node at given path.
 --
 -- The other values are returned for computation efficiency.
 --
@@ -61,7 +62,7 @@ getHeightBoundaries ::
   HeightBoundaryData
 getHeightBoundaries n t p
   | null children =
-    error $ "getHeightBoundaries: " <> n <> ": Path leads to a leaf: " <> show p <> "."
+      error $ "getHeightBoundaries: " <> n <> ": Path leads to a leaf: " <> show p <> "."
   | otherwise = HeightBoundaryData position hNode hsChildren hChild hParent
   where
     position =
@@ -82,7 +83,7 @@ nInnerNodes :: Tree e a -> Int
 nInnerNodes (Node _ _ []) = 0
 nInnerNodes tr = 1 + sum (map nInnerNodes $ forest tr)
 
--- A very specific function scaling an ultrametric tree.
+-- | A very specific function scaling an ultrametric tree.
 --
 -- NOTE: Also scale leaf heights. This may be unintuitive, when leaf heights are
 -- non-zero.
@@ -97,9 +98,9 @@ scaleUltrametricTreeF ::
 scaleUltrametricTreeF h xi (Node _ lb ts) =
   Node h lb $ map (first (* xi)) ts
 
--- A very specific function that samples a delta value from the truncated normal
--- distribution with given bounds [a,b] and also computes the required factor of
--- the Metropolis-Hastings-Green (MHG) proposal ratio.
+-- | A very specific function that samples a delta value from the truncated
+-- normal distribution with given bounds [a,b] and also computes the required
+-- factor of the Metropolis-Hastings-Green (MHG) proposal ratio.
 --
 -- NOTE: No Jacobian is computed, because it is not known how the proposal will
 -- be used.

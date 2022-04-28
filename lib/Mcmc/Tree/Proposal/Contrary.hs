@@ -92,7 +92,7 @@ slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
 -- to determine the new node height of the ultrametric tree. The rates are
 -- changed accordingly.
 --
--- See 'slideNodeAtUltrametric'.
+-- See 'Mcmc.Tree.Proposal.Ultrametric.slideNodeAtUltrametric'.
 --
 -- NOTE: When applying to the root node (1) the tree heights change contrarily,
 -- (2) no upper bound is used because no parent node exists, and (3) the stem of
@@ -139,7 +139,8 @@ slideNodesAtContrarily tr pth sd
 --
 -- See 'slideNodesAtContrarily'.
 --
--- The weights are assigned as described in 'scaleSubTreesUltrametric'.
+-- The weights are assigned as described in
+-- 'Mcmc.Tree.Proposal.Ultrametric.scaleSubTreesUltrametric'.
 --
 -- Do not scale the leaves.
 slideNodesContrarily ::
@@ -342,14 +343,16 @@ scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, Length
 -- The sub trees of both trees are scaled contrarily. For example, if the sub
 -- tree of the ultrametric tree is magnified, the sub tree of the unconstrained
 -- tree is shrunk. In order to maintain ultrametricity of the ultrametric tree,
--- the stem of the sub tree is shortened (see 'scaleSubTreeAtUltrametric').
--- Correspondingly, the stem of the unconstrained tree is elongated.
+-- the stem of the sub tree is shortened. Correspondingly, the stem of the
+-- unconstrained tree is elongated.
 --
 -- A normal distribution truncated at the height of the parent node of the
 -- ultrametric tree and the leaves is used to determine the new height of the
 -- sub tree of the ultrametric tree.
 --
--- For reference, please see 'scaleSubTreeAtUltrametric', and 'scaleSubTreeAt'.
+-- For reference, please see
+-- 'Mcmc.Tree.Proposal.Ultrametric.scaleSubTreeAtUltrametric', and
+-- 'scaleSubTreeAt'.
 --
 -- NOTE: When applying to the root node (1) the tree heights change contrarily,
 -- (2) no upper bound is used because no parent node exists, and (3) the stem of
@@ -394,7 +397,8 @@ scaleSubTreesAtContrarily tr pth sd
 --
 -- See 'scaleSubTreesAtContrarily'.
 --
--- The weights are assigned as described in 'scaleSubTreesUltrametric'.
+-- The weights are assigned as described in
+-- 'Mcmc.Tree.Proposal.Ultrametric.scaleSubTreesUltrametric'.
 --
 -- Do not scale the leaves.
 scaleSubTreesContrarily ::

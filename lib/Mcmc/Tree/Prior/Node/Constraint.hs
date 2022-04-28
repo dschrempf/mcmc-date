@@ -19,10 +19,8 @@ module Mcmc.Tree.Prior.Node.Constraint
     getConstraintYoungNodePath,
     getConstraintOldNodeIndex,
     getConstraintOldNodePath,
-    getConstraintWeight,
-    constraint,
+    getConstraintProbabilityMass,
     loadConstraints,
-    constrainHardS,
     constrainSoftS,
     constrainSoftF,
     constrainSoft,
@@ -41,7 +39,6 @@ import qualified Data.Vector as VB
 import ELynx.Tree
 import GHC.Generics
 import Mcmc.Prior
-import Mcmc.Statistics.Types
 import Mcmc.Tree.Lens
 import Mcmc.Tree.Mrca
 import Mcmc.Tree.Prior.Node.Internal
@@ -49,22 +46,13 @@ import Mcmc.Tree.Types
 
 -- | Constraints define node orders.
 --
--- For example,
+-- For example, a constraint may ensure that a specific node is younger than
+-- another node.
 --
--- @
---   Constraint "Name" YOUNGER OLDER
--- @
+-- The 'ProbabilityMass' describes the steepness of a constraint.
 --
--- ensures that the node with path @YOUNGER@ is younger than the node with path
--- @OLDER@.
---
--- The weight is a positive floating number that specifies the steepness of the
--- decline of the posterior function when the constraint is dishonored. If
--- unsure, use a weight of 1.0.
---
--- Constraints can be created using 'constraint' or 'loadConstraints'. The
--- reason is that finding the nodes on the tree is a slow process not to be
--- repeated at each proposal.
+-- Constraints can be loaded using 'loadConstraints'. The reason is that finding
+-- the nodes on the tree is a slow process not to be repeated at each proposal.
 data Constraint a = Constraint
   { constraintName :: String,
     -- | Path to younger node (closer to the leaves).
@@ -75,10 +63,10 @@ data Constraint a = Constraint
     constraintOldNodePath :: Path,
     -- | Index of older node.
     constraintOldNodeIndex :: Int,
-    -- | Weight.
-    constraintWeight :: a
+    -- | Probability mass.
+    constraintProbabilityMass :: ProbabilityMass a
   }
-  deriving (Eq, Read, Show)
+  deriving (Eq)
 
 -- | Get name.
 getConstraintName :: Constraint a -> String
@@ -100,16 +88,16 @@ getConstraintOldNodeIndex = constraintOldNodeIndex
 getConstraintOldNodePath :: Constraint a -> Path
 getConstraintOldNodePath = constraintOldNodePath
 
--- | Get weight.
-getConstraintWeight :: Constraint a -> a
-getConstraintWeight = constraintWeight
+-- | Get probability mass.
+getConstraintProbabilityMass :: Constraint a -> ProbabilityMass a
+getConstraintProbabilityMass = constraintProbabilityMass
 
 -- Do the constraints affect the same nodes?
 duplicate :: Constraint a -> Constraint a -> Bool
 duplicate (Constraint _ _ yL _ oL _) (Constraint _ _ yR _ oR _) = (yL == yR) && (oL == oR)
 
 prettyPrintConstraint :: Show a => Constraint a -> String
-prettyPrintConstraint (Constraint n yP yI oP oI w) =
+prettyPrintConstraint (Constraint n yP yI oP oI p) =
   "Constraint: "
     <> n
     <> "\n  Young node index and path: "
@@ -120,8 +108,8 @@ prettyPrintConstraint (Constraint n yP yI oP oI w) =
     <> show oI
     <> ", "
     <> show oP
-    <> "\n Weight: "
-    <> show w
+    <> "\n Probability mass: "
+    <> show p
 
 -- Check if a constraint is valid.
 --
@@ -154,7 +142,7 @@ validateConstraint c = case areDirectDescendants y o of
     o = constraintOldNodePath c
     getErrMsg msg = "validateConstraint: " ++ show n ++ ": " ++ msg
 
--- | Create and validate a constraint.
+-- Create and validate a constraint.
 --
 -- Call 'error' if:
 --
@@ -172,15 +160,13 @@ constraint ::
   [a] ->
   -- | The most recent common ancestor of the given leave is the older node.
   [a] ->
-  -- | Weight.
-  b ->
+  ProbabilityMass b ->
   Constraint b
-constraint t n ys os w
-  | w <= 0 = err "Weight is zero or negative."
+constraint t n ys os p
   | otherwise =
-    either error id $
-      validateConstraint $
-        Constraint n pY iY pO iO w
+      either error id $
+        validateConstraint $
+          Constraint n pY iY pO iO p
   where
     err msg = error $ "constraint: " ++ show n ++ ": " ++ msg
     -- NOTE: Identifying the tree multiple times may be slow when creating many
@@ -196,7 +182,7 @@ constraint t n ys os w
   String ->
   [a] ->
   [a] ->
-  Double ->
+  ProbabilityMass Double ->
   Constraint Double
   #-}
 
@@ -206,10 +192,11 @@ data ConstraintData a = ConstraintData String String String String String a
 instance FromField a => FromRecord (ConstraintData a)
 
 constraintDataToConstraint :: (Num a, Ord a) => Tree e Name -> ConstraintData a -> Constraint a
-constraintDataToConstraint t (ConstraintData n yL yR oL oR w) =
-  constraint t n [f yL, f yR] [f oL, f oR] w
+constraintDataToConstraint t (ConstraintData n yL yR oL oR p) =
+  constraint t n [f yL, f yR] [f oL, f oR] (either err id $ probabilityMass p)
   where
     f = Name . BL.pack
+    err m = error $ "constraintDataToConstraint: " <> n <> ": " <> m
 
 -- Given a left constraint, check if a right constraint is redundant.
 --
@@ -262,16 +249,17 @@ describeRedundant (l, r) =
 -- The constraint file is a comma separated values (CSV) file with rows of the
 -- following format:
 --
--- > ConstraintName,YoungLeafA,YoungLeafB,OldLeafA,OldLeafB,Weight
+-- > ConstraintName,YoungLeafA,YoungLeafB,OldLeafA,OldLeafB,ProbabilityMass
 --
 -- The young and old nodes are uniquely defined as the most recent common
 -- ancestors (MRCA) @YoungLeafA@ and @YoungLeafB@, as well as @OldLeafA@ and
--- @OldLeafB@.
+-- @OldLeafB@. The 'ProbabilityMass' describes the steepness of the prior
+-- function.
 --
 -- The following line defines a constraint where the ancestor of leaves A and B
 -- is younger than the ancestor of leaves C and D:
 --
--- > ExampleConstraint,A,B,C,D,1.0
+-- > ExampleConstraint,A,B,C,D,0.025
 --
 -- Redundant constraints are removed.
 --
@@ -342,24 +330,6 @@ loadConstraints t f = do
   mapM_ (putStrLn . prettyPrintConstraint) informativeConstraints
   return $ VB.fromList informativeConstraints
 
--- | Hard constrain order of a single pair of nodes with given paths.
---
--- A truncated, improper uniform distribution is used.
---
--- For reasons of computational efficiency, the paths are not checked for
--- validity. Please do so beforehand using 'constraint'.
-constrainHardS ::
-  RealFloat a =>
-  Constraint a ->
-  PriorFunctionG (HeightTree a) a
-constrainHardS c (HeightTree t)
-  | (t ^. subTreeAtL y . branchL) < (t ^. subTreeAtL o . branchL) = 1
-  | otherwise = 0
-  where
-    y = constraintYoungNodePath c
-    o = constraintOldNodePath c
-{-# SPECIALIZE constrainHardS :: Constraint Double -> PriorFunction (HeightTree Double) #-}
-
 -- | Soft constrain order of a single pair of nodes with given paths.
 --
 -- When the node order is correct, a uniform distribution is used.
@@ -370,39 +340,37 @@ constrainHardS c (HeightTree t)
 -- distribution also ensures that the first derivative is continuous.
 --
 -- For reasons of computational efficiency, the paths are not checked for
--- validity. Please do so beforehand using 'constraint'.
+-- correctness.
+--
+-- Call 'error' if the path is invalid.
 constrainSoftS ::
   RealFloat a =>
-  StandardDeviation a ->
   Constraint a ->
   PriorFunctionG (HeightTree a) a
-constrainSoftS s c (HeightTree t) = constrainSoftF s w (hY, hO)
+constrainSoftS c (HeightTree t) = constrainSoftF p (hY, hO)
   where
     hY = t ^. subTreeAtL y . branchL
     hO = t ^. subTreeAtL o . branchL
     y = constraintYoungNodePath c
     o = constraintOldNodePath c
-    w = constraintWeight c
-{-# SPECIALIZE constrainSoftS :: Double -> Constraint Double -> PriorFunction (HeightTree Double) #-}
+    p = constraintProbabilityMass c
+{-# SPECIALIZE constrainSoftS :: Constraint Double -> PriorFunction (HeightTree Double) #-}
 
 -- | See 'constrainSoftS'.
 constrainSoftF ::
   RealFloat a =>
-  StandardDeviation a ->
-  -- | Weight.
-  a ->
+  ProbabilityMass a ->
   PriorFunctionG (a, a) a
-constrainSoftF s' w (hY, hO)
-  | s <= 0 = error "constrainSoftF: Standard deviation is zero or negative."
-  -- Should not be necessary because we use an abstract data type, and the check
-  -- is performed in 'constraint'.
-  | w <= 0 = error "constrainSoftF: Weight is zero or negative."
+constrainSoftF p (hY, hO)
   | hY < hO = 1
   | otherwise = d (hY - hO) / d 0
   where
-    s = realToFrac s'
-    d = normal 0 (s / w)
-{-# SPECIALIZE constrainSoftF :: Double -> Double -> PriorFunction (Double, Double) #-}
+    -- NOTE: One could store the normal distribution directly in the
+    -- 'Constraint'; but then I do not think this is a big issue.
+    --
+    -- FYI: sqrt (2/pi) = 0.7978845608028654.
+    d = let s = 0.7978845608028654 * (getProbabilityMass p) in normal 0 s
+{-# SPECIALIZE constrainSoftF :: ProbabilityMass Double -> PriorFunction (Double, Double) #-}
 
 -- | Constrain nodes of a tree using 'constrainSoftS'.
 --
@@ -412,17 +380,16 @@ constrainSoftF s' w (hY, hO)
 -- Call 'error' if a path is invalid.
 constrainSoft ::
   RealFloat a =>
-  StandardDeviation a ->
   VB.Vector (Constraint a) ->
   PriorFunctionG (HeightTree a) a
-constrainSoft sd cs t = VB.product $ VB.map (\c -> constrainSoftS sd c t) cs
-{-# SPECIALIZE constrainSoft :: Double -> VB.Vector (Constraint Double) -> PriorFunction (HeightTree Double) #-}
+constrainSoft cs t = VB.product $ VB.map (\c -> constrainSoftS c t) cs
+{-# SPECIALIZE constrainSoft :: VB.Vector (Constraint Double) -> PriorFunction (HeightTree Double) #-}
 
 -- | Convert a constraint on 'Double' to a more general one.
 --
 -- Useful for automatic differentiation.
 realToFracConstraint :: Fractional a => Constraint Double -> Constraint a
-realToFracConstraint c = c {constraintWeight = w'}
+realToFracConstraint c = c {constraintProbabilityMass = p'}
   where
-    w' = realToFrac $ constraintWeight c
+    p' = realToFracProbabilityMass $ constraintProbabilityMass c
 {-# SPECIALIZE realToFracConstraint :: Constraint Double -> Constraint Double #-}

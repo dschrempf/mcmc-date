@@ -13,7 +13,6 @@
 -- Creation date: Mon Jul 27 10:49:11 2020.
 module Mcmc.Tree.Prior.Node.Calibration
   ( -- * Calibrations
-    ProbabilityMass,
     Interval,
     Calibration,
     getCalibrationName,
@@ -43,33 +42,8 @@ import GHC.Generics
 import Mcmc.Prior hiding (positive)
 import Mcmc.Tree.Lens
 import Mcmc.Tree.Mrca
+import Mcmc.Tree.Prior.Node.Internal
 import Mcmc.Tree.Types
-
--- | Probability mass.
---
--- The probability mass describes how soft a calibration boundary is. In other
--- words, the probability mass describes the steepness of the decline of the
--- prior function when the calibration is dishonored. A larger probability mass
--- corresponds to a softer boundary, a lower probability mass corresponds to a
--- harder boundary.
---
--- We specify the probability mass with respect to normalized trees with a
--- height of 1.0. Each probability mass has to be strictly positive and less
--- than 1.0, which is the total probability mass in the unit interval. If
--- unsure, use probability masses of 0.025, which corresponds to 2.5 percent
--- probability at each boundary. A probability mass close to 1.0 will correspond
--- to a boundary too soft to have any effect.
-newtype ProbabilityMass a = ProbabilityMass a
-  deriving (Eq)
-
-instance Show a => Show (ProbabilityMass a) where
-  showsPrec p (ProbabilityMass x) = showsPrec p x
-
-probabilityMass :: (Ord a, Num a) => a -> Either String (ProbabilityMass a)
-probabilityMass x
-  | x <= 0 = Left "probabilityMass: Zero or negative."
-  | x >= 1 = Left "probabilityMass: 1.0 or larger."
-  | otherwise = Right $ ProbabilityMass x
 
 -- Non-negative lower boundary with probability mass.
 data LowerBoundary a = Zero | PositiveLowerBoundary a (ProbabilityMass a)
@@ -313,7 +287,7 @@ loadCalibrations t f = do
 -- If the upper bound is not given, no upper bound is used.
 --
 -- For reasons of computational efficiency, the path is not checked for
--- validity. Please do so beforehand using 'calibration'.
+-- correctness.
 --
 -- Call 'error' if the path is invalid.
 calibrateSoftS ::
@@ -334,23 +308,23 @@ calibrateSoftF (Interval a' b') h
   | otherwise = lowerCheck * upperCheck
   where
     lowerCheck = case a' of
-      Zero -> 1.0
-      PositiveLowerBoundary a (ProbabilityMass pa) ->
+      Zero -> 1
+      PositiveLowerBoundary a pa ->
         if h < a
-          then let d' = d pa in d' (a - h) / d' 0
-          else 1.0
+          then let d = getD pa in d (a - h) / d 0
+          else 1
     upperCheck = case b' of
-      Infinity -> 1.0
-      PositiveUpperBoundary b (ProbabilityMass pb) ->
+      Infinity -> 1
+      PositiveUpperBoundary b pb ->
         if h > b
-          then let d' = d pb in d' (h - b) / d' 0
-          else 1.0
+          then let d = getD pb in d (h - b) / d 0
+          else 1
     -- NOTE: One could store the normal distribution at the boundary directly in
     -- the 'LowerBoundary', and 'UpperBoundary'; but then I do not think this is
     -- a big issue.
     --
     -- FYI: sqrt (2/pi) = 0.7978845608028654.
-    d p = let s = 0.7978845608028654 * p in normal 0 s
+    getD p = let s = 0.7978845608028654 * (getProbabilityMass p) in normal 0 s
 {-# SPECIALIZE calibrateSoftF :: Interval Double -> PriorFunction Double #-}
 
 -- | Calibrate nodes of a tree using 'calibrateSoftS'.
@@ -395,7 +369,7 @@ rf :: (Real a, Fractional b) => a -> b
 rf = realToFrac
 
 rf' :: (Real a, Fractional b) => ProbabilityMass a -> ProbabilityMass b
-rf' (ProbabilityMass x) = ProbabilityMass $ realToFrac x
+rf' = realToFracProbabilityMass
 
 realToFracI :: Fractional a => Interval Double -> Interval a
 realToFracI (Interval (PositiveLowerBoundary a pa) (PositiveUpperBoundary b pb)) =

@@ -21,6 +21,7 @@ import qualified Data.Vector as VB
 import Mcmc.Internal.Gamma
 import Numeric.Log hiding (sum)
 
+-- | Symmetric Dirichlet distribution.
 data DirichletDistributionSymmetric a = DirichletDistributionSymmetric
   { ddSymGetParameter :: a,
     _symGetDimension :: Int,
@@ -34,6 +35,7 @@ invBetaSym k a = Exp $ logDenominator - logNominator
     logNominator = fromIntegral k * logGammaG a
     logDenominator = logGammaG (fromIntegral k * a)
 
+-- | Create a symmetric Dirichlet distribution.
 dirichletDistributionSymmetric ::
   (RealFloat a, Typeable a) =>
   Int ->
@@ -60,6 +62,7 @@ isNormalized v
   | abs (VB.sum v - 1) > eps = False
   | otherwise = True
 
+-- | Dirichlet density.
 dirichletDensitySymmetric :: RealFloat a => DirichletDistributionSymmetric a -> VB.Vector a -> Log a
 dirichletDensitySymmetric (DirichletDistributionSymmetric a k c) xs
   | k /= VB.length xs = error "dicihletDensitySymmetric: Dimension mismatch."
