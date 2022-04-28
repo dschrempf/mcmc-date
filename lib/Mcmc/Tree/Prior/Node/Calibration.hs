@@ -140,7 +140,7 @@ data Calibration a = Calibration
     calibrationNodeIndex :: Int,
     calibrationInterval :: Interval a
   }
-  deriving (Eq, Show)
+  deriving (Eq)
 
 -- | Get name.
 getCalibrationName :: Calibration a -> String
@@ -327,21 +327,6 @@ calibrateSoftS c (HeightTree t) = calibrateSoftF l h
     l = calibrationInterval c
 {-# SPECIALIZE calibrateSoftS :: Calibration Double -> PriorFunction (HeightTree Double) #-}
 
--- -- | See 'calibrateSoftS'.
--- calibrateSoftF ::
---   RealFloat a =>
---   Interval a ->
---   PriorFunctionG a a
--- calibrateSoftF (Interval a' b') h
---   | h < a = d (a - h) / d 0
---   | h > b = d (h - b) / d 0
---   | otherwise = 1
---   where
---     a = fromLowerBoundary a'
---     b = fromUpperBoundary b'
---     d = normal 0 (s / w)
--- {-# SPECIALIZE calibrateSoftF :: Interval Double -> PriorFunction Double #-}
-
 -- | See 'calibrateSoftS'.
 calibrateSoftF :: RealFloat a => Interval a -> PriorFunctionG a a
 calibrateSoftF (Interval a' b') h
@@ -360,6 +345,10 @@ calibrateSoftF (Interval a' b') h
         if h > b
           then let d' = d pb in d' (h - b) / d' 0
           else 1.0
+    -- NOTE: One could store the normal distribution at the boundary directly in
+    -- the 'LowerBoundary', and 'UpperBoundary'; but then I do not think this is
+    -- a big issue.
+    --
     -- FYI: sqrt (2/pi) = 0.7978845608028654.
     d p = let s = 0.7978845608028654 * p in normal 0 s
 {-# SPECIALIZE calibrateSoftF :: Interval Double -> PriorFunction Double #-}
