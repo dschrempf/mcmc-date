@@ -12,23 +12,15 @@
 --
 -- Creation date: Mon Jul 27 10:49:11 2020.
 module Mcmc.Tree.Prior.Node.Calibration
-  ( -- * Intervals
-    NonNegative,
-    ExtendedPositive,
+  ( -- * Calibrations
     Interval,
-    properInterval,
-    lowerBoundOnly,
-
-    -- * Calibrations
     Calibration,
     getCalibrationName,
     getCalibrationPath,
     getCalibrationNodeIndex,
     getCalibrationInterval,
-    getCalibrationWeight,
     calibration,
     loadCalibrations,
-    calibrateHardS,
     calibrateSoftS,
     calibrateSoftF,
     calibrateSoft,
@@ -49,107 +41,101 @@ import qualified Data.Vector as VB
 import ELynx.Tree hiding (partition)
 import GHC.Generics
 import Mcmc.Prior hiding (positive)
-import Mcmc.Statistics.Types
 import Mcmc.Tree.Lens
 import Mcmc.Tree.Mrca
 import Mcmc.Tree.Types
-import Text.Read
 
--- | Non-negative number.
-newtype NonNegative a = NonNegative {fromNonNegative :: a}
+-- | Probability mass.
+--
+-- The probability mass describes how soft a calibration boundary is. In other
+-- words, the probability mass describes the steepness of the decline of the
+-- prior function when the calibration is dishonored. A larger probability mass
+-- corresponds to a softer boundary, a lower probability mass corresponds to a
+-- harder boundary.
+--
+-- We specify the probability mass with respect to normalized trees with a
+-- height of 1.0. Each probability mass has to be strictly positive and less
+-- than 1.0, which is the total probability mass in the unit interval. If
+-- unsure, use probability masses of 0.025, which corresponds to 2.5 percent
+-- probability at each boundary. A probability mass close to 1.0 will correspond
+-- to a boundary too soft to have any effect.
+newtype ProbabilityMass a = ProbabilityMass a
   deriving (Eq)
 
-nonNegative :: (Ord a, Num a) => a -> NonNegative a
-nonNegative x
-  | x < 0 = error "nonNegative: Negative value."
-  | otherwise = NonNegative x
+instance Show a => Show (ProbabilityMass a) where
+  showsPrec p (ProbabilityMass x) = showsPrec p x
 
-instance (RealFloat a, Read a) => Read (NonNegative a) where
-  readPrec = nonNegative <$> readPrec
+probabilityMass :: (Ord a, Num a) => a -> Either String (ProbabilityMass a)
+probabilityMass x
+  | x <= 0 = Left "probabilityMass: Zero or negative."
+  | x >= 1 = Left "probabilityMass: 1.0 or larger."
+  | otherwise = Right $ ProbabilityMass x
 
-instance Show a => Show (NonNegative a) where
-  showsPrec p (NonNegative x) = showsPrec p x
-
--- | Positive number or infinity.
-data ExtendedPositive a = Positive a | Infinity
+-- Non-negative lower boundary with probability mass.
+data LowerBoundary a = Zero | PositiveLowerBoundary a (ProbabilityMass a)
   deriving (Eq)
 
-positive :: (Ord a, Num a) => a -> ExtendedPositive a
-positive x
-  | x <= 0 = error "positive: Zero or negative value."
-  | otherwise = Positive x
+instance Show a => Show (LowerBoundary a) where
+  show (PositiveLowerBoundary x p) = show x ++ "[" ++ show p ++ "]"
+  show Zero = ""
 
-positiveReadPrec :: (Ord a, Num a, Read a) => ReadPrec (ExtendedPositive a)
-positiveReadPrec = positive <$> readPrec
+positiveLowerBoundary :: (Ord a, Num a) => a -> ProbabilityMass a -> Either String (LowerBoundary a)
+positiveLowerBoundary x p
+  | x <= 0 = Left "positiveLowerBoundary: Zero or negative value."
+  | otherwise = Right $ PositiveLowerBoundary x p
 
-infinityReadPrec :: ReadPrec (ExtendedPositive a)
-infinityReadPrec = do
-  Ident "Infinity" <- lexP
-  return Infinity
+-- | Finite positive upper boundary or infinity.
+data UpperBoundary a = PositiveUpperBoundary a (ProbabilityMass a) | Infinity
+  deriving (Eq)
 
-instance (Ord a, Num a, Read a) => Read (ExtendedPositive a) where
-  readPrec = positiveReadPrec <++ infinityReadPrec
+instance Show a => Show (UpperBoundary a) where
+  show (PositiveUpperBoundary x p) = show x ++ "[" ++ show p ++ "]"
+  show Infinity = "Infinity"
 
-instance Show a => Show (ExtendedPositive a) where
-  showsPrec p (Positive x) = showsPrec p x
-  showsPrec _ Infinity = showString "Infinity"
+positiveUpperBoundary :: (Ord a, Num a) => a -> ProbabilityMass a -> Either String (UpperBoundary a)
+positiveUpperBoundary x p
+  | x <= 0 = Left "positiveUpperBoundary: Zero or negative value."
+  | otherwise = Right $ PositiveUpperBoundary x p
 
--- | Open interval \((a,b)\) with \(a < b\), \(a \in [0, \infty)\) and \(b \in
--- (0, \infty]\).
-data Interval a = Interval (NonNegative a) (ExtendedPositive a)
+-- | Interval \([a,b]\) or \([a,\infty]\) with \(a < b\), \(a \in [0, \infty)\)
+-- and \(b \in (0, \infty]\). If a is nonzero, a probability mass is provided
+-- for the left boundary. If b is finite, a probability mass is provided for the
+-- right boundary.
+data Interval a = Interval (LowerBoundary a) (UpperBoundary a)
   deriving (Eq)
 
 instance Show a => Show (Interval a) where
   show (Interval a b) = "(" ++ show a ++ ", " ++ show b ++ ")"
-
--- | Specify a lower and an upper bound.
-properInterval :: (Ord a, Num a) => LowerBoundary a -> UpperBoundary a -> Interval a
-properInterval a b
-  | a < b = Interval (nonNegative a) (positive b)
-  | otherwise = error "properInterval: Left boundary equal or greater than right boundary."
-{-# SPECIALIZE properInterval :: Double -> Double -> Interval Double #-}
-
--- | Specify a lower bound only. The upper bound is set to infinity.
-lowerBoundOnly :: (Ord a, Num a) => LowerBoundary a -> Interval a
-lowerBoundOnly a = Interval (nonNegative a) Infinity
-{-# SPECIALIZE lowerBoundOnly :: Double -> Interval Double #-}
 
 -- | Transform an interval by applying a multiplicative change.
 --
 -- Useful when the tree is normalized and height values have to be converted
 -- from relative heights to absolute heights.
 transformInterval :: RealFloat a => a -> Interval a -> Interval a
-transformInterval x (Interval a b)
+transformInterval x (Interval l r)
   | x <= 0 = error "transformInterval: Multiplier is zero or negative."
-  | otherwise = Interval a' b'
+  | otherwise = Interval l' r'
   where
-    a' = NonNegative $ x * fromNonNegative a
-    b' = case b of
-      Positive bVal -> Positive $ x * bVal
+    l' = case l of
+      Zero -> Zero
+      PositiveLowerBoundary a pa -> PositiveLowerBoundary (x * a) pa
+    r' = case r of
+      PositiveUpperBoundary b pb -> PositiveUpperBoundary (x * b) pb
       Infinity -> Infinity
 {-# SPECIALIZE transformInterval :: Double -> Interval Double -> Interval Double #-}
-
--- No number is greater than a non-existing upper bound..
-(>*) :: (Ord a, Fractional a) => a -> ExtendedPositive a -> Bool
-_ >* Infinity = False
-h >* Positive b = h > b
 
 -- | Calibrate node heights.
 --
 -- A calibration is specified by a name, a node at given path, height
--- boundaries, and a weight.
---
+-- boundaries, and two probability masses.
+
 -- For example,
 --
 -- @
---   let c = Calibration "Root" [] YOUNG OLD
+--   let c = Calibration "Root" [] YoungAge YoungProbabilityMass OldAge OldProbabilityMass
 -- @
 --
 -- ensures that the root node is older than @YOUNG@, and younger than @OLD@.
---
--- The weight is a positive floating number that specifies the steepness of the
--- decline of the posterior function when the calibration is dishonored. If
--- unsure, use a weight of 1.0.
 --
 -- Calibrations are abstract data types and can be created using 'calibration'
 -- or 'loadCalibrations'. The reason is that finding the nodes on the tree is a
@@ -158,8 +144,7 @@ data Calibration a = Calibration
   { calibrationName :: String,
     calibrationNodePath :: Path,
     calibrationNodeIndex :: Int,
-    calibrationInterval :: Interval a,
-    calibrationWeight :: a
+    calibrationInterval :: Interval a
   }
   deriving (Eq, Show)
 
@@ -179,22 +164,16 @@ getCalibrationNodeIndex = calibrationNodeIndex
 getCalibrationInterval :: Calibration a -> Interval a
 getCalibrationInterval = calibrationInterval
 
--- | Get weight.
-getCalibrationWeight :: Calibration a -> a
-getCalibrationWeight = calibrationWeight
-
 prettyPrintCalibration :: Show a => Calibration a -> String
-prettyPrintCalibration (Calibration n p i l w) =
+prettyPrintCalibration (Calibration n p i l) =
   "Calibration: "
     <> n
     <> " with path "
     <> show p
     <> ", index "
     <> show i
-    <> ", interval "
+    <> ", and interval "
     <> show l
-    <> ", and weight "
-    <> show w
     <> "."
 
 -- | Create a calibration.
@@ -210,12 +189,8 @@ calibration ::
   -- | The most recent common ancestor of the given leaves is the calibrated node.
   [a] ->
   Interval b ->
-  -- | Weight.
-  b ->
   Calibration b
-calibration t n xs l w
-  | w <= 0 = err "Weight is zero or negative."
-  | otherwise = Calibration n p i l w
+calibration t n xs l = Calibration n p i l
   where
     err msg = error $ "calibration: " ++ n ++ ": " ++ msg
     p = either err id $ mrca xs t
@@ -228,7 +203,6 @@ calibration t n xs l w
   String ->
   [a] ->
   Interval Double ->
-  Double ->
   Calibration Double
   #-}
 
@@ -238,21 +212,47 @@ data CalibrationData a
       String -- Name.
       String -- Leaf a.
       String -- Leaf b.
-      a -- Leaf boundary.
-      (Maybe a) -- Maybe right boundary.
-      a -- Weight.
+      (Maybe a) -- Lower boundary.
+      (Maybe a) -- Lower boundary probability mass.
+      (Maybe a) -- Upper boundary.
+      (Maybe a) -- Upperboundary probability mass.
   deriving (Generic, Show)
 
 instance FromField a => FromRecord (CalibrationData a)
 
 calibrationDataToCalibration :: (Ord a, Num a) => Tree e Name -> CalibrationData a -> Calibration a
-calibrationDataToCalibration t (CalibrationData n a b l mr w) = calibration t n [a', b'] i w
+calibrationDataToCalibration t (CalibrationData n la lb ma mpa mb mpb) = calibration t n [la', lb'] i
   where
-    a' = Name $ BL.pack a
-    b' = Name $ BL.pack b
-    i = case mr of
-      Nothing -> lowerBoundOnly l
-      Just r -> properInterval l r
+    la' = Name $ BL.pack la
+    lb' = Name $ BL.pack lb
+    i = either err id $ case (ma, mpa, mb, mpb) of
+      -- Lower bound only.
+      (Just a, Just pa, Nothing, Nothing) -> do
+        pa' <- probabilityMass pa
+        a' <- positiveLowerBoundary a pa'
+        pure $ Interval a' Infinity
+      -- Upper bound only.
+      (Nothing, Nothing, Just b, Just pb) -> do
+        pb' <- probabilityMass pb
+        b' <- positiveUpperBoundary b pb'
+        pure $ Interval Zero b'
+      -- Lower and upper bounds.
+      (Just a, Just pa, Just b, Just pb) ->
+        if a >= b
+          then Left "Lower boundary larger equal upper boundary."
+          else do
+            pa' <- probabilityMass pa
+            pb' <- probabilityMass pb
+            a' <- positiveLowerBoundary a pa'
+            b' <- positiveUpperBoundary b pb'
+            pure $ Interval a' b'
+      -- Errors.
+      (Nothing, Just _, _, _) -> Left "Lower probability mass given but no lower boundary."
+      (_, _, Nothing, Just _) -> Left "Upper probability mass given but no upper boundary."
+      (Just _, Nothing, _, _) -> Left "Lower boundary given but no lower probability mass."
+      (_, _, Just _, Nothing) -> Left "Upper boundary given but no upper probability mass."
+      (Nothing, Nothing, Nothing, Nothing) -> Left "No boundaries provided."
+    err m = error $ "calibrationDataToCalibration: " <> n <> ": " <> m
 
 -- Get duplicate pairs of a list.
 findDupsBy :: (a -> a -> Bool) -> [a] -> [[a]]
@@ -305,32 +305,6 @@ loadCalibrations t f = do
 
 -- | Calibrate height of a single node.
 --
--- When the height of the node is within the given bounds, use the uniform
--- distribution. Otherwise, the prior is 0.
---
--- If the upper bound is not given, no upper bound is used.
---
--- For reasons of computational efficiency, the path is not checked for
--- validity. Please do so beforehand using 'calibration'.
---
--- Call 'error' if the path is invalid.
-calibrateHardS ::
-  RealFloat a =>
-  Calibration a ->
-  PriorFunctionG (HeightTree a) a
-calibrateHardS c (HeightTree t)
-  | h <= a' = 0
-  | h >* b = 0
-  | otherwise = 1
-  where
-    a' = realToFrac $ fromNonNegative a
-    h = t ^. subTreeAtL p . branchL
-    (Interval a b) = calibrationInterval c
-    p = calibrationNodePath c
-{-# SPECIALIZE calibrateHardS :: Calibration Double -> PriorFunction (HeightTree Double) #-}
-
--- | Calibrate height of a single node.
---
 -- When the height of the node is within the given bounds, a uniform
 -- distribution is used.
 --
@@ -347,39 +321,51 @@ calibrateHardS c (HeightTree t)
 -- Call 'error' if the path is invalid.
 calibrateSoftS ::
   RealFloat a =>
-  StandardDeviation a ->
   Calibration a ->
   PriorFunctionG (HeightTree a) a
-calibrateSoftS s c (HeightTree t) = calibrateSoftF s l w h
+calibrateSoftS c (HeightTree t) = calibrateSoftF l h
   where
     p = calibrationNodePath c
     h = t ^. subTreeAtL p . branchL
     l = calibrationInterval c
-    w = calibrationWeight c
-{-# SPECIALIZE calibrateSoftS :: Double -> Calibration Double -> PriorFunction (HeightTree Double) #-}
+{-# SPECIALIZE calibrateSoftS :: Calibration Double -> PriorFunction (HeightTree Double) #-}
+
+-- -- | See 'calibrateSoftS'.
+-- calibrateSoftF ::
+--   RealFloat a =>
+--   Interval a ->
+--   PriorFunctionG a a
+-- calibrateSoftF (Interval a' b') h
+--   | h < a = d (a - h) / d 0
+--   | h > b = d (h - b) / d 0
+--   | otherwise = 1
+--   where
+--     a = fromLowerBoundary a'
+--     b = fromUpperBoundary b'
+--     d = normal 0 (s / w)
+-- {-# SPECIALIZE calibrateSoftF :: Interval Double -> PriorFunction Double #-}
 
 -- | See 'calibrateSoftS'.
-calibrateSoftF ::
-  RealFloat a =>
-  StandardDeviation a ->
-  Interval a ->
-  -- | Weight.
-  a ->
-  PriorFunctionG a a
-calibrateSoftF s (Interval a' b) w h
-  | s <= 0 = error "calibrateSoftF: Standard deviation is zero or negative."
-  -- Should not be necessary because we use an abstract data type, and the check
-  -- is performed in 'calibration'.
-  | w <= 0 = error "calibrateSoftF: Weight is zero or negative."
-  | h <= a = d (a - h) / d 0
-  | h >* b = case b of
-    Infinity -> 1
-    Positive b' -> d (h - b') / d 0
-  | otherwise = 1
+calibrateSoftF :: RealFloat a => Interval a -> PriorFunctionG a a
+calibrateSoftF (Interval a' b') h
+  | h < 0 = error "calibrateSoftF: Height is negative."
+  | otherwise = lowerCheck * upperCheck
   where
-    a = fromNonNegative a'
-    d = normal 0 (s / w)
-{-# SPECIALIZE calibrateSoftF :: Double -> Interval Double -> Double -> PriorFunction Double #-}
+    lowerCheck = case a' of
+      Zero -> 1.0
+      PositiveLowerBoundary a (ProbabilityMass pa) ->
+        if h < a
+          then let d' = d pa in d' (a - h) / d' 0
+          else 1.0
+    upperCheck = case b' of
+      Infinity -> 1.0
+      PositiveUpperBoundary b (ProbabilityMass pb) ->
+        if h > b
+          then let d' = d pb in d' (h - b) / d' 0
+          else 1.0
+    -- FYI: sqrt (2/pi) = 0.7978845608028654.
+    d p = let s = 0.7978845608028654 * p in normal 0 s
+{-# SPECIALIZE calibrateSoftF :: Interval Double -> PriorFunction Double #-}
 
 -- | Calibrate nodes of a tree using 'calibrateSoftS'.
 --
@@ -393,28 +379,22 @@ calibrateSoftF s (Interval a' b) w h
 -- - The height multiplier is zero or negative.
 calibrateSoft ::
   RealFloat a =>
-  -- | Standard deviation of the calibrations before scaling with the height
-  -- multiplier.
-  --
-  -- NOTE: The same standard deviation is used for all calibrations.
-  StandardDeviation a ->
   -- | Height multiplier of tree. Useful when working on normalized trees.
   a ->
   VB.Vector (Calibration a) ->
   PriorFunctionG (HeightTree a) a
-calibrateSoft sd h cs t
+calibrateSoft h cs t
   | h <= 0 = error "calibrateSoft: Height multiplier is zero or negative."
   | otherwise = VB.product $ VB.map f cs
   where
-    f c = calibrateSoftS sd (transformCalibration h c) t
+    f c = calibrateSoftS (transformCalibration h c) t
 {-# SPECIALIZE calibrateSoft ::
-  Double ->
   Double ->
   VB.Vector (Calibration Double) ->
   PriorFunction (HeightTree Double)
   #-}
 
--- | Transform a duplication using a height multiplier.
+-- | Transform a calibration using a height multiplier.
 --
 -- See 'calibrateSoft'.
 --
@@ -425,18 +405,27 @@ transformCalibration h c
   | h == 1 = c
   | otherwise = c {calibrationInterval = transformInterval (recip h) $ calibrationInterval c}
 
+rf :: (Real a, Fractional b) => a -> b
+rf = realToFrac
+
+rf' :: (Real a, Fractional b) => ProbabilityMass a -> ProbabilityMass b
+rf' (ProbabilityMass x) = ProbabilityMass $ realToFrac x
+
 realToFracI :: Fractional a => Interval Double -> Interval a
-realToFracI (Interval (NonNegative a) (Positive b)) =
-  Interval (NonNegative $ realToFrac a) (Positive $ realToFrac b)
-realToFracI (Interval (NonNegative a) Infinity) =
-  Interval (NonNegative $ realToFrac a) Infinity
+realToFracI (Interval (PositiveLowerBoundary a pa) (PositiveUpperBoundary b pb)) =
+  Interval (PositiveLowerBoundary (rf a) (rf' pa)) (PositiveUpperBoundary (rf b) (rf' pb))
+realToFracI (Interval (PositiveLowerBoundary a pa) Infinity) =
+  Interval (PositiveLowerBoundary (rf a) (rf' pa)) Infinity
+realToFracI (Interval Zero (PositiveUpperBoundary b pb)) =
+  Interval Zero (PositiveUpperBoundary (rf b) (rf' pb))
+realToFracI (Interval Zero Infinity) =
+  Interval Zero Infinity
 
 -- | Convert a calibration on 'Double' to a more general one.
 --
 -- Useful for automatic differentiation.
 realToFracCalibration :: Fractional a => Calibration Double -> Calibration a
-realToFracCalibration c = c {calibrationInterval = i', calibrationWeight = w'}
+realToFracCalibration c = c {calibrationInterval = i'}
   where
     i' = realToFracI $ calibrationInterval c
-    w' = realToFrac $ calibrationWeight c
 {-# SPECIALIZE realToFracCalibration :: Calibration Double -> Calibration Double #-}

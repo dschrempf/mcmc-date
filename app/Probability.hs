@@ -48,7 +48,7 @@ priorFunction ::
   PriorFunctionG (IG a) a
 priorFunction cb' cs' bs' (I l m h t mu va r) =
   product' $
-    calibrateConstrainBraceSoft 1e-4 h cb 1e-4 cs 1e-4 bs t :
+    calibrateConstrainBraceSoft h cb 1e-4 cs 1e-4 bs t :
     -- -- Usually, the combined treatment is faster.
     -- calibrateSoft 1e-4 h cb t :
     -- constrainSoft 1e-4 cs t :

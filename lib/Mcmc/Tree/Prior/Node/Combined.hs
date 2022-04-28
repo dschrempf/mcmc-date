@@ -29,14 +29,12 @@ getAllHeights = VB.fromList . branches . getHeightTree
 
 calibrateV ::
   (RealFloat a) =>
-  StandardDeviation a ->
   Calibration a ->
   PriorFunctionG (VB.Vector a) a
-calibrateV s c hs = calibrateSoftF s l w h
+calibrateV c hs = calibrateSoftF l h
   where
     l = getCalibrationInterval c
     i = getCalibrationNodeIndex c
-    w = getCalibrationWeight c
     h = hs VB.! i
 
 constrainV ::
@@ -74,8 +72,6 @@ braceV s b hs = braceSoftF s w nHs
 -- Use if there are many calibrations, constraints, or braces.
 calibrateConstrainBraceSoft ::
   (RealFloat a) =>
-  -- | Standard deviation of calibrations.
-  StandardDeviation a ->
   -- | Height multiplier of tree for calibrations.
   a ->
   VB.Vector (Calibration a) ->
@@ -86,19 +82,17 @@ calibrateConstrainBraceSoft ::
   StandardDeviation a ->
   VB.Vector (Brace a) ->
   PriorFunctionG (HeightTree a) a
-calibrateConstrainBraceSoft sdC h cs sdK ks sdB bs t
-  | sdC <= 0 = error "calibrateConstrainBraceSoft: Standard deviation of calibrations is zero or negative."
+calibrateConstrainBraceSoft h cs sdK ks sdB bs t
   | h <= 0 = error "calibrateConstrainBraceSoft: Height multiplier is zero or negative."
   | sdK <= 0 = error "calibrateConstrainBraceSoft: Standard deviation of constraints is zero or negative."
   | sdB <= 0 = error "calibrateConstrainBraceSoft: Standard deviation of braces is zero or negative."
   | otherwise = VB.product csPr * VB.product ksPr * VB.product bsPr
   where
     hs = getAllHeights t
-    csPr = VB.map ((\c -> calibrateV sdC c hs) . transformCalibration h) cs
+    csPr = VB.map ((\c -> calibrateV c hs) . transformCalibration h) cs
     ksPr = VB.map (\k -> constrainV sdK k hs) ks
     bsPr = VB.map (\b -> braceV sdB b hs) bs
 {-# SPECIALIZE calibrateConstrainBraceSoft ::
-  Double ->
   Double ->
   VB.Vector (Calibration Double) ->
   Double ->
