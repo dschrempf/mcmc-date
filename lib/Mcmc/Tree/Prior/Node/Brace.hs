@@ -17,9 +17,7 @@ module Mcmc.Tree.Prior.Node.Brace
     getBraceName,
     getBraceNodes,
     getBraceStandardDeviation,
-    brace,
     loadBraces,
-    braceHardS,
     braceSoftS,
     braceSoftF,
     braceSoft,
@@ -48,10 +46,10 @@ import Mcmc.Tree.Types
 --
 -- The standard deviation is a positive floating number that specifies the
 -- steepness of the decline of the prior function when the braced nodes have
--- different heights.
+-- different heights. A normal distribution is used.
 --
--- Abstract data type to ensure brace validity. Braces can be created using
--- 'brace' or 'loadBraces'.
+-- Abstract data type to ensure brace validity. Braces can be loaded using
+-- 'loadBraces'.
 data Brace a = Brace
   { braceName :: String,
     braceNodes :: [NodeInfo],
@@ -71,7 +69,7 @@ getBraceNodes = braceNodes
 getBraceStandardDeviation :: Brace a -> StandardDeviation a
 getBraceStandardDeviation = braceStandardDeviation
 
--- | Create a brace.
+-- Create a brace.
 --
 -- Call 'error' if:
 --
@@ -159,7 +157,8 @@ checkBraces (Brace nX nsX _) (Brace nY nsY _) =
 --
 -- The braced nodes are uniquely defined as the most recent common ancestors
 -- (MRCA) of @NodeXLeafA@ and @NodeXLeafB@, as well as @NodeYLeafA@ and
--- @NodeYLeafB@.
+-- @NodeYLeafB@. The steepness of the brace prior function is defined using the
+-- standard deviation, see 'Brace'.
 --
 -- Call 'error' if:
 --
@@ -195,22 +194,7 @@ allEqual xs = all (== head xs) (tail xs)
 
 -- | Brace a single list of nodes.
 --
--- 'brace' ensures that the node list is not empty nor a singleton.
---
--- If the node heights are equal, the prior is 1. Otherwise, the prior is 0.
---
--- Call 'error' if a path is invalid.
-braceHardS :: RealFloat a => Brace a -> PriorFunctionG (HeightTree a) a
-braceHardS (Brace _ xs _) (HeightTree t)
-  | allEqual hs = 1
-  | otherwise = 0
-  where
-    hs = map (\ni -> t ^. subTreeAtL (nodePath ni) . branchL) xs
-{-# SPECIALIZE braceHardS :: Brace Double -> PriorFunctionG (HeightTree Double) Double #-}
-
--- | Brace a single list of nodes.
---
--- 'brace' ensures that the node list is not empty nor a singleton.
+-- 'loadBraces' ensures that the node list is not empty nor a singleton.
 --
 -- Use a normal distribution with given standard deviation.
 --
