@@ -257,7 +257,7 @@ findDupsBy eq (x : xs) = case partition (eq x) xs of
 loadCalibrations :: Tree e Name -> FilePath -> IO (VB.Vector (Calibration Double))
 loadCalibrations t f = do
   d <- BL.readFile f
-  let mr = decode NoHeader d :: Either String (VB.Vector (CalibrationData Double))
+  let mr = decode HasHeader d :: Either String (VB.Vector (CalibrationData Double))
       cds = either error id mr
   when (VB.null cds) $ error $ "loadCalibrations: No calibrations found in file: " <> f <> "."
   let calsAll = VB.map (calibrationDataToCalibration t) cds

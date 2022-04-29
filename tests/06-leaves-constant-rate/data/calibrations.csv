@@ -1,1 +1,2 @@
-cladeRoot,a,f,0.8,0.025,1.2,0.025
+Name,LeafA,LeafB,YoungAge,YoungProbabilityMass,OldAge,OldProbabilityMass
+CladeRoot,a,f,0.8,0.025,1.2,0.025

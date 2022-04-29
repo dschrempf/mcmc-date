@@ -1,2 +1,3 @@
-constraintInformative,ba,ua,l,x,0.025
-constraintUninformative,ba,ea,u,x,0.025
+Name,YoungerLeafA,YoungerLeafB,OlderLeafA,OlderLeafB,ProbabilityMass
+ConstraintInformative,ba,ua,l,x,0.025
+ConstraintUninformative,ba,ea,u,x,0.025

@@ -273,7 +273,7 @@ describeRedundant (l, r) =
 loadConstraints :: Tree e Name -> FilePath -> IO (VB.Vector (Constraint Double))
 loadConstraints t f = do
   d <- BL.readFile f
-  let mr = decode NoHeader d :: Either String (VB.Vector (ConstraintData Double))
+  let mr = decode HasHeader d :: Either String (VB.Vector (ConstraintData Double))
       cds = either error id mr
   when (VB.null cds) $ error $ "loadConstraints: No constraints found in file: " <> f <> "."
   let allConstraints = VB.toList $ VB.map (constraintDataToConstraint t) cds

@@ -1,3 +1,4 @@
-cladeRoot,a,l,900,1200,1.0
-cladeEnF,e,f,400,500,1.0
-cladeKnL,k,l,100,150,1.0
+Name,LeafA,LeafB,YoungAge,YoungProbabilityMass,OldAge,OldProbabilityMass
+CladeRoot,a,l,900,0.025,1200,0.025
+CladeEnF,e,f,400,0.025,500,0.025
+CladeKnL,k,l,100,0.025,150,0.025

@@ -1,1 +1,2 @@
-constraint1,k,l,e,d,1.0
+Name,YoungerLeafA,YoungerLeafB,OlderLeafA,OlderLeafB,ProbabilityMass
+Constraint1,k,l,e,d,0.025
