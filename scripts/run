@@ -2,8 +2,6 @@
 
 set -e
 
-source ./analysis.conf
-
 usage() {
     echo "Usage: $(basename "$0") [OPTIONS] LIKELIHOOD_SPECIFICATION COMMANDS"
     echo
@@ -17,8 +15,9 @@ usage() {
     echo "-m Use Mc3 algorithm insteahd of Mhg"
     echo
     echo "Other options:"
-    echo "-p Activate profiling"
-    echo "-s Use stack instead of cabal-install"
+    echo "-f FILE Use a different analysis configuration file"
+    echo "-p      Activate profiling"
+    echo "-s      Use stack instead of cabal-install"
     echo
     echo "Likelihood specification:"
     echo "f  Full covariance matix"
@@ -45,8 +44,10 @@ mc3_activated=0
 profiling_activated=0
 use_stack=0
 
+analysis_configuration_file="analysis.conf"
+
 OPTIND=1
-while getopts "h?bckHmps" opt; do
+while getopts "h?bckHmf:ps" opt; do
     case "$opt" in
         h|\?)
            usage
@@ -61,6 +62,8 @@ while getopts "h?bckHmps" opt; do
         H) hamiltonian_activated=1
            ;;
         m) mc3_activated=1
+           ;;
+        f) analysis_configuration_file=$OPTARG
            ;;
         p) profiling_activated=1
            ;;
@@ -80,6 +83,9 @@ then
     usage
     exit 1
 fi
+
+# shellcheck source=analysis.conf
+source "${analysis_configuration_file}"
 
 likelihood_specification=$1
 shift
@@ -196,6 +202,11 @@ then
     p_flags_prog+=(--profile)
     p_flags_rts+=(-p)
     outdir="${outdir}-profile"
+fi
+
+if [[ -n $suffix ]]
+then
+    outdir="${outdir}-${suffix}"
 fi
 
 echo "Results directory: ${outdir}."
