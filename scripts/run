@@ -15,9 +15,10 @@ usage() {
     echo "-m Use Mc3 algorithm insteahd of Mhg"
     echo
     echo "Other options:"
-    echo "-f FILE Use a different analysis configuration file"
-    echo "-p      Activate profiling"
-    echo "-s      Use stack instead of cabal-install"
+    echo "-f FILE    Use a different analysis configuration file"
+    echo "-n SUFFIX  Use an analysis suffix"
+    echo "-p         Activate profiling"
+    echo "-s         Use stack instead of cabal-install"
     echo
     echo "Likelihood specification:"
     echo "f  Full covariance matix"
@@ -45,9 +46,10 @@ profiling_activated=0
 use_stack=0
 
 analysis_configuration_file="analysis.conf"
+analysis_suffix=
 
 OPTIND=1
-while getopts "h?bckHmf:ps" opt; do
+while getopts "h?bckHmf:n:ps" opt; do
     case "$opt" in
         h|\?)
            usage
@@ -64,6 +66,8 @@ while getopts "h?bckHmf:ps" opt; do
         m) mc3_activated=1
            ;;
         f) analysis_configuration_file=$OPTARG
+           ;;
+        n) analysis_suffix=$OPTARG
            ;;
         p) profiling_activated=1
            ;;
@@ -204,9 +208,16 @@ then
     outdir="${outdir}-profile"
 fi
 
+# Suffix from configuration file.
 if [[ -n $suffix ]]
 then
     outdir="${outdir}-${suffix}"
+fi
+
+# Suffix from command line.
+if [[ -n $analysis_suffix ]]
+then
+    outdir="${outdir}-${analysis_suffix}"
 fi
 
 echo "Results directory: ${outdir}."
