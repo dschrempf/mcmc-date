@@ -26,7 +26,7 @@ module Mcmc.Tree.Prior.Branch.RelaxedClock
     -- * Uncorrelated models
     uncorrelatedGamma,
     uncorrelatedLogNormal,
-    whiteNoise,
+    uncorrelatedWhiteNoise,
 
     -- * Auto-correlated models
     autocorrelatedGamma,
@@ -174,7 +174,7 @@ uncorrelatedLogNormal hs mu var = branchesWith hs (logNormal' mu var) . getLengt
 --
 -- For example,
 -- @
--- prior = whiteNoise variance timeTree rateTree
+-- prior = uncorrelatedWhiteNoise variance timeTree rateTree
 -- @
 --
 -- NOTE: The name white noise implies that the process is uncorrelated, but the
@@ -202,12 +202,12 @@ uncorrelatedWhiteNoise ::
   LengthTree a ->
   PriorFunctionG (LengthTree a) a
 uncorrelatedWhiteNoise hs v (LengthTree tTr) (LengthTree rTr)
-  | v <= 0 = error "whiteNoise: Variance is zero or negative."
+  | v <= 0 = error "uncorrelatedWhiteNoise: Variance is zero or negative."
   | otherwise = branchesWith hs f zTr
   where
     zTr =
       fromMaybe
-        (error "whiteNoise: Topologies of time and rate trees do not match.")
+        (error "uncorrelatedWhiteNoise: Topologies of time and rate trees do not match.")
         (zipTrees tTr rTr)
     -- This is correct :). For a specific branch b, we have:
     --
@@ -243,15 +243,17 @@ uncorrelatedWhiteNoise hs v (LengthTree tTr) (LengthTree rTr)
 -- NOTE: For convenience, the mean and variance are used as parameters for this
 -- relaxed molecular clock model. They are used to calculate the shape and the
 -- scale of the underlying gamma distribution.
--- For example,
 --
--- NOTE: The time tree has to be given because long branches are expected to
--- have a distribution of rates with higher variance than short branches. This
--- is the opposite property compared to the white noise process ('whiteNoise').
+-- For example,
 --
 -- @
 -- prior = autocorrelatedGamma initialMean variance timeTree rateTree
 -- @
+--
+-- NOTE: The time tree has to be given because long branches are expected to
+-- have a distribution of rates with higher variance than short branches. This
+-- is the opposite property compared to the white noise process
+-- ('uncorrelatedWhiteNoise').
 --
 -- Call 'error' if:
 --
@@ -298,7 +300,8 @@ autocorrelatedGamma hs mu var (LengthTree tTr) (LengthTree rTr)
 --
 -- NOTE: The time tree has to be given because long branches are expected to
 -- have a distribution of rates with higher variance than short branches. This
--- is the opposite property compared to the white noise process ('whiteNoise').
+-- is the opposite property compared to the white noise process
+-- ('uncorrelatedWhiteNoise').
 --
 -- For example,
 -- @
