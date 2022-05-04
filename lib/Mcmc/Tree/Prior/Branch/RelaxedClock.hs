@@ -184,18 +184,24 @@ uncorrelatedLogNormal hs mu var = branchesWith hs (logNormal' mu var) . getLengt
 -- of relaxed molecular clock models, Molecular Biology and Evolution, 24(12),
 -- 2669–2680 (2007). http://dx.doi.org/10.1093/molbev/msm193
 --
+-- Even better explined (although there is a mistake in the formula) in the
+-- Material and Methods section of Lartillot, Phillips, Ronquist (2016) A mixed
+-- relaxed clock model, Philosophical Transactions of the Royal Society B:
+-- Biological Sciences.
+--
+--
 -- Call 'error' if:
 --
 -- - the topologies of the time and rate trees do not match;
 --
 -- - the variance is zero or negative.
-whiteNoise ::
+uncorrelatedWhiteNoise ::
   (RealFloat a, Typeable a) =>
   HandleStem ->
   Variance a ->
   LengthTree a ->
   PriorFunctionG (LengthTree a) a
-whiteNoise hs v (LengthTree tTr) (LengthTree rTr)
+uncorrelatedWhiteNoise hs v (LengthTree tTr) (LengthTree rTr)
   | v <= 0 = error "whiteNoise: Variance is zero or negative."
   | otherwise = branchesWith hs f zTr
   where
@@ -203,10 +209,23 @@ whiteNoise hs v (LengthTree tTr) (LengthTree rTr)
       fromMaybe
         (error "whiteNoise: Topologies of time and rate trees do not match.")
         (zipTrees tTr rTr)
-    -- This is correct. The mean of b=tr is t, the variance of b is
-    -- Var(tr) = t^2Var(r) = t^2 v/t = vt, as required in Lepage, 2006.
+    -- This is correct :). For a specific branch b, we have:
+    --
+    -- In absolute units: Let mu and v' (both not provided here) be the mean and
+    -- variance of the white noise process given in absolute time units,
+    -- respectively. Then, the mean rate is mu and the variance of the rate is
+    -- v'/t, where t is the branch length of b measured in units of time. That
+    -- is, the longer a branch, the lower the variance of the rate.
+    --
+    -- In relative units: The mean rate should be 1.0, and the variance should
+    -- be (1/mu)^2 * v'/t = v/t, where v is the variance measured in relative
+    -- units of the white noise process (this is the v provided here).
+    --
+    -- The following gamma distribution with shape k=t/v and scale theta=v/t has
+    --  a mean of k*theta=1.0, and a variance of k*theta^2=theta=v/t, as
+    --  required.
     f (t, r) = let k = t / v in gamma k (recip k) r
-{-# SPECIALIZE whiteNoise ::
+{-# SPECIALIZE uncorrelatedWhiteNoise ::
   HandleStem ->
   Double ->
   LengthTree Double ->
