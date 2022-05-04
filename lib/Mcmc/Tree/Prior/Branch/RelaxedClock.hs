@@ -152,7 +152,7 @@ uncorrelatedLogNormal ::
   Mean a ->
   Variance a ->
   PriorFunctionG (LengthTree a) a
-uncorrelatedLogNormal hs mu var = branchesWith hs (logNormal' mu var) . getLengthTree
+uncorrelatedLogNormal hs m v = branchesWith hs (logNormal' m v) . getLengthTree
 {-# SPECIALIZE uncorrelatedLogNormal ::
   HandleStem ->
   Double ->
@@ -192,41 +192,38 @@ uncorrelatedLogNormal hs mu var = branchesWith hs (logNormal' mu var) . getLengt
 --
 -- Call 'error' if:
 --
--- - the topologies of the time and rate trees do not match;
+-- - the topologies of the time and rate trees are different;
 --
 -- - the variance is zero or negative.
 uncorrelatedWhiteNoise ::
   (RealFloat a, Typeable a) =>
   HandleStem ->
+  Mean a ->
   Variance a ->
   LengthTree a ->
   PriorFunctionG (LengthTree a) a
-uncorrelatedWhiteNoise hs v (LengthTree tTr) (LengthTree rTr)
+uncorrelatedWhiteNoise hs m v (LengthTree tTr) (LengthTree rTr)
   | v <= 0 = error "uncorrelatedWhiteNoise: Variance is zero or negative."
   | otherwise = branchesWith hs f zTr
   where
     zTr =
       fromMaybe
-        (error "uncorrelatedWhiteNoise: Topologies of time and rate trees do not match.")
+        (error "uncorrelatedWhiteNoise: Topologies of time and rate trees are different.")
         (zipTrees tTr rTr)
-    -- This is correct :). For a specific branch b, we have:
-    --
-    -- In absolute units: Let mu and v' (both not provided here) be the mean and
-    -- variance of the white noise process given in absolute time units,
-    -- respectively. Then, the mean rate is mu and the variance of the rate is
-    -- v'/t, where t is the branch length of b measured in units of time. That
-    -- is, the longer a branch, the lower the variance of the rate.
-    --
-    -- In relative units: The mean rate should be 1.0, and the variance should
-    -- be (1/mu)^2 * v'/t = v/t, where v is the variance measured in relative
-    -- units of the white noise process (this is the v provided here).
-    --
-    -- The following gamma distribution with shape k=t/v and scale theta=v/t has
-    --  a mean of k*theta=1.0, and a variance of k*theta^2=theta=v/t, as
-    --  required.
-    f (t, r) = let k = t / v in gamma k (recip k) r
+    -- The following is correct, and has been proof read various times :).
+
+    -- For a specific branch b, we have: Let mu and v be the mean and variance
+    -- of the white noise process, respectively. Then, the mean rate is mu and
+    -- the variance of the rate is v/t, where t is the branch length of b
+    -- measured in units of time. That is, the longer a branch, the lower the
+    -- variance of the rate.
+    f (t, r) =
+      let v' = v / t
+          (k, th) = gammaMeanVarianceToShapeScale m v'
+       in gamma k th r
 {-# SPECIALIZE uncorrelatedWhiteNoise ::
   HandleStem ->
+  Double ->
   Double ->
   LengthTree Double ->
   PriorFunction (LengthTree Double)
@@ -238,26 +235,15 @@ uncorrelatedWhiteNoise hs v (LengthTree tTr) (LengthTree rTr)
 -- parent branch exists, set the mean of the gamma distribution to the parent
 -- branch length. Otherwise, use the given initial mean. The variance of the
 -- gamma distribution is set to the given variance multiplied with the branch
--- length measured in unit time (see note below).
---
--- NOTE: For convenience, the mean and variance are used as parameters for this
--- relaxed molecular clock model. They are used to calculate the shape and the
--- scale of the underlying gamma distribution.
---
--- For example,
---
--- @
--- prior = autocorrelatedGamma initialMean variance timeTree rateTree
--- @
+-- length measured in unit time.
 --
 -- NOTE: The time tree has to be given because long branches are expected to
 -- have a distribution of rates with higher variance than short branches. This
--- is the opposite property compared to the white noise process
--- ('uncorrelatedWhiteNoise').
+-- is the opposite of the white noise process ('uncorrelatedWhiteNoise').
 --
 -- Call 'error' if:
 --
--- - the topologies of the time and rate trees do not match;
+-- - the topologies of the time and rate trees are different;
 --
 -- - the variance is zero or negative.
 autocorrelatedGamma ::
@@ -267,18 +253,18 @@ autocorrelatedGamma ::
   Variance a ->
   LengthTree a ->
   PriorFunctionG (LengthTree a) a
-autocorrelatedGamma hs mu var (LengthTree tTr) (LengthTree rTr)
-  | var <= 0 = error "autocorrelatedGamma: Variance is zero or negative."
+autocorrelatedGamma hs m v (LengthTree tTr) (LengthTree rTr)
+  | v <= 0 = error "autocorrelatedGamma: Variance is zero or negative."
   | otherwise = branchesWith hs f zTr
   where
     zTr =
       fromMaybe
-        (error "autocorrelatedGamma: Topologies of time and rate trees do not match.")
+        (error "autocorrelatedGamma: Topologies of time and rate trees are different.")
         (zipTrees tTr rTr)
     f (t, r) =
-      let var' = t * var
-          (shape, scale) = gammaMeanVarianceToShapeScale mu var'
-       in gamma shape scale r
+      let v' = v * t
+          (k, th) = gammaMeanVarianceToShapeScale m v'
+       in gamma k th r
 {-# SPECIALIZE autocorrelatedGamma ::
   HandleStem ->
   Double ->
@@ -291,26 +277,20 @@ autocorrelatedGamma hs mu var (LengthTree tTr) (LengthTree rTr)
 --
 -- Let \(R\) be the rate of the parent branch, and \(\mu\) and \(\sigma^2\) be
 -- two given values roughly denoting mean and variance. Further, let \(t\) be
--- the length of the current branch measured in unit time. Then, the rate of the
--- current branch \(r\) is distributed according to a normal distribution with
--- mean \(\log{R} - \sigma^2 t/2) and variance \(\sigma^2t\).
+-- the length of the current branch measured in units of time. Then, the rate of
+-- the current branch \(r\) is distributed according to a normal distribution
+-- with mean \(\log{R} - \sigma^2 t/2) and variance \(\sigma^2t\).
 --
 -- The correction term is needed to ensure that the mean stays constant. See
 -- Computational Molecular Evolution (Yang, 2006), Section 7.4.3.
 --
 -- NOTE: The time tree has to be given because long branches are expected to
 -- have a distribution of rates with higher variance than short branches. This
--- is the opposite property compared to the white noise process
--- ('uncorrelatedWhiteNoise').
---
--- For example,
--- @
--- prior = autocorrelatedLogNormal initialRate variance timeTree rateTree
--- @
+-- is the opposite of the white noise process ('uncorrelatedWhiteNoise').
 --
 -- Call 'error' if:
 --
--- - the topologies of the time and rate trees do not match;
+-- - the topologies of the time and rate trees are different;
 --
 -- - the variance is zero or negative.
 autocorrelatedLogNormal ::
@@ -320,15 +300,17 @@ autocorrelatedLogNormal ::
   Variance a ->
   LengthTree a ->
   PriorFunctionG (LengthTree a) a
-autocorrelatedLogNormal hs mu var (LengthTree tTr) (LengthTree rTr)
-  | var <= 0 = error "autocorrelatedLogNormal: Variance is zero or negative."
+autocorrelatedLogNormal hs m v (LengthTree tTr) (LengthTree rTr)
+  | v <= 0 = error "autocorrelatedLogNormal: Variance is zero or negative."
   | otherwise = branchesWith hs f zTr
   where
     zTr =
       fromMaybe
-        (error "autocorrelatedLogNormal: Topologies of time and rate trees do not match.")
+        (error "autocorrelatedLogNormal: Topologies of time and rate trees are different.")
         (zipTrees tTr rTr)
-    f (t, r) = let var' = t * var in logNormal' mu var' r
+    f (t, r) =
+      let v' = v * t
+       in logNormal' m v' r
 {-# SPECIALIZE autocorrelatedLogNormal ::
   HandleStem ->
   Double ->
