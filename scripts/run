@@ -15,7 +15,7 @@ usage() {
     echo "-m Use Mc3 algorithm insteahd of Mhg"
     echo
     echo "Other options:"
-    echo "-f FILE    Use a different analysis configuration file"
+    echo "-f FILE    Use a different analysis configuration file (relative path)"
     echo "-n SUFFIX  Use an analysis suffix"
     echo "-p         Activate profiling"
     echo "-s         Use stack instead of cabal-install"
@@ -89,7 +89,7 @@ then
 fi
 
 # shellcheck source=analysis.conf
-source "${analysis_configuration_file}"
+source "./${analysis_configuration_file}"
 
 likelihood_specification=$1
 shift
