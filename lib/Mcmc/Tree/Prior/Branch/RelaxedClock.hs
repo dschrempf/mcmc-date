@@ -273,7 +273,7 @@ autocorrelatedGamma hs m v (LengthTree tTr) (LengthTree rTr)
   PriorFunction (LengthTree Double)
   #-}
 
--- | Auto-correlated log normal model.
+-- | Auto-correlated log normal model or geometric Brownian motion.
 --
 -- Let \(R\) be the rate of the parent branch, and \(\mu\) and \(\sigma^2\) be
 -- two given values roughly denoting mean and variance. Further, let \(t\) be

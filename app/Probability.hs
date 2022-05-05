@@ -71,6 +71,7 @@ priorFunction cb' cs' bs' (I l m h t mu va r) =
       exponential 1.0 va,
       -- Relative rate tree.
       uncorrelatedGamma WithoutStem 1.0 va r
+      -- autocorrelatedLogNormal WithoutStem 1.0 va t' r
     ]
   where
     cb = VB.map realToFracCalibration cb'
