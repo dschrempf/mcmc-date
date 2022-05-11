@@ -42,11 +42,13 @@ import Tools
 -- | Prior function.
 priorFunction ::
   (RealFloat a, Show a, Typeable a) =>
+  -- | Approximate absolute time tree height.
+  Double ->
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
   PriorFunctionG (IG a) a
-priorFunction cb' cs' bs' (I l m h t mu va r) =
+priorFunction ht cb' cs' bs' (I l m h t mu va r) =
   product' $
     calibrateConstrainBraceSoft h cb cs bs t :
     -- -- Usually, the combined treatment is faster.
@@ -62,11 +64,8 @@ priorFunction cb' cs' bs' (I l m h t mu va r) =
       --
       -- Relative time tree.
       birthDeath ConditionOnTimeOfMrca l m 1.0 t',
-      -- Mean rate.
-      --
-      -- IDEA: Use gamma distribution with mean calculated using the number of
-      -- branches and the total length of the substitution-like tree.
-      exponential 1.0 mu,
+      -- Mean rate. The mean of the mean rate ^^ is (1/height).
+      exponential (realToFrac ht) mu,
       -- Variance of the relative rates.
       exponential 1.0 va,
       -- Relative rate tree.
@@ -79,6 +78,7 @@ priorFunction cb' cs' bs' (I l m h t mu va r) =
     bs = VB.map realToFracBrace bs'
     t' = heightTreeToLengthTree t
 {-# SPECIALIZE priorFunction ::
+  Double ->
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
@@ -270,6 +270,8 @@ likelihoodFunctionG mu' sigmaInv' logDetSigma' x =
 
 posteriorFunction ::
   (RealFloat a, Show a, Typeable a) =>
+  -- Approximate absolute time tree height.
+  Double ->
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
@@ -280,8 +282,8 @@ posteriorFunction ::
   -- Log of determinant of covariance matrix.
   Double ->
   PosteriorFunctionG (IG a) a
-posteriorFunction cs ks bs mu sigmaInv logDetSigma xs =
-  priorFunction cs ks bs xs * likelihoodFunctionG mu sigmaInv logDetSigma xs
+posteriorFunction ht cs ks bs mu sigmaInv logDetSigma xs =
+  priorFunction ht cs ks bs xs * likelihoodFunctionG mu sigmaInv logDetSigma xs
 
 -- | Gradient of the log posterior function.
 --
@@ -302,6 +304,8 @@ posteriorFunction cs ks bs mu sigmaInv logDetSigma xs =
 --   Analysis by Gelman, they suggest computing the gradient manually. We could
 --   start using univariate normal distributions.
 gradLogPosteriorFunc ::
+  -- | Approximate absolute time tree height.
+  Double ->
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
@@ -313,10 +317,10 @@ gradLogPosteriorFunc ::
   Double ->
   IG Double ->
   IG Double
-gradLogPosteriorFunc cs ks bs mu sigmaInv logDetSigma =
+gradLogPosteriorFunc ht cs ks bs mu sigmaInv logDetSigma =
   -- grad (ln . priorFunction cs ks)
   -- grad (ln . likelihoodFunction mu sigmaInv logDetSigma)
-  grad (ln . posteriorFunction cs ks bs mu sigmaInv logDetSigma)
+  grad (ln . posteriorFunction ht cs ks bs mu sigmaInv logDetSigma)
 
 -- numDiffLogPosteriorFunc ::
 --   (RealFloat a, Show a) =>

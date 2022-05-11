@@ -328,17 +328,19 @@ getLikelihoodFunction an lhsp = do
 getGradLogPosteriorFunction ::
   String ->
   LikelihoodSpec ->
+  -- Approximate absolute time tree height.
+  Double ->
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
   IO (IG Double -> IG Double)
-getGradLogPosteriorFunction an lhsp cb cs bs = do
+getGradLogPosteriorFunction an lhsp ht cb cs bs = do
   lhd <- getData an
   case (lhsp, lhd) of
     (FullMultivariateNormal, Full mu s d) -> do
       let muBoxed = VB.convert mu
           sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym s
-      pure $ gradLogPosteriorFunc cb cs bs muBoxed sigmaInvBoxed d
+      pure $ gradLogPosteriorFunc ht cb cs bs muBoxed sigmaInvBoxed d
     (_, _) -> do
       let msg = "Generalized likelihood function not implemented for sparse matrices and the univariate."
       throwIO $ PatternMatchFail msg
@@ -362,6 +364,7 @@ getMcmcProps (Spec an cls cns brs prof ham lhsp) = do
   --
   -- Calibrations.
   cb <- getCalibrations meanTree cls
+  let ht = fromMaybe 1.0 $ getMeanRootHeight cb
   -- Constraints.
   cs <- getConstraints meanTree cns
   -- Braces.
@@ -371,12 +374,12 @@ getMcmcProps (Spec an cls cns brs prof ham lhsp) = do
   -- Generalized posterior function for Hamiltonian proposal.
   gradient <-
     if ham
-      then Just <$> getGradLogPosteriorFunction an lhsp cb cs bs
+      then Just <$> getGradLogPosteriorFunction an lhsp ht cb cs bs
       else pure Nothing
   let -- Starting state.
       start' = initWith meanTree
       -- Prior function.
-      pr' = priorFunction cb cs bs
+      pr' = priorFunction ht cb cs bs
       -- Proposal cycle.
       cc' = proposals (VB.toList bs) (isJust cls) start' gradient
       -- Monitor.

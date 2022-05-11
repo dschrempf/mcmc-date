@@ -20,6 +20,7 @@ module Mcmc.Tree.Prior.Node.Calibration
     getCalibrationNodeIndex,
     getCalibrationInterval,
     loadCalibrations,
+    getMeanRootHeight,
     calibrateSoftS,
     calibrateSoftF,
     calibrateSoft,
@@ -273,6 +274,26 @@ loadCalibrations t f = do
       mapM_ (putStr . render) calsErrs
       error "loadCalibrations: Duplicates and/or conflicting calibrations have been detected."
   return calsAll
+
+-- | If the root node is calibrated, get the mean of the root node height.
+--
+-- The mean root node height is useful when calibrating the rate mean prior.
+getMeanRootHeight :: RealFloat a => VB.Vector (Calibration a) -> Maybe a
+getMeanRootHeight cs =
+  VB.filter isRootCalibration cs
+    & assertZeroOrOneResults
+    <&> calibrationInterval
+    >>= getMean
+  where
+    isRootCalibration :: Calibration a -> Bool
+    isRootCalibration c = calibrationNodePath c == []
+    assertZeroOrOneResults :: VB.Vector (Calibration a) -> Maybe (Calibration a)
+    assertZeroOrOneResults xs = if VB.length xs == 1 then Just $ VB.unsafeHead xs else Nothing
+    getMean :: RealFloat a => Interval a -> Maybe a
+    getMean (Interval a' (PositiveUpperBoundary b _)) = case a' of
+      Zero -> Just $ b / 2.0
+      (PositiveLowerBoundary a _) -> Just $ (a + b) / 2.0
+    getMean _ = Nothing
 
 -- | Calibrate height of a single node.
 --
