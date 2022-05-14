@@ -393,8 +393,7 @@ getMcmcProps (Spec an cls cns brs prof ham lhsp) = do
           (AnalysisName an)
           burnIn'
           iterations'
-          -- TraceAuto
-          (TraceMinimum 100)
+          TraceAuto
           Overwrite
           Parallel
           Save
