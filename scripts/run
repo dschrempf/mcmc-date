@@ -203,8 +203,10 @@ p_flags_rts=()
 if [[ $profiling_activated -eq 1 ]]
 then
     p_flags+=("${prog_profiling_flag}")
-    p_flags_prog+=(--profile)
-    p_flags_rts+=(-p)
+    #p_flags_prog+=(--profile)
+    #p_flags_rts+=(-p)
+    p_flags_prog+=()
+    p_flags_rts+=(-p -l -hy)
     outdir="${outdir}-profile"
 fi
 
