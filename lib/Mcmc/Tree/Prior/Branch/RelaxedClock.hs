@@ -38,7 +38,7 @@ import Data.Maybe
 import Data.Typeable
 import qualified Data.Vector as VB
 import ELynx.Tree
-import Mcmc.Prior
+import Mcmc.Prior hiding (logNormal)
 import Mcmc.Statistics.Types
 import Mcmc.Tree.Prior.Branch
 import Mcmc.Tree.Prior.Branch.Internal
@@ -125,17 +125,26 @@ uncorrelatedGamma hs m v
   PriorFunction (LengthTree Double)
   #-}
 
--- A variant of the log normal distribution. See Yang 2006, equation (7.23).
-logNormal' :: RealFloat a => Mean a -> StandardDeviation a -> a -> Log a
-logNormal' m s x
-  | s <= 0 = error "logNormal': Standard deviation is zero or negative."
+-- Log normal distributed prior.
+logNormal :: RealFloat a => Mean a -> Variance a -> PriorFunctionG a a
+logNormal m v x
+  | v <= 0 = error "logNormal: Variance is zero or negative."
   | x <= 0 = 0
   | otherwise = Exp $ t + e
   where
-    -- Using the variance as input argument would remove the squaring step, but
-    -- for consistency we use the standard deviation.
-    v = s * s
-    t = negate $ realToFrac m_ln_sqrt_2_pi + log (x * s)
+    t = negate $ realToFrac m_ln_sqrt_2_pi + log (x * sqrt v)
+    a = recip $ 2 * v
+    b = log x - m
+    e = negate $ a * b * b
+
+-- A variant of the log normal distribution. See Yang 2006, equation (7.23).
+logNormal' :: RealFloat a => Mean a -> Variance a -> a -> Log a
+logNormal' m v x
+  | v <= 0 = error "logNormal': Variance is zero or negative."
+  | x <= 0 = 0
+  | otherwise = Exp $ t + e
+  where
+    t = negate $ realToFrac m_ln_sqrt_2_pi + log (x * sqrt v)
     a = recip $ 2 * v
     b = log (x / m) + 0.5 * v
     e = negate $ a * b * b
@@ -154,9 +163,7 @@ uncorrelatedLogNormal ::
   Mean a ->
   Variance a ->
   PriorFunctionG (LengthTree a) a
-uncorrelatedLogNormal hs m v = branchesWith hs (logNormal' m s) . getLengthTree
-  where
-    s = sqrt v
+uncorrelatedLogNormal hs m v = branchesWith hs (logNormal' m v) . getLengthTree
 {-# SPECIALIZE uncorrelatedLogNormal ::
   HandleStem ->
   Double ->
@@ -314,8 +321,7 @@ autocorrelatedLogNormal hs m v (LengthTree tTr) (LengthTree rTr)
         (zipTrees tTr rTr)
     f (t, r) =
       let v' = v * t
-          s' = sqrt v'
-       in logNormal' m s' r
+       in logNormal m v' r
 {-# SPECIALIZE autocorrelatedLogNormal ::
   HandleStem ->
   Double ->
