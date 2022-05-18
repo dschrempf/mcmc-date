@@ -126,17 +126,19 @@ uncorrelatedGamma hs m v
   #-}
 
 -- A variant of the log normal distribution. See Yang 2006, equation (7.23).
-logNormal' :: RealFloat a => Mean a -> Variance a -> a -> Log a
-logNormal' mu var x
-  | var <= 0 = error "logNormal': Variance is zero or negative."
-  | x < 0 = error "logNormal': Negative value."
-  | x == 0 = 0
-  | otherwise = Exp $ negate t - e
+logNormal' :: RealFloat a => Mean a -> StandardDeviation a -> a -> Log a
+logNormal' m s x
+  | s <= 0 = error "logNormal': Standard deviation is zero or negative."
+  | x <= 0 = 0
+  | otherwise = Exp $ t + e
   where
-    t = realToFrac m_ln_sqrt_2_pi + log (x * sqrt var)
-    a = recip $ 2 * var
-    b = log (x / mu) + 0.5 * var
-    e = a * (b ** 2)
+    -- Using the variance as input argument would remove the squaring step, but
+    -- for consistency we use the standard deviation.
+    v = s * s
+    t = negate $ realToFrac m_ln_sqrt_2_pi + log (x * s)
+    a = recip $ 2 * v
+    b = log (x / m) + 0.5 * v
+    e = negate $ a * b * b
 
 -- | Uncorrelated log normal model.
 --
@@ -152,7 +154,9 @@ uncorrelatedLogNormal ::
   Mean a ->
   Variance a ->
   PriorFunctionG (LengthTree a) a
-uncorrelatedLogNormal hs m v = branchesWith hs (logNormal' m v) . getLengthTree
+uncorrelatedLogNormal hs m v = branchesWith hs (logNormal' m s) . getLengthTree
+  where
+    s = sqrt v
 {-# SPECIALIZE uncorrelatedLogNormal ::
   HandleStem ->
   Double ->
@@ -310,7 +314,8 @@ autocorrelatedLogNormal hs m v (LengthTree tTr) (LengthTree rTr)
         (zipTrees tTr rTr)
     f (t, r) =
       let v' = v * t
-       in logNormal' m v' r
+          s' = sqrt v'
+       in logNormal' m s' r
 {-# SPECIALIZE autocorrelatedLogNormal ::
   HandleStem ->
   Double ->
