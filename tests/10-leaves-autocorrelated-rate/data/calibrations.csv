@@ -1,0 +1,4 @@
+Name,LeafA,LeafB,YoungAge,YoungProbabilityMass,OldAge,OldProbabilityMass
+CladeRoot,a,j,900,0.025,1100,0.025
+CladeCDFast,c,d,371,0.025,471,0.025
+CladeEFSlow,e,f,133,0.025,233,0.025

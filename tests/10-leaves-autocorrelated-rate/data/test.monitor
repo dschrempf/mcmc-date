@@ -1,0 +1,22 @@
+	MeanLength                    	0	59.82	
+	MeanLength                    	0	95.91	
+	VarLength                     	0	68.1	
+	VarLength                     	0	96.91	
+	EnterPartial                  	170	100	
+	OneBranchLengthPartial        	253	59.0118	
+	OneBranchLengthPartial        	207	95.0206	
+	LeavePartial                  	86	100	
+	ResampleSub                   	482	100	
+	ResampleLength                	0	100	
+	ResampleSub                   	478	100	
+	SwitchModeIntegral            	2	0	
+	ResampleStat                  	1	31.8615	
+	UpdateLogProbs                	69	100	
+	UpdateLogProbs                	54	100	
+
+
+	stat inf count : 0
+	inf prob count : 0
+	sub overflow count : 0
+	sub max count : 0
+
