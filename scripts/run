@@ -236,19 +236,19 @@ then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} run \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           "${likelihood_specification_flags[@]}" \
-           +RTS -N5 "${p_flags_rts[@]}"
+           +RTS -N2 "${p_flags_rts[@]}"
 elif [[ "$command" == "c" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} continue \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           "${likelihood_specification_flags[@]}" \
-          +RTS -N5 "${p_flags_rts[@]}"
+          +RTS -N2 "${p_flags_rts[@]}"
 elif [[ "$command" == "m" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} marginal-likelihood \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           "${likelihood_specification_flags[@]}" \
-          +RTS -N5 "${p_flags_rts[@]}"
+          +RTS -N2 "${p_flags_rts[@]}"
 else
     usage
     exit 1
