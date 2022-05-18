@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 SERVER="meganeura"
+#SERVER="mellifera"
 PATH_SERVER="/scratch/dominik/projects/mcmc-date"
 EXCLUDE=$(cat <<EOF
 - .direnv/
