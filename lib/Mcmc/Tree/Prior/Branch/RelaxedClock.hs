@@ -38,7 +38,7 @@ import Data.Maybe
 import Data.Typeable
 import qualified Data.Vector as VB
 import ELynx.Tree
-import Mcmc.Prior hiding (logNormal)
+import Mcmc.Prior
 import Mcmc.Statistics.Types
 import Mcmc.Tree.Prior.Branch
 import Mcmc.Tree.Prior.Branch.Internal
@@ -125,19 +125,19 @@ uncorrelatedGamma hs m v
   PriorFunction (LengthTree Double)
   #-}
 
--- Log normal distributed prior.
-logNormal :: RealFloat a => Mean a -> Variance a -> PriorFunctionG a a
-logNormal m v x
-  | v <= 0 = error "logNormal: Variance is zero or negative."
-  | x <= 0 = 0
-  | otherwise = Exp $ t + e
-  where
-    t = negate $ realToFrac m_ln_sqrt_2_pi + log (x * sqrt v)
-    a = recip $ 2 * v
-    b = log x - m
-    e = negate $ a * b * b
-
--- A variant of the log normal distribution. See Yang 2006, equation (7.23).
+-- A variant of the log normal distribution.
+--
+-- NOTE: The log normal distribution is parametrized with the mean \(\mu\) and
+-- the standard deviation \(\sigma\) of the underlying normal distribution. The
+-- mean and variance of the log normal distribution itself are functions of
+-- \(\mu\) and \(\sigma\), but are not the same as \(\mu\) and \(\sigma\)!
+--
+-- This function is parametrized with the actual mean. That is, the mean of this
+-- distribution is the provided mean. However, the variance is still the one of
+-- the underlying normal distribution. Reparameterization of the variance is
+-- complicated, and not necessary.
+--
+-- See Yang 2006, equation (7.23).
 logNormal' :: RealFloat a => Mean a -> Variance a -> a -> Log a
 logNormal' m v x
   | v <= 0 = error "logNormal': Variance is zero or negative."
@@ -321,7 +321,7 @@ autocorrelatedLogNormal hs m v (LengthTree tTr) (LengthTree rTr)
         (zipTrees tTr rTr)
     f (t, r) =
       let v' = v * t
-       in logNormal m v' r
+       in logNormal' m v' r
 {-# SPECIALIZE autocorrelatedLogNormal ::
   HandleStem ->
   Double ->
