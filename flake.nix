@@ -79,7 +79,7 @@
               export PATH="${scripts}:$PATH"
             '';
           packages = _: [ mcmc-date-package ];
-          buildInputs = with pkgs; [
+          nativeBuildInputs = with pkgs; [
             bashInteractive
             dschrempf.beast2
             dschrempf.figtree
@@ -92,6 +92,8 @@
 
             hpkgs.cabal-install
             hpkgs.haskell-language-server
+          ];
+          buildInputs = with pkgs; [
           ];
           doBenchmark = true;
           # withHoogle = true;
