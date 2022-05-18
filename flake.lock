@@ -139,11 +139,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1652777021,
-        "narHash": "sha256-14k+dCxyV4qfRJbjGFYz4ITUFrqs8jRGma06XRHT0fY=",
+        "lastModified": 1652862695,
+        "narHash": "sha256-6brxO04Jgug6HBgxnhrbTmOjBPpqshwGy+kUGU7cPtA=",
         "owner": "dschrempf",
         "repo": "elynx",
-        "rev": "48a0ee786ea41c6184ae1df70cb965cf21320b40",
+        "rev": "44877b2b8998425d1178382ac2ef62f755c48dfe",
         "type": "github"
       },
       "original": {
@@ -342,11 +342,11 @@
         "pava": "pava"
       },
       "locked": {
-        "lastModified": 1652777603,
-        "narHash": "sha256-SAi8giGBsCa67+j7CjU1uDnbN2BArZF6F43I0D0WWpw=",
+        "lastModified": 1652876982,
+        "narHash": "sha256-sG5mVcRjvT1GpU3G+uMPQZfp1iZRfoMuBkGykDE27fw=",
         "owner": "dschrempf",
         "repo": "mcmc",
-        "rev": "72e7c08963802840e5b6e8563a45d7506cdde8a0",
+        "rev": "b915acca2f13b74c04f72cec880d2e1f3948e06f",
         "type": "github"
       },
       "original": {
