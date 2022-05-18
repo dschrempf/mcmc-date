@@ -17,7 +17,14 @@ function analyze_tree_monitor() {
 
 shopt -s extglob
 
-for d in results*
+if [[ -n $1 ]]
+then
+  ds=("$1")
+else
+  ds=(results*)
+fi
+
+for d in "${ds[@]}"
 do
     ( cd "$d"
       echo "Current directory: ${PWD}."
