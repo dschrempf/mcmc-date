@@ -389,8 +389,8 @@ monitor cb cs bs =
 burnIn :: BurnInSettings
 burnIn = BurnInWithCustomAutoTuning fast slow
   where
-    fast = 10 : 10 : [10, 20 .. 200]
-    slow = [210, 220 .. 400]
+    fast = 10 : 10 : [10, 20 .. 190]
+    slow = [200, 220 .. 400]
 
 -- | Number of burn in iterations when profiling is enabled.
 burnInProf :: BurnInSettings
