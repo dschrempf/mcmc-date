@@ -265,7 +265,8 @@ loadCalibrations t f = do
   -- Check for duplicates and conflicts.
   let calsErrs = findDupsBy ((==) `on` calibrationNodePath) $ VB.toList calsAll
   if null calsErrs
-    then putStrLn "No duplicates and no conflicting calibrations have been detected."
+    then -- TODO: Actually check for conflicting calibrations.
+      putStrLn "No duplicates and no conflicting calibrations have been detected."
     else do
       -- Calibrations could also be removed. But then, which one should be removed?
       let render xs =
