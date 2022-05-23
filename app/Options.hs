@@ -45,6 +45,8 @@ data Spec = Spec
     calibrations :: Maybe FilePath,
     constraints :: Maybe FilePath,
     braces :: Maybe FilePath,
+    -- | Try to reuse state and proposal tuning parameters from a previous run.
+    initFromSave :: Bool,
     -- | Activate profiling (change the number of iterations).
     profile :: Bool,
     -- | Activate Hamiltonian proposal.
@@ -86,13 +88,11 @@ bracesP =
         <> metavar "FILE"
     )
 
-algorithmP :: Parser Algorithm
-algorithmP =
-  flag
-    MhgA
-    Mc3A
-    ( long "mc3"
-        <> help "Use MC3 instead of MHG algorithm"
+initFromSaveP :: Parser Bool
+initFromSaveP =
+  switch
+    ( long "init-from-save"
+        <> help "Try to reuse state and proposal tuning parameters from a previous run."
     )
 
 profileP :: Parser Bool
@@ -116,6 +116,7 @@ specP =
     <*> optional calibrationsP
     <*> optional constraintsP
     <*> optional bracesP
+    <*> initFromSaveP
     <*> profileP
     <*> hamiltonianP
     <*> likelihoodSpecP
@@ -161,6 +162,15 @@ data Mode
   | Continue Spec Algorithm
   | MarginalLikelihood Spec
   deriving (Eq, Show, Read)
+
+algorithmP :: Parser Algorithm
+algorithmP =
+  flag
+    MhgA
+    Mc3A
+    ( long "mc3"
+        <> help "Use MC3 instead of MHG algorithm"
+    )
 
 prepareP :: Parser Mode
 prepareP = Prepare <$> prepSpecP

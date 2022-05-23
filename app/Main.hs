@@ -19,12 +19,13 @@ module Main
 where
 
 import Control.DeepSeq
+import Control.Exception
 import Control.Monad
 import Data.Aeson
 import Data.Aeson.TH
 import Data.Bifunctor
 import qualified Data.ByteString.Lazy.Char8 as BL
-import Data.List
+import Data.List hiding (cycle)
 import qualified Data.Matrix as MB
 import Data.Maybe
 import qualified Data.Vector as VB
@@ -32,6 +33,7 @@ import qualified Data.Vector.Storable as VS
 import qualified Numeric.LinearAlgebra as L
 import Options
 import System.Random.MWC hiding (uniform)
+import Prelude hiding (cycle)
 
 -- Disable the syntax formatter Ormolu to highlight relevant module imports.
 {- ORMOLU_DISABLE -}
@@ -42,6 +44,11 @@ import ELynx.Tree
 -- The Mcmc library includes the Metropolis-Hastings-Green algorithm.
 import Mcmc hiding (Continue)
 import Mcmc.Tree
+
+-- We need this to load an old state (see 'initFromSave').
+import Mcmc.Chain.Chain (cycle, link)
+import Mcmc.Chain.Link (state)
+import Mcmc.Cycle (ccProposals)
 
 -- -- Test automatic differentiation.
 --
@@ -56,7 +63,6 @@ import Definitions
 import Probability
 import State
 import Tools
-import Control.Exception
 import qualified Statistics.Covariance as S
 {- ORMOLU_ENABLE -}
 
@@ -347,6 +353,7 @@ getGradLogPosteriorFunction an lhsp ht cb cs bs = do
 
 getMcmcProps ::
   Spec ->
+  Maybe Algorithm ->
   IO
     ( I,
       PriorFunctionG (IG Double) Double,
@@ -355,7 +362,7 @@ getMcmcProps ::
       Monitor I,
       Settings
     )
-getMcmcProps (Spec an cls cns brs prof ham lhsp) = do
+getMcmcProps (Spec an cls cns brs ifs prof ham lhsp) malg = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
 
@@ -376,14 +383,38 @@ getMcmcProps (Spec an cls cns brs prof ham lhsp) = do
     if ham
       then Just <$> getGradLogPosteriorFunction an lhsp ht cb cs bs
       else pure Nothing
-  let -- Starting state.
-      start' = initWith meanTree
-      -- Prior function.
+
+  let -- Naive starting state and proposal cycle.
+      startNaive = initWith meanTree
+      ccNaive = proposals (VB.toList bs) (isJust cls) startNaive gradient
+
+  let -- Prior function.
       pr' = priorFunction ht cb cs bs
-      -- Proposal cycle.
-      cc' = proposals (VB.toList bs) (isJust cls) start' gradient
       -- Monitor.
       mon' = monitor (VB.toList cb) (VB.toList cs) (VB.toList bs)
+
+  -- Starting state.
+  let eWith m = error $ "getMcmcProps: " <> m <> " Try without '--init-from-save'."
+  (start', cc') <-
+    if ifs
+      then case malg of
+        Just Mc3A -> eWith "Loading initial state not implemented for MC3 algorithm."
+        Nothing -> eWith "Loading initial state not possible."
+        Just MhgA -> do
+          putStrLn "Loading old state; if this fails fail, try without '--init-from-save'."
+          mhgA <- mhgLoadUnsafe pr' lh' ccNaive mon' (AnalysisName an)
+          let startInformed = state $ link $ fromMHG mhgA
+              ccInformed = cycle $ fromMHG mhgA
+          putStrLn "Success."
+          putStrLn "Initializing chain with last state from save."
+          if length (ccProposals ccInformed) == length (ccProposals ccNaive)
+            then do
+              putStrLn "Using tuning parameters from save."
+              pure (startInformed, ccInformed)
+            else do
+              putStrLn "Cycle has changed, start with untuned proposals."
+              pure (startInformed, ccNaive)
+      else pure $ (startNaive, ccNaive)
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
   let burnIn' = if prof then burnInProf else burnIn
@@ -405,7 +436,7 @@ getMcmcProps (Spec an cls cns brs prof ham lhsp) = do
 -- Run the Metropolis-Hastings-Green algorithm.
 runMetropolisHastingsGreen :: Spec -> Algorithm -> IO ()
 runMetropolisHastingsGreen spec alg = do
-  (i, p, l, c, m, s) <- getMcmcProps spec
+  (i, p, l, c, m, s) <- getMcmcProps spec (Just alg)
 
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For
@@ -436,7 +467,7 @@ runMetropolisHastingsGreen spec alg = do
 
 continueMetropolisHastingsGreen :: Spec -> Algorithm -> IO ()
 continueMetropolisHastingsGreen spec alg = do
-  (_, p, l, c, m, _) <- getMcmcProps spec
+  (_, p, l, c, m, _) <- getMcmcProps spec Nothing
   let an = AnalysisName $ analysisName spec
   s <- settingsLoad an
   let is = if profile spec then iterationsProf else iterations
@@ -450,7 +481,7 @@ continueMetropolisHastingsGreen spec alg = do
 
 runMarginalLikelihood :: Spec -> IO ()
 runMarginalLikelihood spec = do
-  (i, p, l, c, m, _) <- getMcmcProps spec
+  (i, p, l, c, m, _) <- getMcmcProps spec Nothing
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For
   -- real analyses, use 'createSystemRandom'.
