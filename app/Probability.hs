@@ -67,10 +67,10 @@ priorFunction ht cb' cs' bs' (I l m h t mu va r) =
       -- Mean rate. The mean of the mean rate ^^ is (1/height).
       exponential (realToFrac ht) mu,
       -- Variance of the relative rates.
-      exponential 1.0 va,
+      exponential 10 va,
       -- Relative rate tree.
-      uncorrelatedGamma WithoutStem 1.0 va r
-      -- autocorrelatedLogNormal WithoutStem 1.0 va t' r
+      -- uncorrelatedGamma WithoutStem 1.0 va r
+      autocorrelatedLogNormal WithoutStem 1.0 va t' r
     ]
   where
     cb = VB.map realToFracCalibration cb'
