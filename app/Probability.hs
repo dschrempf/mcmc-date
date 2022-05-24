@@ -12,7 +12,10 @@
 --
 -- Creation date: Tue Jul 13 11:02:03 2021.
 module Probability
-  ( priorFunction,
+  ( priorFunctionCalibrationsConstraintsBraces,
+    priorFunctionBirthDeath,
+    priorFunctionRelaxedMolecularClock,
+    priorFunction,
     likelihoodFunctionFullMultivariateNormal,
     likelihoodFunctionSparseMultivariateNormal,
     likelihoodFunctionUnivariateNormal,
@@ -39,22 +42,34 @@ import State
 import Tools
 {- ORMOLU_ENABLE -}
 
--- | Prior function.
-priorFunction ::
-  (RealFloat a, Show a, Typeable a) =>
-  -- | Approximate absolute time tree height.
-  Double ->
+-- | Prior function for calibrations, constraints, and braces.
+priorFunctionCalibrationsConstraintsBraces ::
+  RealFloat a =>
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
   PriorFunctionG (IG a) a
-priorFunction ht cb' cs' bs' (I l m h t mu va r) =
-  product' $
-    calibrateConstrainBraceSoft h cb cs bs t :
-    -- -- Usually, the combined treatment is faster.
-    -- calibrateSoft 1e-4 h cb t :
-    -- constrainSoft 1e-4 cs t :
-    -- braceSoft 1e-4 bs t :
+priorFunctionCalibrationsConstraintsBraces cb' cs' bs' x =
+  -- -- Usually, the combined treatment is faster.
+  -- calibrateSoft 1e-4 h cb t :
+  -- constrainSoft 1e-4 cs t :
+  -- braceSoft 1e-4 bs t :
+  calibrateConstrainBraceSoft h cb cs bs t
+  where
+    cb = VB.map realToFracCalibration cb'
+    cs = VB.map realToFracConstraint cs'
+    bs = VB.map realToFracBrace bs'
+    h = x ^. timeHeight
+    t = x ^. timeTree
+
+-- | Prior function of time tree (birth and death process).
+priorFunctionBirthDeath ::
+  RealFloat a =>
+  -- | Time tree converted with 'heightTreeToLengthTree'.
+  LengthTree a ->
+  PriorFunctionG (IG a) a
+priorFunctionBirthDeath t' x =
+  product'
     [ -- Birth and death rates of the relative time tree.
       exponential 1.0 l,
       exponential 1.0 m,
@@ -63,20 +78,51 @@ priorFunction ht cb' cs' bs' (I l m h t mu va r) =
       -- set to 1.0.
       --
       -- Relative time tree.
-      birthDeath ConditionOnTimeOfMrca l m 1.0 t',
-      -- Mean rate. The mean of the mean rate ^^ is (1/height).
+      birthDeath ConditionOnTimeOfMrca l m 1.0 t'
+    ]
+  where
+    l = x ^. timeBirthRate
+    m = x ^. timeDeathRate
+
+-- Prior function of rate tree (relaxed molecular clock model).
+priorFunctionRelaxedMolecularClock ::
+  RealFloat a =>
+  -- | Initial, constant, approximate absolute time tree height.
+  Double ->
+  -- | Time tree converted with 'heightTreeToLengthTree'.
+  LengthTree a ->
+  PriorFunctionG (IG a) a
+priorFunctionRelaxedMolecularClock ht t' x =
+  product'
+    [ -- Mean rate. The mean of the mean rate ^^ is (1/height).
       exponential (realToFrac ht) mu,
       -- Variance of the relative rates.
-      exponential 10 va,
+      exponential 1.0 va,
       -- Relative rate tree.
       -- uncorrelatedGamma WithoutStem 1.0 va r
       autocorrelatedLogNormal WithoutStem 1.0 va t' r
     ]
   where
-    cb = VB.map realToFracCalibration cb'
-    cs = VB.map realToFracConstraint cs'
-    bs = VB.map realToFracBrace bs'
-    t' = heightTreeToLengthTree t
+    mu = x ^. rateMean
+    va = x ^. rateVariance
+    r = x ^. rateTree
+
+-- | Prior function.
+priorFunction ::
+  (RealFloat a, Show a, Typeable a) =>
+  -- | Initial, constant, approximate absolute time tree height.
+  Double ->
+  VB.Vector (Calibration Double) ->
+  VB.Vector (Constraint Double) ->
+  VB.Vector (Brace Double) ->
+  PriorFunctionG (IG a) a
+priorFunction ht cb' cs' bs' x =
+  product' $
+    priorFunctionCalibrationsConstraintsBraces cb' cs' bs' x :
+    priorFunctionBirthDeath t' x :
+    [priorFunctionRelaxedMolecularClock ht t' x]
+  where
+    t' = heightTreeToLengthTree $ x ^. timeTree
 {-# SPECIALIZE priorFunction ::
   Double ->
   VB.Vector (Calibration Double) ->

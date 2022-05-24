@@ -221,7 +221,7 @@ toHeightTreeUltrametric' t@(Node _ lb ts) =
       | otherwise = val
 
 -- | Calculate branch lengths and remove node heights.
-heightTreeToLengthTree :: (Ord a, Num a, Show a) => HeightTree a -> LengthTree a
+heightTreeToLengthTree :: (Ord a, Num a) => HeightTree a -> LengthTree a
 heightTreeToLengthTree t' = LengthTree $ go (branch t) t
   where
     t = getHeightTree t'

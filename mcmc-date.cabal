@@ -123,6 +123,7 @@ executable mcmc-date
   other-modules:
     Definitions
     Hamiltonian
+    Monitor
     Options
     Paths_mcmc_date
     Probability

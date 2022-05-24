@@ -391,7 +391,7 @@ getMcmcProps (Spec an cls cns brs ifs prof ham lhsp) malg = do
   let -- Prior function.
       pr' = priorFunction ht cb cs bs
       -- Monitor.
-      mon' = monitor (VB.toList cb) (VB.toList cs) (VB.toList bs)
+      mon' = monitor ht cb cs bs
 
   -- Starting state.
   let eWith m = error $ "getMcmcProps: " <> m <> " Try without '--init-from-save'."

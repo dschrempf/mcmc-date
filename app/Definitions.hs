@@ -74,11 +74,15 @@ import ELynx.Tree
 -- Mcmc library.
 import Mcmc
 
--- Local Modules.
+-- Local library.
 import Mcmc.Tree
+
+-- Local modules.
 import Hamiltonian
+import Monitor
 import State
 import Tools
+import qualified Data.Vector as VB
 {- ORMOLU_ENABLE -}
 
 -- | Initial state.
@@ -380,10 +384,40 @@ monFileTimeTree = monitorFile "timetree" [absoluteTimeTree >$< monitorLengthTree
 monFileRateTree :: MonitorFile I
 monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorLengthTree "RateTree"] 2
 
+-- Monitor the individual parts of the prior function.
+monFilePrior ::
+  -- Initial, constant, approximate absolute time tree height.
+  Double ->
+  VB.Vector (Calibration Double) ->
+  VB.Vector (Constraint Double) ->
+  VB.Vector (Brace Double) ->
+  MonitorFile I
+monFilePrior ht cb cs bs =
+  monitorFile
+    "prior"
+    [ monitorPriorCsKsBs cb cs bs,
+      monitorPriorBirthDeath,
+      monitorPriorRelaxedMolecularClock ht
+    ]
+    2
+
 -- | Monitor to standard output and files. Do not use any batch monitors for now.
-monitor :: [Calibration Double] -> [Constraint Double] -> [Brace Double] -> Monitor I
-monitor cb cs bs =
-  Monitor monStdOut [monFileParams cb cs bs, monFileTimeTree, monFileRateTree] []
+monitor ::
+  -- | Initial, constant, approximate absolute time tree height.
+  Double ->
+  VB.Vector (Calibration Double) ->
+  VB.Vector (Constraint Double) ->
+  VB.Vector (Brace Double) ->
+  Monitor I
+monitor ht cb cs bs =
+  Monitor
+    monStdOut
+    [ monFileParams (VB.toList cb) (VB.toList cs) (VB.toList bs),
+      monFileTimeTree,
+      monFileRateTree,
+      monFilePrior ht cb cs bs
+    ]
+    []
 
 -- | Number of burn in iterations and auto tuning period.
 burnIn :: BurnInSettings
