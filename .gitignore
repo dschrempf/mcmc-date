@@ -43,3 +43,4 @@ cabal.project.local~
 *.tex
 **/auto/
 **/result
+/.rsync-project
