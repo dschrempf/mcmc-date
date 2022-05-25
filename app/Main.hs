@@ -395,7 +395,7 @@ getMcmcProps (Spec an cls cns brs ifs prof ham lhsp) malg = do
 
   -- Starting state.
   let eWith m = error $ "getMcmcProps: " <> m <> " Try without '--init-from-save'."
-  (start', cc') <-
+  (start', cc', burnIn') <-
     if ifs
       then case malg of
         Just Mc3A -> eWith "Loading initial state not implemented for MC3 algorithm."
@@ -410,19 +410,19 @@ getMcmcProps (Spec an cls cns brs ifs prof ham lhsp) malg = do
           if length (ccProposals ccInformed) == length (ccProposals ccNaive)
             then do
               putStrLn "Using tuning parameters from save."
-              pure (startInformed, ccInformed)
+              pure (startInformed, ccInformed, burnInInformed)
             else do
               putStrLn "Cycle has changed, start with untuned proposals."
-              pure (startInformed, ccNaive)
-      else pure $ (startNaive, ccNaive)
+              pure (startInformed, ccNaive, burnIn)
+      else pure $ (startNaive, ccNaive, burnIn)
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
-  let burnIn' = if prof then burnInProf else burnIn
+  let burnIn'' = if prof then burnInProf else burnIn'
       iterations' = if prof then iterationsProf else iterations
       mcmcS =
         Settings
           (AnalysisName an)
-          burnIn'
+          burnIn''
           iterations'
           TraceAuto
           Overwrite

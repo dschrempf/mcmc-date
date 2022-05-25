@@ -51,6 +51,7 @@ module Definitions
     proposals,
     monitor,
     burnIn,
+    burnInInformed,
     burnInProf,
     iterations,
     iterationsProf,
@@ -425,6 +426,12 @@ burnIn = BurnInWithCustomAutoTuning fast slow
   where
     fast = 10 : 10 : [10, 20 .. 190]
     slow = [200, 220 .. 400]
+
+burnInInformed :: BurnInSettings
+burnInInformed = BurnInWithCustomAutoTuning fast slow
+  where
+    fast = [50, 100, 150, 200]
+    slow = [200, 300, 400, 400]
 
 -- | Number of burn in iterations when profiling is enabled.
 burnInProf :: BurnInSettings

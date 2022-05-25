@@ -45,7 +45,8 @@ data Spec = Spec
     calibrations :: Maybe FilePath,
     constraints :: Maybe FilePath,
     braces :: Maybe FilePath,
-    -- | Try to reuse state and proposal tuning parameters from a previous run.
+    -- | Try to reuse state and proposal tuning parameters from a previous run;
+    -- if successful also reduce burn in.
     initFromSave :: Bool,
     -- | Activate profiling (change the number of iterations).
     profile :: Bool,
@@ -92,7 +93,7 @@ initFromSaveP :: Parser Bool
 initFromSaveP =
   switch
     ( long "init-from-save"
-        <> help "Try to reuse state and proposal tuning parameters from a previous run."
+        <> help "Try to reuse state and proposal tuning parameters from a previous run; if successful, also reduce burn in"
     )
 
 profileP :: Parser Bool
