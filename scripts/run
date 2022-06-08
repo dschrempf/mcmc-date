@@ -21,6 +21,10 @@ usage() {
     echo "-p         Activate profiling"
     echo "-s         Use stack instead of cabal-install"
     echo
+    echo "Relaxed molecular clock model:"
+    echo "u  Uncorrelated gamma model"
+    echo "a  Autocorrelated log normal model"
+    echo
     echo "Likelihood specification:"
     echo "f  Full covariance matix"
     echo "s  Sparse covariance matrix"
@@ -86,7 +90,7 @@ shift $((OPTIND-1))
 [ "${1:-}" = "--" ] && shift
 
 # Arguments.
-if [[ $# -lt 2 ]]
+if [[ $# -lt 3 ]]
 then
     usage
     exit 1
@@ -95,21 +99,39 @@ fi
 # shellcheck source=analysis.conf
 source "./${analysis_configuration_file}"
 
+relaxed_molecular_clock_model=$1
+shift
+
+relaxed_molecular_clock_model_flags=()
+case "$relaxed_molecular_clock_model" in
+    u) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "UncorrelatedGamma")
+       ;;
+    a) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "AutocorrelatedLogNormal")
+       ;;
+    *) usage
+       exit 1
+       ;;
+esac
+if [ ${#relaxed_molecular_clock_model_flags[@]} -eq 0 ]; then
+    usage
+    exit 1
+fi
+
 likelihood_specification=$1
 shift
 
 likelihood_specification_flags=()
-    case "$likelihood_specification" in
-        f) likelihood_specification_flags+=(--likelihood-spec "FullMultivariateNormal")
-           ;;
-        s) likelihood_specification_flags+=(--likelihood-spec "SparseMultivariateNormal 0.1")
-           ;;
-        u) likelihood_specification_flags+=(--likelihood-spec "UnivariateNormal")
-           ;;
-        *) usage
-           exit 1
-           ;;
-    esac
+case "$likelihood_specification" in
+    f) likelihood_specification_flags+=(--likelihood-spec "FullMultivariateNormal")
+       ;;
+    s) likelihood_specification_flags+=(--likelihood-spec "SparseMultivariateNormal 0.1")
+       ;;
+    u) likelihood_specification_flags+=(--likelihood-spec "UnivariateNormal")
+       ;;
+    *) usage
+       exit 1
+       ;;
+esac
 if [ ${#likelihood_specification_flags[@]} -eq 0 ]; then
     usage
     exit 1
@@ -189,6 +211,28 @@ then
     fi
 fi
 
+case "$relaxed_molecular_clock_model" in
+    u) outdir="${outdir}-uncorrelated"
+       ;;
+    a) outdir="${outdir}-autocorrelated"
+       ;;
+    *) usage
+       exit 1
+       ;;
+esac
+
+case "$likelihood_specification" in
+    f) outdir="${outdir}-full"
+       ;;
+    s) outdir="${outdir}-sparse"
+       ;;
+    u) outdir="${outdir}-univariate"
+       ;;
+    *) usage
+       exit 1
+       ;;
+esac
+
 if [[ $init_from_save_activated -eq 1 ]]
 then
     echo "Initialize from save activated."
@@ -245,18 +289,21 @@ elif [[ "$command" == "r" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} run \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          "${relaxed_molecular_clock_model_flags[@]}" \
           "${likelihood_specification_flags[@]}" \
            +RTS -N2 "${p_flags_rts[@]}"
 elif [[ "$command" == "c" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} continue \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          "${relaxed_molecular_clock_model_flags[@]}" \
           "${likelihood_specification_flags[@]}" \
           +RTS -N2 "${p_flags_rts[@]}"
 elif [[ "$command" == "m" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} marginal-likelihood \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
+          "${relaxed_molecular_clock_model_flags[@]}" \
           "${likelihood_specification_flags[@]}" \
           +RTS -N2 "${p_flags_rts[@]}"
 else

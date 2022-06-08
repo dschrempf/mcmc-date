@@ -216,7 +216,10 @@ modeP =
         vsep $
           map
             string
-            [ "Likelihood specification:",
+            [ "Relaxed molecular clock model:",
+              "  - UncorrelatedGamma",
+              "  - AutocorrelatedLogNormal",
+              "Likelihood specification:",
               "  - FullMultivariateNormal",
               "  - SparseMultivariateNormal PENALTY",
               "  - UnivariateNormal"
