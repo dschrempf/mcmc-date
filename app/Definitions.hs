@@ -84,6 +84,7 @@ import Monitor
 import State
 import Tools
 import qualified Data.Vector as VB
+import Probability (RelaxedMolecularClockModel)
 {- ORMOLU_ENABLE -}
 
 -- | Initial state.
@@ -389,16 +390,17 @@ monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorLengthTree "RateT
 monFilePrior ::
   -- Initial, constant, approximate absolute time tree height.
   Double ->
+  RelaxedMolecularClockModel ->
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
   MonitorFile I
-monFilePrior ht cb cs bs =
+monFilePrior ht md cb cs bs =
   monitorFile
     "prior"
     [ monitorPriorCsKsBs cb cs bs,
       monitorPriorBirthDeath,
-      monitorPriorRelaxedMolecularClock ht
+      monitorPriorRelaxedMolecularClock ht md
     ]
     2
 
@@ -406,17 +408,18 @@ monFilePrior ht cb cs bs =
 monitor ::
   -- | Initial, constant, approximate absolute time tree height.
   Double ->
+  RelaxedMolecularClockModel ->
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
   Monitor I
-monitor ht cb cs bs =
+monitor ht md cb cs bs =
   Monitor
     monStdOut
     [ monFileParams (VB.toList cb) (VB.toList cs) (VB.toList bs),
       monFileTimeTree,
       monFileRateTree,
-      monFilePrior ht cb cs bs
+      monFilePrior ht md cb cs bs
     ]
     []
 

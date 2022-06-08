@@ -336,17 +336,18 @@ getGradLogPosteriorFunction ::
   LikelihoodSpec ->
   -- Approximate absolute time tree height.
   Double ->
+  RelaxedMolecularClockModel ->
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
   IO (IG Double -> IG Double)
-getGradLogPosteriorFunction an lhsp ht cb cs bs = do
+getGradLogPosteriorFunction an lhsp ht md cb cs bs = do
   lhd <- getData an
   case (lhsp, lhd) of
     (FullMultivariateNormal, Full mu s d) -> do
       let muBoxed = VB.convert mu
           sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym s
-      pure $ gradLogPosteriorFunc ht cb cs bs muBoxed sigmaInvBoxed d
+      pure $ gradLogPosteriorFunc ht md cb cs bs muBoxed sigmaInvBoxed d
     (_, _) -> do
       let msg = "Generalized likelihood function not implemented for sparse matrices and the univariate."
       throwIO $ PatternMatchFail msg
@@ -362,7 +363,7 @@ getMcmcProps ::
       Monitor I,
       Settings
     )
-getMcmcProps (Spec an cls cns brs ifs prof ham lhsp) malg = do
+getMcmcProps (Spec an cls cns brs ifs prof ham lhsp rmcm) malg = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
 
@@ -381,7 +382,7 @@ getMcmcProps (Spec an cls cns brs ifs prof ham lhsp) malg = do
   -- Generalized posterior function for Hamiltonian proposal.
   gradient <-
     if ham
-      then Just <$> getGradLogPosteriorFunction an lhsp ht cb cs bs
+      then Just <$> getGradLogPosteriorFunction an lhsp ht rmcm cb cs bs
       else pure Nothing
 
   let -- Naive starting state and proposal cycle.
@@ -389,9 +390,9 @@ getMcmcProps (Spec an cls cns brs ifs prof ham lhsp) malg = do
       ccNaive = proposals (VB.toList bs) (isJust cls) startNaive gradient
 
   let -- Prior function.
-      pr' = priorFunction ht cb cs bs
+      pr' = priorFunction ht rmcm cb cs bs
       -- Monitor.
-      mon' = monitor ht cb cs bs
+      mon' = monitor ht rmcm cb cs bs
 
   -- Starting state.
   let eWith m = error $ "getMcmcProps: " <> m <> " Try without '--init-from-save'."

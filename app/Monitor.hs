@@ -43,9 +43,13 @@ monitorPriorBirthDeath = f >$< monitorDouble "PriorBirthDeath"
 monitorPriorRelaxedMolecularClock ::
   -- | Initial, constant, approximate absolute time tree height.
   Double ->
+  RelaxedMolecularClockModel ->
   MonitorParameter I
-monitorPriorRelaxedMolecularClock ht = f >$< monitorDouble "PriorRelaxedMolecularClock"
+monitorPriorRelaxedMolecularClock ht md = f >$< monitorDouble n
   where
+    n = case md of
+      UncorrelatedGamma -> "PriorUncorrelatedGammaRelaxedMolecularClock"
+      AutocorrelatedLogNormal -> "PriorAutocorrelatedLogNormalRelaxedMolecularClock"
     f x =
       let t = heightTreeToLengthTree (x ^. timeTree)
-       in ln $ priorFunctionRelaxedMolecularClock ht t x
+       in ln $ priorFunctionRelaxedMolecularClock ht md t x

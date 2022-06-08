@@ -23,6 +23,7 @@ import Data.Version (showVersion)
 import Options.Applicative
 import Options.Applicative.Help.Pretty
 import Paths_mcmc_date (version)
+import Probability
 
 data Algorithm = MhgA | Mc3A
   deriving (Eq, Read, Show)
@@ -53,7 +54,9 @@ data Spec = Spec
     -- | Activate Hamiltonian proposal.
     hamiltonian :: Bool,
     -- | Likelihood specification.
-    likelihoodSpec :: LikelihoodSpec
+    likelihoodSpec :: LikelihoodSpec,
+    -- | Relaxed molecular clock.
+    relaxedMolecularClock :: RelaxedMolecularClockModel
   }
   deriving (Eq, Show, Read)
 
@@ -110,6 +113,11 @@ hamiltonianP =
         <> help "Activate Hamiltonian proposal"
     )
 
+relaxedMolecularClockP :: Parser RelaxedMolecularClockModel
+relaxedMolecularClockP =
+  option auto $
+    long "relaxed-molecular-clock" <> help "Relaxed molecular clock model (see below)."
+
 specP :: Parser Spec
 specP =
   Spec
@@ -121,6 +129,7 @@ specP =
     <*> profileP
     <*> hamiltonianP
     <*> likelihoodSpecP
+    <*> relaxedMolecularClockP
 
 data PrepSpec = PrepSpec
   { prepAnalysisName :: String,
