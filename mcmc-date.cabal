@@ -133,7 +133,6 @@ executable mcmc-date
   autogen-modules:  Paths_mcmc_date
   hs-source-dirs:   app
   build-depends:
-    , ad
     , aeson
     , base                  >=4.7 && <5
     , bytestring

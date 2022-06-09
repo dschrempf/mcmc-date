@@ -193,9 +193,9 @@ rateVarianceRateTreeL = tupleLens rateVariance rateTree
 -- Proposals on the rate tree.
 proposalsRateTree :: Tree e a -> [Proposal I]
 proposalsRateTree t =
-  liftProposalWith jacobianRootBranch rateMeanRateTreeL psMeanContra :
-  liftProposalWith jacobianRootBranch rateVarianceRateTreeL psVariance :
-  map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
+  liftProposalWith jacobianRootBranch rateMeanRateTreeL psMeanContra
+    : liftProposalWith jacobianRootBranch rateVarianceRateTreeL psVariance
+    : map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
     ++ map (liftProposal rateTree) psOthers
   where
     w = weightNBranches $ length t
@@ -262,8 +262,8 @@ proposalsChangingTimeHeight t =
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
 -- | The proposal cycle includes proposals for the other parameters.
-proposals :: [Brace Double] -> Bool -> I -> Maybe (I -> I) -> Cycle I
-proposals bs calibrationsAvailable x mGradient =
+proposals :: [Brace Double] -> Bool -> I -> Maybe (HTarget IG) -> Cycle I
+proposals bs calibrationsAvailable x mHTarget =
   cycleFromList $
     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
       timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
@@ -279,9 +279,9 @@ proposals bs calibrationsAvailable x mGradient =
   where
     t = getLengthTree $ _rateTree x
     w = weightNBranches $ length t
-    maybeHamiltonianProposal = case mGradient of
+    maybeHamiltonianProposal = case mHTarget of
       Nothing -> []
-      Just gradient -> [liftProposalWith jacobianRootBranch id $ hmc calibrationsAvailable x gradient]
+      Just htarget -> [liftProposalWith jacobianRootBranch id $ hmcWith calibrationsAvailable x htarget]
 
 -- -- Hamiltonian proposal only.
 

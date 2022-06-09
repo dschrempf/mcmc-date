@@ -18,7 +18,7 @@ where
 
 import Data.Typeable
 import qualified Data.Vector as VB
-import Mcmc.Internal.Gamma
+import Mcmc.Internal.SpecFunctions
 import Numeric.Log hiding (sum)
 
 -- | Symmetric Dirichlet distribution.

@@ -96,7 +96,7 @@ scaleTreeSimple ::
   Int ->
   Shape Double ->
   TuningParameter ->
-  ProposalSimple (Tree Double a)
+  Propose (Tree Double a)
 scaleTreeSimple n k t =
   genericContinuous
     (gammaDistr (k / t) (t / k))
@@ -194,7 +194,7 @@ pulleyTruncatedNormalSample s t (Node _ _ [l, r])
     b = brR
 pulleyTruncatedNormalSample _ _ _ = error "pulleyTruncatedNormalSample: Node is not bifurcating."
 
-pulleySimple :: StandardDeviation Double -> TuningParameter -> ProposalSimple (LengthTree Double)
+pulleySimple :: StandardDeviation Double -> TuningParameter -> Propose (LengthTree Double)
 pulleySimple s t (LengthTree tr@(Node br lb [l, r])) g = do
   (u, q) <- pulleyTruncatedNormalSample s t tr g
   let tr' =
@@ -205,7 +205,7 @@ pulleySimple s t (LengthTree tr@(Node br lb [l, r])) g = do
             r & branchL -~ u
           ]
   -- The determinant of the Jacobian matrix is (-1).
-  return (LengthTree tr', q, 1)
+  pure (Suggest (LengthTree tr') q 1, Nothing)
 pulleySimple _ _ _ _ = error "pulleySimple: Node is not bifurcating."
 
 -- | Use a node as a pulley.
@@ -242,7 +242,7 @@ scaleNormAndTreeContrarilySimple ::
   Int ->
   Shape Double ->
   TuningParameter ->
-  ProposalSimple (Double, LengthTree Double)
+  Propose (Double, LengthTree Double)
 scaleNormAndTreeContrarilySimple n k t =
   genericContinuous
     (gammaDistr (k / t) (t / k))
@@ -308,7 +308,7 @@ scaleVarianceAndTreeSimple ::
   Int ->
   Shape Double ->
   TuningParameter ->
-  ProposalSimple (Double, LengthTree Double)
+  Propose (Double, LengthTree Double)
 scaleVarianceAndTreeSimple n k t =
   genericContinuous
     (gammaDistr (k / t) (t / k))

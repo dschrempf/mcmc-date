@@ -51,12 +51,12 @@ slideNodeAtUltrametricSimple ::
   Path ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (HeightTree Double)
+  Propose (HeightTree Double)
 slideNodeAtUltrametricSimple pth s t tr g = do
   (hNode', q) <- truncatedNormalSample hNode s t hChild hParent g
   let tr' = toTree $ pos & currentTreeL . branchL .~ assertWith (> 0) hNode'
   -- The absolute value of the determinant of the Jacobian is 1.
-  return (HeightTree tr', q, 1)
+  return (Suggest (HeightTree tr') q 1, Nothing)
   where
     (HeightBoundaryData pos hNode _ hChild hParent) =
       getHeightBoundaries "slideNodeAtUltrametricSimple" tr pth
@@ -129,7 +129,7 @@ scaleSubTreeAtUltrametricSimple ::
   Path ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (HeightTree Double)
+  Propose (HeightTree Double)
 scaleSubTreeAtUltrametricSimple n pth sd t tr g
   | null children = error "scaleSubTreeAtUltrametricSimple: Sub tree is a leaf."
   | otherwise = do
@@ -139,7 +139,7 @@ scaleSubTreeAtUltrametricSimple n pth sd t tr g
           -- (-1) because the root height has an additive change.
           jacobian = Exp $ fromIntegral (n - 1) * log xi
           tr' = toTree $ trPos & currentTreeL %~ scaleUltrametricTreeF hNode' xi
-      return (HeightTree tr', q, jacobian)
+      return (Suggest (HeightTree tr') q jacobian, Nothing)
   where
     trPos = goPathUnsafe pth $ fromTree $ getHeightTree tr
     focus = current trPos
@@ -260,7 +260,7 @@ pulleyUltrametricSimple ::
   Int ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (HeightTree Double)
+  Propose (HeightTree Double)
 pulleyUltrametricSimple nL nR s t tr@(HeightTree (Node br lb [l, r])) g = do
   (u, q) <- pulleyUltrametricTruncatedNormalSample s t tr g
   -- Left.
@@ -282,7 +282,7 @@ pulleyUltrametricSimple nL nR s t tr@(HeightTree (Node br lb [l, r])) g = do
   -- (-1) because the root height has an additive change.
   let jacobianL = Exp $ fromIntegral (nL - 1) * log xiL
       jacobianR = Exp $ fromIntegral (nR - 1) * log xiR
-  return (HeightTree tr', q, jacobianL * jacobianR)
+  return (Suggest (HeightTree tr') q (jacobianL * jacobianR), Nothing)
 pulleyUltrametricSimple _ _ _ _ _ _ = error "pulleyUltrametricSimple: Node is not bifurcating."
 
 -- | Use a node as a pulley.

@@ -50,16 +50,9 @@ import Mcmc.Chain.Chain (cycle, link)
 import Mcmc.Chain.Link (state)
 import Mcmc.Cycle (ccProposals)
 
--- -- Test automatic differentiation.
---
--- import Control.Lens
--- import Mcmc.Chain.Chain hiding (priorFunction, likelihoodFunction, monitor)
--- import Mcmc.Chain.Link
--- import Mcmc.Chain.Trace
--- import State
-
 -- Local modules (see comment above).
 import Definitions
+import Hamiltonian
 import Probability
 import State
 import Tools
@@ -76,12 +69,6 @@ getMeanTree = oneTree Standard . getMeanTreeFn
 
 getDataFn :: String -> FilePath
 getDataFn s = s <> ".data"
-
-data LikelihoodData
-  = Full (L.Vector Double) (L.Herm Double) Double
-  | Sparse (L.Vector Double) L.GMatrix Double
-  | Univariate (L.Vector Double) (L.Vector Double)
-  deriving (Show)
 
 data LikelihoodDataStore
   = FullS (L.Vector Double) [L.Vector Double] Double
@@ -322,16 +309,19 @@ getBraces t (Just f) = loadBraces t f
 getLikelihoodFunction :: String -> LikelihoodSpec -> IO (LikelihoodFunction I)
 getLikelihoodFunction an lhsp = do
   lhd <- getData an
+  -- Assert that likelihood specification on command line, and stored likelihood
+  -- data are in agreement.
   case (lhsp, lhd) of
-    (FullMultivariateNormal, Full mu s d) -> pure $ likelihoodFunctionFullMultivariateNormal mu s d
-    (SparseMultivariateNormal _, Sparse mu s d) -> pure $ likelihoodFunctionSparseMultivariateNormal mu s d
-    (UnivariateNormal, Univariate mu vs) -> pure $ likelihoodFunctionUnivariateNormal mu vs
+    (FullMultivariateNormal, Full _ _ _) -> putStrLn "Using full multivariate normal distribution."
+    (SparseMultivariateNormal _, Sparse _ _ _) -> putStrLn "Using sparse multivariate normal distribution."
+    (UnivariateNormal, Univariate _ _) -> putStrLn "Using univariate normal distributions."
     (l, r) -> do
       putStrLn $ "Likelihood specification: " <> show l
       putStrLn $ "Likelihood data: " <> show r
       error "Likelihood specification and data do not match (see above)."
+  pure $ likelihoodFunction lhd
 
-getGradLogPosteriorFunction ::
+getHTarget ::
   String ->
   LikelihoodSpec ->
   -- Approximate absolute time tree height.
@@ -340,14 +330,14 @@ getGradLogPosteriorFunction ::
   VB.Vector (Calibration Double) ->
   VB.Vector (Constraint Double) ->
   VB.Vector (Brace Double) ->
-  IO (IG Double -> IG Double)
-getGradLogPosteriorFunction an lhsp ht md cb cs bs = do
+  IO (HTarget IG)
+getHTarget an lhsp ht md cb cs bs = do
   lhd <- getData an
   case (lhsp, lhd) of
     (FullMultivariateNormal, Full mu s d) -> do
       let muBoxed = VB.convert mu
           sigmaInvBoxed = MB.fromRows $ map VB.convert $ L.toRows $ L.unSym s
-      pure $ gradLogPosteriorFunc ht md cb cs bs muBoxed sigmaInvBoxed d
+      pure $ htargetWith ht md cb cs bs muBoxed sigmaInvBoxed d
     (_, _) -> do
       let msg = "Generalized likelihood function not implemented for sparse matrices and the univariate."
       throwIO $ PatternMatchFail msg
@@ -380,14 +370,14 @@ getMcmcProps (Spec an cls cns brs ifs prof ham lhsp rmcm) malg = do
   -- Likelihood function.
   lh' <- getLikelihoodFunction an lhsp
   -- Generalized posterior function for Hamiltonian proposal.
-  gradient <-
+  mHTarget <-
     if ham
-      then Just <$> getGradLogPosteriorFunction an lhsp ht rmcm cb cs bs
+      then Just <$> getHTarget an lhsp ht rmcm cb cs bs
       else pure Nothing
 
   let -- Naive starting state and proposal cycle.
       startNaive = initWith meanTree
-      ccNaive = proposals (VB.toList bs) (isJust cls) startNaive gradient
+      ccNaive = proposals (VB.toList bs) (isJust cls) startNaive mHTarget
 
   let -- Prior function.
       pr' = priorFunction ht rmcm cb cs bs

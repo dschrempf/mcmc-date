@@ -35,7 +35,7 @@ slideNodesAtContrarilySimple ::
   Path ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (HeightTree Double, LengthTree Double)
+  Propose (HeightTree Double, LengthTree Double)
 slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
   | null rTrChildren =
       error "slideNodesAtContrarilySimple: Sub tree of unconstrained tree is a leaf."
@@ -65,7 +65,7 @@ slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
       -- New state.
       let x' = (HeightTree tTr', LengthTree rTr')
           jacobian = Exp $ sum (map log xisR) + log xiStemR
-      return (x', q, jacobian)
+      return (Suggest x' q jacobian, Nothing)
   where
     -- Time tree.
     (HeightBoundaryData tTrPos hNode hsChildren hMaxChild hParent) =
@@ -182,15 +182,16 @@ slideRootContrarilyJacobian n u xis =
   Exp $
     sum $
       -- Minus n: Scaling the time tree node heights contrarily.
-      fromIntegral (-n) * log u :
-      -- Scaling the rate branches.
-      map log xis
+      fromIntegral (-n) * log u
+        :
+        -- Scaling the rate branches.
+        map log xis
 
 slideRootContrarilySimple ::
   Int ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (Double, HeightTree Double, LengthTree Double)
+  Propose (Double, HeightTree Double, LengthTree Double)
 slideRootContrarilySimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
   let tTrHeight = branch tTr
   when
@@ -214,7 +215,7 @@ slideRootContrarilySimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
       rTr' = rTr & forestL %~ zipWith (modifyStem . (*)) xis
       j = slideRootContrarilyJacobian n u xis
       x' = (ht', HeightTree tTr', LengthTree rTr')
-  return (x', q, j)
+  return (Suggest x' q j, Nothing)
   where
     htsChildren = map branch $ forest tTr
     -- Absolute height of oldest child.
@@ -272,7 +273,7 @@ scaleSubTreeAtContrarilySimple ::
   Path ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (HeightTree Double, LengthTree Double)
+  Propose (HeightTree Double, LengthTree Double)
 scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, LengthTree rTr) g
   | null tTrChildren =
       error "scaleSubTreeAtContrarilySimple: Sub tree of ultrametric tree is a leaf."
@@ -288,14 +289,15 @@ scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, Length
           xiR = recip xiT
           -- Scaling factor of rate tree stem.
           xiStemR =
+            -- If root node is handled, the stem scaling factor is 1.0.
             if null pth
-              then 1
+              then 1.0
               else
                 let x = (hTTrParent - hTTrNode) / (hTTrParent - hTTrNode')
                  in assertWith (> 0) x
-          -- If the root node is handled, do not scale the stem because no upper
-          -- bound is set.
           f =
+            -- If the root node is handled, do not scale the stem because no upper
+            -- bound is set.
             if null pth
               then scaleUnconstrainedTreeWithoutStemF xiR
               else modifyStem (* xiStemR) . scaleUnconstrainedTreeWithoutStemF xiR
@@ -305,29 +307,18 @@ scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, Length
           -- jacobianTimeTree = Exp $ fromIntegral (nNodes - 1) * log xi
           -- jacobianRateTree = Exp $ fromIntegral (nBranches -1) * log xi' + log xiStem
           jacobian = Exp $ fromIntegral (nNodes - nBranches) * log xiT + log xiStemR
-      let -- Time tree.
-
-          -- If the root node is handled, set the upper bound to +Infinity because no
-          -- parent node exists.
-
-          -- Rate tree.
-
-          -- Subtract 2 because leaves have depth one and are not scaled.
-
-          -- Do not scale the leaves.
-
-          -- Filter other nodes.
-
-      return (x', q, jacobian)
+      return (Suggest x' q jacobian, Nothing)
   where
+    -- Time tree.
     tTrPos = goPathUnsafe pth $ fromTree tTr
     tTrFocus = current tTrPos
     tTrParent = current $ goParentUnsafe tTrPos
     tTrChildren = forest tTrFocus
     hTTrNode = branch tTrFocus
-
+    -- If the root node is handled, set the upper bound to +Infinity because no
+    -- parent node exists.
     hTTrParent = if null pth then 1 / 0 else branch tTrParent
-
+    -- Rate tree.
     rTrPos = goPathUnsafe pth $ fromTree rTr
     rTrFocus = current rTrPos
     rTrChildren = forest rTrFocus

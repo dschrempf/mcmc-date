@@ -38,7 +38,7 @@ slideBracedNodesUltrametricSimple ::
   Brace Double ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (HeightTree Double)
+  Propose (HeightTree Double)
 slideBracedNodesUltrametricSimple b s t tr g = do
   (hDelta, q) <- truncatedNormalSample 0 s t lowerBound upperBound g
   let modifyHeight = assertWith (> 0) . (+ hDelta)
@@ -46,7 +46,7 @@ slideBracedNodesUltrametricSimple b s t tr g = do
       modifyHeightAcc pth tre = tre & heightTreeL . subTreeAtL pth . branchL %~ modifyHeight
       -- NOTE: The first path is walked again.
       tr' = foldr modifyHeightAcc tr paths
-  return (tr', q, 1)
+  return (Suggest tr' q 1, Nothing)
   where
     -- Calculate the boundaries per node, and then choose the smallest interval
     -- satisfying all boundaries.
@@ -98,7 +98,7 @@ slideBracedNodesContrarilySimple ::
   Brace Double ->
   StandardDeviation Double ->
   TuningParameter ->
-  ProposalSimple (HeightTree Double, LengthTree Double)
+  Propose (HeightTree Double, LengthTree Double)
 slideBracedNodesContrarilySimple b s t (tTr, rTr) g
   | any null rTrChildren =
       error "slideBracedNodesContrarilySimple: Sub tree of unconstrained tree is a leaf."
@@ -140,7 +140,7 @@ slideBracedNodesContrarilySimple b s t (tTr, rTr) g
              in (tre', jac')
           -- NOTE: The first path is walked again.
           (rTr', jacobian) = foldr modifyRatesAcc (rTr, 1.0) $ zip paths hbds
-      return ((tTr', rTr'), q, jacobian)
+      return (Suggest (tTr', rTr') q jacobian, Nothing)
   where
     -- Time tree. See also 'slideBracedNodesUltrametricSimple'.
     paths = map nodePath $ getBraceNodes b

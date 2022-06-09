@@ -17,10 +17,9 @@ module Probability
     RelaxedMolecularClockModel (..),
     priorFunctionRelaxedMolecularClock,
     priorFunction,
-    likelihoodFunctionFullMultivariateNormal,
-    likelihoodFunctionSparseMultivariateNormal,
-    likelihoodFunctionUnivariateNormal,
-    gradLogPosteriorFunc,
+    LikelihoodData (..),
+    likelihoodFunction,
+    likelihoodFunctionG,
   )
 where
 
@@ -30,7 +29,6 @@ import qualified Data.Matrix as MB
 import Data.Typeable
 import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
-import Numeric.AD.Double
 import qualified Numeric.LinearAlgebra as L
 import Numeric.Log hiding (sum)
 import Numeric.MathFunctions.Constants
@@ -116,7 +114,7 @@ priorFunctionRelaxedMolecularClock ht md t' x =
 
 -- | Prior function.
 priorFunction ::
-  (RealFloat a, Show a, Typeable a) =>
+  (RealFloat a, Typeable a) =>
   -- | Initial, constant, approximate absolute time tree height.
   Double ->
   RelaxedMolecularClockModel ->
@@ -126,9 +124,9 @@ priorFunction ::
   PriorFunctionG (IG a) a
 priorFunction ht md cb' cs' bs' x =
   product' $
-    priorFunctionCalibrationsConstraintsBraces cb' cs' bs' x :
-    priorFunctionBirthDeath t' x :
-    [priorFunctionRelaxedMolecularClock ht md t' x]
+    priorFunctionCalibrationsConstraintsBraces cb' cs' bs' x
+      : priorFunctionBirthDeath t' x
+      : [priorFunctionRelaxedMolecularClock ht md t' x]
   where
     t' = heightTreeToLengthTree $ x ^. timeTree
 {-# SPECIALIZE priorFunction ::
@@ -197,44 +195,76 @@ likelihoodFunctionWrapper f mu dt x = f mu dt distances
     rMu = x ^. rateMean
     distances = VS.map (* (tH * rMu)) $ sumFirstTwo $ VS.zipWith (*) times rates
 
--- | Approximation of the phylogenetic likelihood using a multivariate normal
+-- | Specification of the approximation of the likelihood function.
+data LikelihoodData
+  = -- | Multivariate normal distribution with full inverted covariance matrix.
+    Full
+      (L.Vector Double)
+      -- ^ Means.
+      (L.Herm Double)
+      -- ^ Full inverted covariance matrix.
+      Double
+      -- ^ Log determinant of full covariance matrix.
+  | -- | Multivariate normal distribution with sparse inverted covariance matrix.
+    Sparse
+      (L.Vector Double)
+      -- ^ Means.
+      L.GMatrix
+      -- ^ Sparse inverted covariance matrix.
+      Double
+      -- ^ Log determinant of sparse covariance matrix.
+  | -- | Univariate normal distributions.
+    Univariate
+      (L.Vector Double)
+      -- ^ Means.
+      (L.Vector Double)
+      -- ^ Variances.
+  deriving (Show)
+
+-- Approximation of the phylogenetic likelihood using a multivariate normal
 -- distribution with full inverted covariance matrix.
 likelihoodFunctionFullMultivariateNormal ::
-  -- | Means.
+  -- Means.
   VS.Vector Double ->
-  -- | Full inverted covariance matrix.
+  -- Full inverted covariance matrix.
   L.Herm Double ->
-  -- | Log determinant of full covariance matrix.
+  -- Log determinant of full covariance matrix.
   Double ->
   LikelihoodFunction I
 likelihoodFunctionFullMultivariateNormal mu sigmaInvF logDetSigmaF =
   likelihoodFunctionWrapper logDensityFullMultivariateNormal mu (sigmaInvF, logDetSigmaF)
 
--- | Approximation of the phylogenetic likelihood using a multivariate normal
+-- Approximation of the phylogenetic likelihood using a multivariate normal
 -- distribution with sparse inverted covariance matrix.
 likelihoodFunctionSparseMultivariateNormal ::
-  -- | Means.
+  -- Means.
   VS.Vector Double ->
-  -- | Sparse inverted covariance matrix.
+  -- Sparse inverted covariance matrix.
   L.GMatrix ->
-  -- | Log determinant of sparse covariance matrix.
+  -- Log determinant of sparse covariance matrix.
   Double ->
   LikelihoodFunction I
 likelihoodFunctionSparseMultivariateNormal mu sigmaInvS logDetSigmaS =
   likelihoodFunctionWrapper logDensitySparseMultivariateNormal mu (sigmaInvS, logDetSigmaS)
 
--- | Approximation of the phylogenetic likelihood using univariate normal
+-- Approximation of the phylogenetic likelihood using univariate normal
 -- distributions.
 likelihoodFunctionUnivariateNormal ::
-  -- | Means.
+  -- Means.
   VS.Vector Double ->
-  -- | Variances.
+  -- Variances.
   VS.Vector Double ->
   LikelihoodFunction I
 likelihoodFunctionUnivariateNormal mu vs =
   likelihoodFunctionWrapper logDensityUnivariateNormal mu (vs, logSigmaSquaredProduct)
   where
     !logSigmaSquaredProduct = VS.sum $ VS.map log vs
+
+-- | Likelihood function.
+likelihoodFunction :: LikelihoodData -> LikelihoodFunction I
+likelihoodFunction (Full mu s d) = likelihoodFunctionFullMultivariateNormal mu s d
+likelihoodFunction (Sparse mu s d) = likelihoodFunctionSparseMultivariateNormal mu s d
+likelihoodFunction (Univariate mu vs) = likelihoodFunctionUnivariateNormal mu vs
 
 -- Vector-matrix-vector product.
 --
@@ -293,14 +323,34 @@ getBranchesG _ = error "getBranches: Root node is not bifurcating."
 sumFirstTwoG :: RealFloat a => VB.Vector a -> VB.Vector a
 sumFirstTwoG v = (v VB.! 0 + v VB.! 1) `VB.cons` VB.drop 2 v
 
--- Generalizaed likelihood function for automatic differentiation.
+-- | Generalized likelihood function for automatic differentiation.
+--
+-- The generalized likelihood function is only available when the full
+-- multivariate normal distribution is used.
+--
+-- Useful for Hamiltonian Monte Carlo proposals.
+--
+-- Notes on automatic differentiation:
+--
+-- - Automatic differentiation only works on overloaded operators. The type
+--   signatures of all used operators need to be general enough. Specifically:
+--
+--   + I cannot use any function pinning the type to a =Double=
+--
+--   + I cannot use linear algebra functions provided by =hmatrix=, because the
+--     data type is not =Storable=.
+--
+-- - I think in our case, manual calculation of the gradient may be a better
+--   option, but would also be more than cumbersome. In the book Bayesian Data
+--   Analysis by Gelman, they suggest computing the gradient manually. We could
+--   start using univariate normal distributions.
 likelihoodFunctionG ::
-  (RealFloat a, Show a) =>
-  -- Mean vector.
+  RealFloat a =>
+  -- | Mean vector.
   VB.Vector Double ->
-  -- Inverted covariance matrix.
+  -- | Inverted full covariance matrix.
   MB.Matrix Double ->
-  -- Log of determinant of covariance matrix.
+  -- | Log of determinant of full covariance matrix.
   Double ->
   LikelihoodFunctionG (IG a) a
 likelihoodFunctionG mu' sigmaInv' logDetSigma' x =
@@ -322,80 +372,3 @@ likelihoodFunctionG mu' sigmaInv' logDetSigma' x =
   Double ->
   LikelihoodFunction I
   #-}
-
-posteriorFunction ::
-  (RealFloat a, Show a, Typeable a) =>
-  -- Approximate absolute time tree height.
-  Double ->
-  RelaxedMolecularClockModel ->
-  VB.Vector (Calibration Double) ->
-  VB.Vector (Constraint Double) ->
-  VB.Vector (Brace Double) ->
-  -- Mean  vector.
-  VB.Vector Double ->
-  -- Inverted covariance matrix.
-  MB.Matrix Double ->
-  -- Log of determinant of covariance matrix.
-  Double ->
-  PosteriorFunctionG (IG a) a
-posteriorFunction ht md cs ks bs mu sigmaInv logDetSigma xs =
-  priorFunction ht md cs ks bs xs * likelihoodFunctionG mu sigmaInv logDetSigma xs
-
--- | Gradient of the log posterior function.
---
--- Useful for Hamiltonian Monte Carlo proposals.
---
--- NOTE: Automatic differentiation.
---
--- - Automatic differentiation only works on overloaded operators. The type
---   signatures of all used operators need to be general enough. Specifically:
---
---   + I cannot use any function pinning the type to a =Double=
---
---   + I cannot use linear algebra functions provided by =hmatrix=, because the
---     data type is not =Storable=.
---
--- - I think in our case, manual calculation of the gradient may be a better
---   option, but would also be more than cumbersome. In the book Bayesian Data
---   Analysis by Gelman, they suggest computing the gradient manually. We could
---   start using univariate normal distributions.
-gradLogPosteriorFunc ::
-  -- | Approximate absolute time tree height.
-  Double ->
-  RelaxedMolecularClockModel ->
-  VB.Vector (Calibration Double) ->
-  VB.Vector (Constraint Double) ->
-  VB.Vector (Brace Double) ->
-  -- | Mean  vector.
-  VB.Vector Double ->
-  -- | Inverted covariance matrix.
-  MB.Matrix Double ->
-  -- | Log of determinant of covariance matrix.
-  Double ->
-  I ->
-  I
-gradLogPosteriorFunc ht md cs ks bs mu sigmaInv logDetSigma =
-  -- grad (ln . priorFunction cs ks)
-  -- grad (ln . likelihoodFunction mu sigmaInv logDetSigma)
-  grad (ln . posteriorFunction ht md cs ks bs mu sigmaInv logDetSigma)
-
--- numDiffLogPosteriorFunc ::
---   (RealFloat a, Show a) =>
---   VB.Vector (Calibration Double) ->
---   VB.Vector Constraint ->
---   -- | Mean  vector.
---   VB.Vector Double ->
---   -- | Inverted covariance matrix.
---   MB.Matrix Double ->
---   -- | Log of determinant of covariance matrix.
---   Double ->
---   IG a ->
---   IG a ->
---   a ->
---   a
--- numDiffLogPosteriorFunc cs ks mu sigmaInv logDetSigma xs ys h =
---   (f ys - f xs) / h
---   where
---     -- f = ln . priorFunction cs ks
---     -- f = ln . likelihoodFunction mu sigmaInv logDetSigma
---     f = ln . posteriorFunction cs ks mu sigmaInv logDetSigma
