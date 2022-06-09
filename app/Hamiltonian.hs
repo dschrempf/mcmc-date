@@ -94,7 +94,7 @@ htargetWith ht md cb cs bs mu s d =
     -- https://gitlab.haskell.org/ghc/ghc/-/issues/17130.
     (Just $ priorFunction ht md cb cs bs)
     (likelihoodFunctionG mu s d)
-    (Just jacobianFunction)
+    (Just jacobianRootBranch)
 
 -- | The Hamiltonian proposal.
 hmcWith ::
@@ -107,5 +107,5 @@ hmcWith calibrationsAvailable x htarget = hamiltonian tspec hspec htarget n w
     mask = getMask calibrationsAvailable x
     tspec = tspecWith mask x
     hspec = hspecWith mask x
-    n = PName "Hamiltonian"
+    n = PName "All parameters"
     w = pWeight 1
