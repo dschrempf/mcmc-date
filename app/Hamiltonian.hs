@@ -107,5 +107,5 @@ hmcWith calibrationsAvailable x htarget = hamiltonian tspec hspec htarget n w
     mask = getMask calibrationsAvailable x
     tspec = tspecWith mask x
     hspec = hspecWith mask x
-    n = PName "All parameters"
+    n = PName "[R] All parameters"
     w = pWeight 1

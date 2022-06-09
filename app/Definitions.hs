@@ -136,6 +136,10 @@ childrenOfRoot = (== 1) . length
 otherNodes :: HandleNode
 otherNodes = (> 1) . length
 
+-- NOTE: Proposals with [R] include the root, and so need the specific jacobian
+-- function 'jacobianRootBranch'. Other proposals on the trees start with [O]
+-- for other nodes, or [B] for braces.
+
 -- Proposals on the time tree.
 proposalsTimeTree :: [Brace Double] -> Tree e a -> [Proposal I]
 proposalsTimeTree bs t =
@@ -144,21 +148,20 @@ proposalsTimeTree bs t =
     ++ map (liftProposal timeTree) psBraces
   where
     -- Pulley on the root node.
-    nP = PName "Time tree [R]"
+    nR = PName "[R] Time tree"
     maybePulley = case t of
       Node _ _ [l, r]
         | null (forest l) -> []
         | null (forest r) -> []
-        | otherwise -> [pulleyUltrametric t 0.01 nP (pWeight 6) Tune]
+        | otherwise -> [pulleyUltrametric t 0.01 nR (pWeight 6) Tune]
       _ -> error "maybePulley: Tree is not bifurcating."
     ps hn n =
       slideNodesUltrametric t hn 0.01 n (pWeight 5) Tune
         ++ scaleSubTreesUltrametric t hn 0.01 n (pWeight 3) (pWeight 8) Tune
-    nR = PName "Time tree [R]"
     psAtRoot = maybePulley ++ ps childrenOfRoot nR
-    nO = PName "Time tree [O]"
+    nO = PName "[O] Time tree"
     psOthers = ps otherNodes nO
-    nPB = PName "Time tree [B]"
+    nPB = PName "[B] Time tree"
     psBraces = [slideBracedNodesUltrametric t b 0.01 nPB (pWeight 5) Tune | b <- bs]
 
 -- Lens for proposals on the rate mean and rate tree.
@@ -179,16 +182,16 @@ proposalsRateTree t =
   where
     w = weightNBranches $ length t
     -- I am proud of the next three proposals :).
-    nMR = PName "Rate mean, Rate tree [R]"
+    nMR = PName "[R] Rate mean, Rate tree"
     psMeanContra = scaleNormAndTreeContrarily t 100 nMR w Tune
-    nVR = PName "Rate variance, Rate tree [R]"
+    nVR = PName "[R] Rate variance, Rate tree"
     psVariance = scaleVarianceAndTree t 100 nVR w Tune
-    nR = PName "Rate tree [R]"
     ps hn n =
       scaleBranches t hn 100 n (pWeight 3) Tune
         ++ scaleSubTrees t hn 100 n (pWeight 3) (pWeight 8) Tune
+    nR = PName "[R] Rate tree"
     psAtRoot = ps childrenOfRoot nR
-    nO = PName "Rate tree [O]"
+    nO = PName "[O] Rate tree"
     psOthers = ps otherNodes nO
 
 -- Contrary proposals on the time and rate trees.
@@ -204,11 +207,11 @@ proposalsTimeRateTreeContra bs t =
     ps hn n =
       slideNodesContrarily t hn 0.1 n (pWeight 3) (pWeight 8) Tune
         ++ scaleSubTreesContrarily t hn 0.1 n (pWeight 3) (pWeight 8) Tune
-    nR = PName "Trees [C] [R]"
+    nR = PName "[C] [R] Trees"
     psAtRoot = ps childrenOfRoot nR
-    nO = PName "Trees [C] [O]"
+    nO = PName "[C] [O] Trees"
     psOthers = ps otherNodes nO
-    nPB = PName "Trees [C] [B]"
+    nPB = PName "[C] [B] Trees"
     psBraces = [slideBracedNodesContrarily t b 0.1 nPB (pWeight 5) Tune | b <- bs]
 
 -- Lens for a contrary proposal on the time height and rate mean.
@@ -235,9 +238,9 @@ proposalsChangingTimeHeight t =
   ]
   where
     w = weightNBranches $ length t
-    nH = PName "Time height, Rate tree [R]"
+    nH = PName "[R] Time height, Rate tree"
     psHeightContra = scaleNormAndTreeContrarily t 100 nH w Tune
-    nRC = PName "Trees [R]"
+    nRC = PName "[R] Trees"
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
 -- | The proposal cycle includes proposals for the other parameters.
