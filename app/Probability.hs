@@ -3,7 +3,7 @@
 -- |
 -- Module      :  Probability
 -- Description :  Prior and likelihood functions
--- Copyright   :  (c) 2021 Dominik Schrempf
+-- Copyright   :  2021 Dominik Schrempf
 -- License     :  GPL-3.0-or-later
 --
 -- Maintainer  :  dominik.schrempf@gmail.com

@@ -12,7 +12,7 @@ homepage:           https://github.com/dschrempf/mcmc-date#readme
 bug-reports:        https://github.com/dschrempf/mcmc-date/issues
 author:             Dominik Schrempf
 maintainer:         dominik.schrempf@gmail.com
-copyright:          Dominik Schrempf (2021)
+copyright:          2021 Dominik Schrempf
 license:            GPL-3.0-or-later
 license-file:       LICENSE
 build-type:         Simple
