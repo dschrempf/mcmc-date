@@ -47,19 +47,19 @@ import Mcmc.Tree.Types
 import Numeric.Log hiding (sum)
 import System.Random.MWC
 
-slideNodeAtUltrametricSimple ::
+slideNodeAtUltrametricPFunction ::
   Path ->
   StandardDeviation Double ->
   TuningParameter ->
-  Propose (HeightTree Double)
-slideNodeAtUltrametricSimple pth s t tr g = do
+  PFunction (HeightTree Double)
+slideNodeAtUltrametricPFunction pth s t tr g = do
   (hNode', q) <- truncatedNormalSample hNode s t hChild hParent g
   let tr' = toTree $ pos & currentTreeL . branchL .~ assertWith (> 0) hNode'
   -- The absolute value of the determinant of the Jacobian is 1.
-  return (Suggest (HeightTree tr') q 1, Nothing)
+  return (Propose (HeightTree tr') q 1, Nothing)
   where
     (HeightBoundaryData pos hNode _ hChild hParent) =
-      getHeightBoundaries "slideNodeAtUltrametricSimple" tr pth
+      getHeightBoundaries "slideNodeAtUltrametricPFunction" tr pth
 
 -- | Slide node (for ultrametric trees).
 --
@@ -94,7 +94,7 @@ slideNodeAtUltrametric ::
 slideNodeAtUltrametric tr pth s
   | not $ isValidPath tr pth = error $ "slideNodeAtUltrametric: Path is invalid: " <> show pth <> "."
   | isLeafPath tr pth = error $ "slideNodeAtUltrametric: Path leads to a leaf: " <> show pth <> "."
-  | otherwise = createProposal description (slideNodeAtUltrametricSimple pth s) PFast (PDimension 1)
+  | otherwise = createProposal description (slideNodeAtUltrametricPFunction pth s) PFast (PDimension 1)
   where
     description = PDescription $ "Slide node ultrametric; sd: " ++ show s
 
@@ -123,15 +123,15 @@ slideNodesUltrametric tr hn s n w t =
   where
     name lb = n <> PName (" node " ++ show lb)
 
-scaleSubTreeAtUltrametricSimple ::
+scaleSubTreeAtUltrametricPFunction ::
   -- Number of inner nodes.
   Int ->
   Path ->
   StandardDeviation Double ->
   TuningParameter ->
-  Propose (HeightTree Double)
-scaleSubTreeAtUltrametricSimple n pth sd t tr g
-  | null children = error "scaleSubTreeAtUltrametricSimple: Sub tree is a leaf."
+  PFunction (HeightTree Double)
+scaleSubTreeAtUltrametricPFunction n pth sd t tr g
+  | null children = error "scaleSubTreeAtUltrametricPFunction: Sub tree is a leaf."
   | otherwise = do
       (hNode', q) <- truncatedNormalSample hNode sd t 0 hParent g
       -- Scaling factor (xi, not x_i).
@@ -139,7 +139,7 @@ scaleSubTreeAtUltrametricSimple n pth sd t tr g
           -- (-1) because the root height has an additive change.
           jacobian = Exp $ fromIntegral (n - 1) * log xi
           tr' = toTree $ trPos & currentTreeL %~ scaleUltrametricTreeF hNode' xi
-      return (Suggest (HeightTree tr') q jacobian, Nothing)
+      return (Propose (HeightTree tr') q jacobian, Nothing)
   where
     trPos = goPathUnsafe pth $ fromTree $ getHeightTree tr
     focus = current trPos
@@ -180,7 +180,7 @@ scaleSubTreeAtUltrametric tr pth sd
   | otherwise =
       createProposal
         description
-        (scaleSubTreeAtUltrametricSimple n pth sd)
+        (scaleSubTreeAtUltrametricPFunction n pth sd)
         PFast
         (PDimension n)
   where
@@ -253,15 +253,15 @@ pulleyUltrametricTruncatedNormalSample s t (HeightTree (Node ht _ [l, r]))
 pulleyUltrametricTruncatedNormalSample _ _ _ =
   error "pulleyUltrametricTruncatedNormalSample: Node is not bifurcating."
 
-pulleyUltrametricSimple ::
+pulleyUltrametricPFunction ::
   -- Number of inner nodes of left tree.
   Int ->
   -- Number of inner nodes of right tree.
   Int ->
   StandardDeviation Double ->
   TuningParameter ->
-  Propose (HeightTree Double)
-pulleyUltrametricSimple nL nR s t tr@(HeightTree (Node br lb [l, r])) g = do
+  PFunction (HeightTree Double)
+pulleyUltrametricPFunction nL nR s t tr@(HeightTree (Node br lb [l, r])) g = do
   (u, q) <- pulleyUltrametricTruncatedNormalSample s t tr g
   -- Left.
   let hL = branch l
@@ -282,8 +282,8 @@ pulleyUltrametricSimple nL nR s t tr@(HeightTree (Node br lb [l, r])) g = do
   -- (-1) because the root height has an additive change.
   let jacobianL = Exp $ fromIntegral (nL - 1) * log xiL
       jacobianR = Exp $ fromIntegral (nR - 1) * log xiR
-  return (Suggest (HeightTree tr') q (jacobianL * jacobianR), Nothing)
-pulleyUltrametricSimple _ _ _ _ _ _ = error "pulleyUltrametricSimple: Node is not bifurcating."
+  return (Propose (HeightTree tr') q (jacobianL * jacobianR), Nothing)
+pulleyUltrametricPFunction _ _ _ _ _ _ = error "pulleyUltrametricPFunction: Node is not bifurcating."
 
 -- | Use a node as a pulley.
 --
@@ -308,7 +308,7 @@ pulleyUltrametric ::
 pulleyUltrametric (Node _ _ [l, r]) d
   | null (forest l) = error "pulleyUltrametric: Left sub tree is a leaf."
   | null (forest r) = error "pulleyUltrametric: Right sub tree is a leaf."
-  | otherwise = createProposal description (pulleyUltrametricSimple nL nR d) PFast (PDimension $ nL + nR)
+  | otherwise = createProposal description (pulleyUltrametricPFunction nL nR d) PFast (PDimension $ nL + nR)
   where
     description = PDescription $ "Pulley ultrametric; sd: " ++ show d
     nL = nInnerNodes l

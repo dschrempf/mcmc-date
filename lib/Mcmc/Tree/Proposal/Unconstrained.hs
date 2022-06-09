@@ -91,13 +91,13 @@ scaleTreeJacobian ::
   Jacobian
 scaleTreeJacobian n _ u = Exp $ fromIntegral (n - 2) * log u
 
-scaleTreeSimple ::
+scaleTreePFunction ::
   -- Number of branches.
   Int ->
   Shape Double ->
   TuningParameter ->
-  Propose (Tree Double a)
-scaleTreeSimple n k t =
+  PFunction (Tree Double a)
+scaleTreePFunction n k t =
   genericContinuous
     (gammaDistr (k / t) (t / k))
     (flip scaleUnconstrainedTreeF)
@@ -111,7 +111,7 @@ scaleTree ::
   PWeight ->
   Tune ->
   Proposal (Tree Double b)
-scaleTree tr k = createProposal description (scaleTreeSimple n k) PFast (PDimension n)
+scaleTree tr k = createProposal description (scaleTreePFunction n k) PFast (PDimension n)
   where
     description = PDescription $ "Scale tree; shape: " ++ show k
     n = length tr
@@ -194,8 +194,8 @@ pulleyTruncatedNormalSample s t (Node _ _ [l, r])
     b = brR
 pulleyTruncatedNormalSample _ _ _ = error "pulleyTruncatedNormalSample: Node is not bifurcating."
 
-pulleySimple :: StandardDeviation Double -> TuningParameter -> Propose (LengthTree Double)
-pulleySimple s t (LengthTree tr@(Node br lb [l, r])) g = do
+pulleyPFunction :: StandardDeviation Double -> TuningParameter -> PFunction (LengthTree Double)
+pulleyPFunction s t (LengthTree tr@(Node br lb [l, r])) g = do
   (u, q) <- pulleyTruncatedNormalSample s t tr g
   let tr' =
         Node
@@ -205,8 +205,8 @@ pulleySimple s t (LengthTree tr@(Node br lb [l, r])) g = do
             r & branchL -~ u
           ]
   -- The determinant of the Jacobian matrix is (-1).
-  pure (Suggest (LengthTree tr') q 1, Nothing)
-pulleySimple _ _ _ _ = error "pulleySimple: Node is not bifurcating."
+  pure (Propose (LengthTree tr') q 1, Nothing)
+pulleyPFunction _ _ _ _ = error "pulleyPFunction: Node is not bifurcating."
 
 -- | Use a node as a pulley.
 --
@@ -224,7 +224,7 @@ pulley ::
   PWeight ->
   Tune ->
   Proposal (LengthTree Double)
-pulley s = createProposal description (pulleySimple s) PFast (PDimension 2)
+pulley s = createProposal description (pulleyPFunction s) PFast (PDimension 2)
   where
     description = PDescription $ "Pulley; sd: " ++ show s
 
@@ -237,13 +237,13 @@ scaleNormAndTreeContrarilyFunction ::
 scaleNormAndTreeContrarilyFunction (x, LengthTree tr) u =
   (x / u, LengthTree $ scaleUnconstrainedTreeWithoutStemF u tr)
 
-scaleNormAndTreeContrarilySimple ::
+scaleNormAndTreeContrarilyPFunction ::
   -- Number of branches.
   Int ->
   Shape Double ->
   TuningParameter ->
-  Propose (Double, LengthTree Double)
-scaleNormAndTreeContrarilySimple n k t =
+  PFunction (Double, LengthTree Double)
+scaleNormAndTreeContrarilyPFunction n k t =
   genericContinuous
     (gammaDistr (k / t) (t / k))
     scaleNormAndTreeContrarilyFunction
@@ -274,7 +274,7 @@ scaleNormAndTreeContrarily ::
 scaleNormAndTreeContrarily tr sd =
   createProposal
     description
-    (scaleNormAndTreeContrarilySimple nBranches sd)
+    (scaleNormAndTreeContrarilyPFunction nBranches sd)
     PFast
     (PDimension $ nBranches + 1)
   where
@@ -303,13 +303,13 @@ scaleVarianceAndTreeFunction n (x, LengthTree tr) u =
     -- negative branch lengths.
     f b = let b' = (b - mu) * u + mu in if b' > 0 then b' else 0 / 0
 
-scaleVarianceAndTreeSimple ::
+scaleVarianceAndTreePFunction ::
   -- Number of branches.
   Int ->
   Shape Double ->
   TuningParameter ->
-  Propose (Double, LengthTree Double)
-scaleVarianceAndTreeSimple n k t =
+  PFunction (Double, LengthTree Double)
+scaleVarianceAndTreePFunction n k t =
   genericContinuous
     (gammaDistr (k / t) (t / k))
     (scaleVarianceAndTreeFunction n)
@@ -358,7 +358,7 @@ scaleVarianceAndTree ::
 scaleVarianceAndTree tr sd =
   createProposal
     description
-    (scaleVarianceAndTreeSimple nBranches sd)
+    (scaleVarianceAndTreePFunction nBranches sd)
     PFast
     (PDimension $ nBranches + 1)
   where

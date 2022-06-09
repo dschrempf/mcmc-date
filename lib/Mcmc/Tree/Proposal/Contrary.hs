@@ -30,15 +30,15 @@ import Mcmc.Tree.Proposal.Unconstrained
 import Mcmc.Tree.Types
 import Numeric.Log hiding (sum)
 
--- See also 'slideNodeAtUltrametricSimple'.
-slideNodesAtContrarilySimple ::
+-- See also 'slideNodeAtUltrametricPFunction'.
+slideNodesAtContrarilyPFunction ::
   Path ->
   StandardDeviation Double ->
   TuningParameter ->
-  Propose (HeightTree Double, LengthTree Double)
-slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
+  PFunction (HeightTree Double, LengthTree Double)
+slideNodesAtContrarilyPFunction pth sd t (tTr, LengthTree rTr) g
   | null rTrChildren =
-      error "slideNodesAtContrarilySimple: Sub tree of unconstrained tree is a leaf."
+      error "slideNodesAtContrarilyPFunction: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
       (hNode', q) <- truncatedNormalSample hNode sd t hMaxChild hParent g
       -- Time tree.
@@ -65,11 +65,11 @@ slideNodesAtContrarilySimple pth sd t (tTr, LengthTree rTr) g
       -- New state.
       let x' = (HeightTree tTr', LengthTree rTr')
           jacobian = Exp $ sum (map log xisR) + log xiStemR
-      return (Suggest x' q jacobian, Nothing)
+      return (Propose x' q jacobian, Nothing)
   where
     -- Time tree.
     (HeightBoundaryData tTrPos hNode hsChildren hMaxChild hParent) =
-      getHeightBoundaries "slideNodesAtContrarilySimple" tTr pth
+      getHeightBoundaries "slideNodesAtContrarilyPFunction" tTr pth
     -- Rate tree.
     rTrPos = goPathUnsafe pth $ fromTree rTr
     rTrFocus = current rTrPos
@@ -124,7 +124,7 @@ slideNodesAtContrarily tr pth sd
   | otherwise =
       createProposal
         description
-        (slideNodesAtContrarilySimple pth sd)
+        (slideNodesAtContrarilyPFunction pth sd)
         PFast
         -- 1 for ultrametric node.
         -- 0 or 1 for unconstrained stem.
@@ -187,17 +187,17 @@ slideRootContrarilyJacobian n u xis =
         -- Scaling the rate branches.
         map log xis
 
-slideRootContrarilySimple ::
+slideRootContrarilyPFunction ::
   Int ->
   StandardDeviation Double ->
   TuningParameter ->
-  Propose (Double, HeightTree Double, LengthTree Double)
-slideRootContrarilySimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
+  PFunction (Double, HeightTree Double, LengthTree Double)
+slideRootContrarilyPFunction n s t (ht, HeightTree tTr, LengthTree rTr) g = do
   let tTrHeight = branch tTr
   when
     (abs (tTrHeight - 1.0) > 1e-14)
     ( error $
-        "slideRootContrarilySimple: Height of relative time tree is different from 1: "
+        "slideRootContrarilyPFunction: Height of relative time tree is different from 1: "
           <> show tTrHeight
           <> "."
     )
@@ -215,7 +215,7 @@ slideRootContrarilySimple n s t (ht, HeightTree tTr, LengthTree rTr) g = do
       rTr' = rTr & forestL %~ zipWith (modifyStem . (*)) xis
       j = slideRootContrarilyJacobian n u xis
       x' = (ht', HeightTree tTr', LengthTree rTr')
-  return (Suggest x' q j, Nothing)
+  return (Propose x' q j, Nothing)
   where
     htsChildren = map branch $ forest tTr
     -- Absolute height of oldest child.
@@ -253,7 +253,7 @@ slideRootContrarily ::
 slideRootContrarily tr s =
   createProposal
     description
-    (slideRootContrarilySimple n s)
+    (slideRootContrarilyPFunction n s)
     PFast
     -- 1: Slide absolute time height.
     -- n: Scale inner nodes of time tree.
@@ -264,8 +264,8 @@ slideRootContrarily tr s =
     n = nInnerNodes tr
     k = length $ forest tr
 
--- See also 'scaleSubTreeAtUltrametricSimple'.
-scaleSubTreeAtContrarilySimple ::
+-- See also 'scaleSubTreeAtUltrametricPFunction'.
+scaleSubTreeAtContrarilyPFunction ::
   -- Number of inner nodes.
   Int ->
   -- Number of branches.
@@ -273,12 +273,12 @@ scaleSubTreeAtContrarilySimple ::
   Path ->
   StandardDeviation Double ->
   TuningParameter ->
-  Propose (HeightTree Double, LengthTree Double)
-scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, LengthTree rTr) g
+  PFunction (HeightTree Double, LengthTree Double)
+scaleSubTreeAtContrarilyPFunction nNodes nBranches pth sd t (HeightTree tTr, LengthTree rTr) g
   | null tTrChildren =
-      error "scaleSubTreeAtContrarilySimple: Sub tree of ultrametric tree is a leaf."
+      error "scaleSubTreeAtContrarilyPFunction: Sub tree of ultrametric tree is a leaf."
   | null rTrChildren =
-      error "scaleSubTreeAtContrarilySimple: Sub tree of unconstrained tree is a leaf."
+      error "scaleSubTreeAtContrarilyPFunction: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
       (hTTrNode', q) <- truncatedNormalSample hTTrNode sd t 0 hTTrParent g
       let -- Scaling factor of time tree nodes heights (xi, not x_i).
@@ -307,7 +307,7 @@ scaleSubTreeAtContrarilySimple nNodes nBranches pth sd t (HeightTree tTr, Length
           -- jacobianTimeTree = Exp $ fromIntegral (nNodes - 1) * log xi
           -- jacobianRateTree = Exp $ fromIntegral (nBranches -1) * log xi' + log xiStem
           jacobian = Exp $ fromIntegral (nNodes - nBranches) * log xiT + log xiStemR
-      return (Suggest x' q jacobian, Nothing)
+      return (Propose x' q jacobian, Nothing)
   where
     -- Time tree.
     tTrPos = goPathUnsafe pth $ fromTree tTr
@@ -375,7 +375,7 @@ scaleSubTreesAtContrarily tr pth sd
   | otherwise =
       createProposal
         description
-        (scaleSubTreeAtContrarilySimple nNodes nBranches pth sd)
+        (scaleSubTreeAtContrarilyPFunction nNodes nBranches pth sd)
         PFast
         (PDimension $ nNodes + nBranches)
   where

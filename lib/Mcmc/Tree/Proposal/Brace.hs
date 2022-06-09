@@ -34,24 +34,24 @@ import Mcmc.Tree.Proposal.Internal
 import Mcmc.Tree.Types
 import Numeric.Log hiding (sum)
 
-slideBracedNodesUltrametricSimple ::
+slideBracedNodesUltrametricPFunction ::
   Brace Double ->
   StandardDeviation Double ->
   TuningParameter ->
-  Propose (HeightTree Double)
-slideBracedNodesUltrametricSimple b s t tr g = do
+  PFunction (HeightTree Double)
+slideBracedNodesUltrametricPFunction b s t tr g = do
   (hDelta, q) <- truncatedNormalSample 0 s t lowerBound upperBound g
   let modifyHeight = assertWith (> 0) . (+ hDelta)
       -- Set the node height at path.
       modifyHeightAcc pth tre = tre & heightTreeL . subTreeAtL pth . branchL %~ modifyHeight
       -- NOTE: The first path is walked again.
       tr' = foldr modifyHeightAcc tr paths
-  return (Suggest tr' q 1, Nothing)
+  return (Propose tr' q 1, Nothing)
   where
     -- Calculate the boundaries per node, and then choose the smallest interval
     -- satisfying all boundaries.
     paths = map nodePath $ getBraceNodes b
-    hbds = map (getHeightBoundaries "slideBracedNodesUltrametricSimple" tr) paths
+    hbds = map (getHeightBoundaries "slideBracedNodesUltrametricPFunction" tr) paths
     -- Interval around 0.
     getInterval d = let h = hbdNodeHeight d in (hbdMaximumChildrenHeight d - h, hbdParentHeight d - h)
     intervals = map getInterval hbds
@@ -87,24 +87,24 @@ slideBracedNodesUltrametric tr b s
       error $ "slideBracedNodesUltrametric: Path of a node leads to a leaf: Brace: " <> show n <> ", Paths: " <> show paths <> "."
   -- NOTE: For hard braces, the dimension is 1.
   | otherwise =
-      createProposal description (slideBracedNodesUltrametricSimple b s) PFast (PDimension $ length ns)
+      createProposal description (slideBracedNodesUltrametricPFunction b s) PFast (PDimension $ length ns)
   where
     n = getBraceName b
     ns = getBraceNodes b
     paths = map nodePath ns
     description = PDescription $ "Slide braced nodes ultrametric; sd: " ++ show s
 
-slideBracedNodesContrarilySimple ::
+slideBracedNodesContrarilyPFunction ::
   Brace Double ->
   StandardDeviation Double ->
   TuningParameter ->
-  Propose (HeightTree Double, LengthTree Double)
-slideBracedNodesContrarilySimple b s t (tTr, rTr) g
+  PFunction (HeightTree Double, LengthTree Double)
+slideBracedNodesContrarilyPFunction b s t (tTr, rTr) g
   | any null rTrChildren =
-      error "slideBracedNodesContrarilySimple: Sub tree of unconstrained tree is a leaf."
+      error "slideBracedNodesContrarilyPFunction: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
       (hDelta, q) <- truncatedNormalSample 0 s t lowerBound upperBound g
-      -- Time tree. See also 'slideBracedNodesUltrametricSimple'.
+      -- Time tree. See also 'slideBracedNodesUltrametricPFunction'.
       let modifyHeight = assertWith (> 0) . (+ hDelta)
           modifyHeightAcc pth tre = tre & heightTreeL . subTreeAtL pth . branchL %~ modifyHeight
           -- NOTE: The first path is walked again.
@@ -121,7 +121,7 @@ slideBracedNodesContrarilySimple b s t (tTr, rTr) g
           getXi hNode hChild = assertWith (> 0) (hNode - hChild) / (hNode + hDelta - hChild)
           scaleDaughterBranches xis (Node br lb trs)
             | length trs /= length xis =
-                error "slideBracedNodesContrarilySimple: Mismatch between lengths of subforest and scaling factors."
+                error "slideBracedNodesContrarilyPFunction: Mismatch between lengths of subforest and scaling factors."
             | otherwise = Node br lb $ zipWith (modifyStem . (*)) xis trs
           -- If the root node is handled, do not scale the stem because no upper
           -- bound is set.
@@ -140,11 +140,11 @@ slideBracedNodesContrarilySimple b s t (tTr, rTr) g
              in (tre', jac')
           -- NOTE: The first path is walked again.
           (rTr', jacobian) = foldr modifyRatesAcc (rTr, 1.0) $ zip paths hbds
-      return (Suggest (tTr', rTr') q jacobian, Nothing)
+      return (Propose (tTr', rTr') q jacobian, Nothing)
   where
-    -- Time tree. See also 'slideBracedNodesUltrametricSimple'.
+    -- Time tree. See also 'slideBracedNodesUltrametricPFunction'.
     paths = map nodePath $ getBraceNodes b
-    hbds = map (getHeightBoundaries "slideBracedNodesUltrametricSimple" tTr) paths
+    hbds = map (getHeightBoundaries "slideBracedNodesUltrametricPFunction" tTr) paths
     getInterval d = let h = hbdNodeHeight d in (hbdMaximumChildrenHeight d - h, hbdParentHeight d - h)
     intervals = map getInterval hbds
     lowerBound = assertWith (< 0) $ maximum $ map fst intervals
@@ -193,7 +193,7 @@ slideBracedNodesContrarily tr b s
   | otherwise =
       createProposal
         description
-        (slideBracedNodesContrarilySimple b s)
+        (slideBracedNodesContrarilyPFunction b s)
         PFast
         -- NOTE: For hard braces, the dimension is `1 + nStems + nDaughters`.
         (PDimension $ length ns + nStems + nDaughters)

@@ -342,11 +342,11 @@
         "pava": "pava"
       },
       "locked": {
-        "lastModified": 1654781071,
-        "narHash": "sha256-1Ag46tTXR7rcdMGhj3DE0u6JdbaZCM7FnDk9qL044nU=",
+        "lastModified": 1654791979,
+        "narHash": "sha256-edjRyuAyZfc4jrJ7seqe6ubWooA1yquHujLAWDWSoSQ=",
         "owner": "dschrempf",
         "repo": "mcmc",
-        "rev": "d0f659db09a80bbb8d5c1d29784d735c3b9fdd01",
+        "rev": "78f30b02ac7fa0c874b2fedfa752e0f67a5e198b",
         "type": "github"
       },
       "original": {
