@@ -20,6 +20,7 @@ module Probability
     LikelihoodData (..),
     likelihoodFunction,
     likelihoodFunctionG,
+    jacobianRootBranch,
   )
 where
 
@@ -372,3 +373,25 @@ likelihoodFunctionG mu' sigmaInv' logDetSigma' x =
   Double ->
   LikelihoodFunction I
   #-}
+
+-- The root splits the branch of the unrooted tree into two branches. This
+-- function retrieves the root branch measured in expected number of
+-- substitutions.
+rootBranch :: RealFloat a => IG a -> a
+rootBranch x = tH * rM * (t1 * r1 + t2 * r2)
+  where
+    (t1, t2) = case heightTreeToLengthTree $ x ^. timeTree of
+      LengthTree (Node _ _ [l, r]) -> (branch l, branch r)
+      _ -> error "rootBranch: Time tree is not bifurcating."
+    (r1, r2) = case x ^. rateTree of
+      LengthTree (Node _ _ [l, r]) -> (branch l, branch r)
+      _ -> error "rootBranch: Rate tree is not bifurcating."
+    tH = x ^. timeHeight
+    rM = x ^. rateMean
+{-# SPECIALIZE rootBranch :: I -> Double #-}
+
+-- | This Jacobian is necessary to have unbiased proposals on the branches
+-- leading to the root of the time tree.
+jacobianRootBranch :: RealFloat a => JacobianFunctionG (IG a) a
+jacobianRootBranch = Exp . log . recip . rootBranch
+{-# SPECIALIZE jacobianRootBranch :: JacobianFunction I #-}

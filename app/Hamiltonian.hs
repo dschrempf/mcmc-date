@@ -94,8 +94,7 @@ htargetWith ht md cb cs bs mu s d =
     -- https://gitlab.haskell.org/ghc/ghc/-/issues/17130.
     (Just $ priorFunction ht md cb cs bs)
     (likelihoodFunctionG mu s d)
-    -- TODO @Dominik (high, bug): Jacobian.
-    Nothing
+    (Just jacobianFunction)
 
 -- | The Hamiltonian proposal.
 hmcWith ::

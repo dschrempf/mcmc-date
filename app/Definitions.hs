@@ -65,7 +65,6 @@ where
 import Control.Lens
 import Data.Bifunctor
 import qualified Data.Vector.Unboxed as VU
-import Numeric.Log hiding (sum)
 import qualified Statistics.Sample as S
 
 {- ORMOLU_DISABLE -}
@@ -81,10 +80,10 @@ import Mcmc.Tree
 -- Local modules.
 import Hamiltonian
 import Monitor
+import Probability
 import State
 import Tools
 import qualified Data.Vector as VB
-import Probability (RelaxedMolecularClockModel)
 {- ORMOLU_ENABLE -}
 
 -- | Initial state.
@@ -121,26 +120,6 @@ initWith t =
       toHeightTreeUltrametric $
         normalizeHeight $
           makeUltrametric tPositiveBranchesStemZero
-
--- The root splits the branch of the unrooted tree into two branches. This
--- function retrieves the root branch measured in expected number of
--- substitutions.
-rootBranch :: I -> Double
-rootBranch x = tH * rM * (t1 * r1 + t2 * r2)
-  where
-    (t1, t2) = case heightTreeToLengthTree $ x ^. timeTree of
-      LengthTree (Node _ _ [l, r]) -> (branch l, branch r)
-      _ -> error "rootBranch: Time tree is not bifurcating."
-    (r1, r2) = case x ^. rateTree of
-      LengthTree (Node _ _ [l, r]) -> (branch l, branch r)
-      _ -> error "rootBranch: Rate tree is not bifurcating."
-    tH = x ^. timeHeight
-    rM = x ^. rateMean
-
--- This Jacobian is necessary to have unbiased proposals on the branches leading
--- to the root of the time tree.
-jacobianRootBranch :: JacobianFunction I
-jacobianRootBranch = Exp . log . recip . rootBranch
 
 -- Weight of proposals not acting on individual branches. The larger the tree,
 -- the higher the weight.
