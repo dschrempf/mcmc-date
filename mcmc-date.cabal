@@ -111,11 +111,11 @@ benchmark mcmc-date-bench
   autogen-modules: Paths_mcmc_date
   hs-source-dirs:  bench
   build-depends:
-    , base        >=4.7 && <5
+    , base           >=4.7 && <5
     , criterion
     , elynx-tree
     , lens
-    , mcmc-date
+    , mcmc-date-lib
 
 executable mcmc-date
   import:           exec
