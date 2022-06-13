@@ -11,7 +11,7 @@
 -- Creation date: Tue Sep 14 17:36:51 2021.
 module Hamiltonian
   ( htargetWith,
-    hmcWith,
+    nutsWith,
   )
 where
 
@@ -59,16 +59,11 @@ fromVectorWith mask x xs = snd $ mapAccumL f (mask, L.size xs - 1) x
     f (False : ms, i) z = ((ms, i), z)
     f (_, _) _ = error "fromVectorWith: Mask is too short or traversable structure is too long."
 
-tspecWith :: [Bool] -> I -> HTuningSpec
-tspecWith mask x =
-  either error id $
-    hTuningSpec masses 10 0.001 (HTuningConf HTuneLeapfrog HTuneAllMasses)
-  where
-    toVector' = toVector mask
-    masses = L.scale 10.0 $ L.trustSym $ L.ident $ L.size $ toVector' x
+htconf :: HTuningConf
+htconf = HTuningConf HTuneLeapfrog HTuneAllMasses
 
-hspecWith :: [Bool] -> I -> HSpec IG
-hspecWith mask x = HSpec x toVector' fromVectorWith'
+hstructWith :: [Bool] -> I -> HStructure IG
+hstructWith mask x = HStructure x toVector' fromVectorWith'
   where
     toVector' = toVector mask
     fromVectorWith' = fromVectorWith mask
@@ -96,16 +91,15 @@ htargetWith ht md cb cs bs mu s d =
     (likelihoodFunctionG mu s d)
     (Just jacobianRootBranch)
 
--- | The Hamiltonian proposal.
-hmcWith ::
+-- | The NUTS proposal.
+nutsWith ::
   Bool ->
   I ->
   HTarget IG ->
   Proposal I
-hmcWith calibrationsAvailable x htarget = hamiltonian tspec hspec htarget n w
+nutsWith calibrationsAvailable x htarget = nuts defaultNParams htconf hstruct htarget n w
   where
     mask = getMask calibrationsAvailable x
-    tspec = tspecWith mask x
-    hspec = hspecWith mask x
+    hstruct = hstructWith mask x
     n = PName "[R] All parameters"
     w = pWeight 1

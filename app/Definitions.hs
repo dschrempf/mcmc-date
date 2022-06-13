@@ -263,7 +263,7 @@ proposals bs calibrationsAvailable x mHTarget =
     w = weightNBranches $ length t
     maybeHamiltonianProposal = case mHTarget of
       Nothing -> []
-      Just htarget -> [liftProposalWith jacobianRootBranch id $ hmcWith calibrationsAvailable x htarget]
+      Just htarget -> [liftProposalWith jacobianRootBranch id $ nutsWith calibrationsAvailable x htarget]
 
 -- -- Hamiltonian proposal only.
 
