@@ -265,13 +265,14 @@ proposals bs calibrationsAvailable x mHTarget =
       Nothing -> []
       Just htarget -> [liftProposalWith jacobianRootBranch id $ nutsWith calibrationsAvailable x htarget]
 
--- -- Hamiltonian proposal only.
+-- Hamiltonian proposal only.
 
--- -- | The proposal cycle includes proposals for the other parameters.
--- proposals :: Bool -> I -> (I -> I) -> Cycle I
--- proposals calibrationsAvailable x gradient =
+-- -- | Use the Hamiltonian proposal only.
+-- proposals :: [Brace Double] -> Bool -> I -> Maybe (HTarget IG) -> Cycle I
+-- proposals _ _ _ Nothing = error "proposals: No target provided."
+-- proposals _ calibrationsAvailable x (Just htarget) =
 --   cycleFromList
---     [liftProposalWith jacobianRootBranch id $ hmc calibrationsAvailable x gradient]
+--     [liftProposalWith jacobianRootBranch id $ nutsWith calibrationsAvailable x htarget]
 
 -- Monitor parameters.
 monParams :: [MonitorParameter I]
@@ -409,8 +410,8 @@ monitor ht md cb cs bs =
 burnIn :: BurnInSettings
 burnIn = BurnInWithCustomAutoTuning fast slow
   where
-    fast = 10 : 10 : [10, 20 .. 190]
-    slow = [200, 220 .. 400]
+    fast = 10 : 10 : [10, 20 .. 90]
+    slow = [100, 120 .. 400]
 
 burnInInformed :: BurnInSettings
 burnInInformed = BurnInWithCustomAutoTuning fast slow
