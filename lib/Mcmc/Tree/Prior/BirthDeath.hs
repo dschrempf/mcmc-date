@@ -195,7 +195,7 @@ birthDeathWith ::
   (Log a, a)
 -- First case of the boundary conditions given after Eq. [4].
 birthDeathWith f la mu rho (Node br _ [l, r])
-  | br <= 0 = error "birthDeathWith: Branch length negative (3-degree node)."
+  | br <= 0 = (0.0, 1.0)
   | otherwise = (Exp (log (dT * la)) * dL * dR, eT)
   where
     (dL, eL) = birthDeathWith f la mu rho l
@@ -215,14 +215,14 @@ birthDeathWith f la mu rho (Node br _ [l, r])
     (dT, eT) = f la mu 1 br eL
 -- Second case of the boundary conditions given after Eq. [4].
 birthDeathWith f la mu rho (Node br _ [c])
-  | br <= 0 = error "birthDeathWith: Branch length negative (2-degree node)."
+  | br <= 0 = (0.0, 1.0)
   | otherwise = (Exp (log (dT * rho)) * d, eT)
   where
     (d, e) = birthDeathWith f la mu rho c
     (dT, eT) = f la mu 1 br e
 -- Third case of the boundary conditions given after Eq. [4].
 birthDeathWith f la mu rho (Node br _ [])
-  | br <= 0 = error "birthDeathWith: Branch length negative (leaf)."
+  | br <= 0 = (0.0, 1.0)
   | otherwise = (Exp $ log $ dT * rho, eT)
   where
     -- D and E at the top of the external branch. We use the given sampling

@@ -76,7 +76,7 @@ calibrateConstrainBraceSoft ::
   VB.Vector (Brace a) ->
   PriorFunctionG (HeightTree a) a
 calibrateConstrainBraceSoft h cs ks bs t
-  | h <= 0 = error "calibrateConstrainBraceSoft: Height multiplier is zero or negative."
+  | h <= 0 = 0.0
   | otherwise = VB.product csPr * VB.product ksPr * VB.product bsPr
   where
     hs = getAllHeights t

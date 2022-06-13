@@ -366,7 +366,7 @@ calibrateSoft ::
   VB.Vector (Calibration a) ->
   PriorFunctionG (HeightTree a) a
 calibrateSoft h cs t
-  | h <= 0 = error "calibrateSoft: Height multiplier is zero or negative."
+  | h <= 0 = 0.0
   | otherwise = VB.product $ VB.map f cs
   where
     f c = calibrateSoftS (transformCalibration h c) t
