@@ -265,8 +265,6 @@ proposals bs calibrationsAvailable x mHTarget =
       Nothing -> []
       Just htarget -> [liftProposalWith jacobianRootBranch id $ nutsWith calibrationsAvailable x htarget]
 
--- Hamiltonian proposal only.
-
 -- -- | Use the Hamiltonian proposal only.
 -- proposals :: [Brace Double] -> Bool -> I -> Maybe (HTarget IG) -> Cycle I
 -- proposals _ _ _ Nothing = error "proposals: No target provided."
