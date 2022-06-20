@@ -19,6 +19,7 @@ module Mcmc.Tree.Prior.Node.Calibration
     getCalibrationPath,
     getCalibrationNodeIndex,
     getCalibrationInterval,
+    CalibrationData (..),
     loadCalibrations,
     getMeanRootHeight,
     calibrateSoftS,
@@ -175,19 +176,31 @@ calibration t n xs l = Calibration n p i l
   Calibration Double
   #-}
 
--- Used to decode the CSV file.
+-- | Calibration data structure used to encode and decode the calibration CSV
+-- file.
+--
+-- Useful to save calibration files.
 data CalibrationData a
   = CalibrationData
-      String -- Name.
-      String -- Leaf a.
-      String -- Leaf b.
-      (Maybe a) -- Lower boundary.
-      (Maybe a) -- Lower boundary probability mass.
-      (Maybe a) -- Upper boundary.
-      (Maybe a) -- Upperboundary probability mass.
+      String
+      -- ^ Name.
+      String
+      -- ^ Leaf a.
+      String
+      -- ^ Leaf b.
+      (Maybe a)
+      -- ^ Lower boundary.
+      (Maybe a)
+      -- ^ Lower boundary probability mass.
+      (Maybe a)
+      -- ^ Upper boundary.
+      (Maybe a)
+      -- ^ Upperboundary probability mass.
   deriving (Generic, Show)
 
 instance FromField a => FromRecord (CalibrationData a)
+
+instance ToField a => ToRecord (CalibrationData a)
 
 calibrationDataToCalibration :: (Ord a, Num a) => Tree e Name -> CalibrationData a -> Calibration a
 calibrationDataToCalibration t (CalibrationData n la lb ma mpa mb mpb) = calibration t n [la', lb'] i
