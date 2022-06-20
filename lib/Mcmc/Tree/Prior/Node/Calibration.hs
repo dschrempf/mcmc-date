@@ -20,6 +20,7 @@ module Mcmc.Tree.Prior.Node.Calibration
     getCalibrationNodeIndex,
     getCalibrationInterval,
     CalibrationData (..),
+    HandleDuplicatesConflictsRedundancies (..),
     loadCalibrations,
     getMeanRootHeight,
     calibrateSoftS,
@@ -46,6 +47,7 @@ import Mcmc.Tree.Lens
 import Mcmc.Tree.Mrca
 import Mcmc.Tree.Prior.Node.Internal
 import Mcmc.Tree.Types
+import System.IO
 
 -- Non-negative lower boundary with probability mass.
 data LowerBoundary a = Zero | PositiveLowerBoundary a (ProbabilityMass a)
@@ -243,6 +245,12 @@ findDupsBy eq (x : xs) = case partition (eq x) xs of
   ([], _) -> findDupsBy eq xs
   (ys, xs') -> (x : ys) : findDupsBy eq xs'
 
+-- | Warn or error when duplicate/conflicting/reduncant calibrations are found?
+data HandleDuplicatesConflictsRedundancies
+  = WarnAboutDuplicatesConflictsRedundancies
+  | ErrorOnDuplicatesConflictsRedundancies
+  deriving (Eq, Read, Show)
+
 -- | Load and validate calibrations from file.
 --
 -- The calibration file is a comma separated values (CSV) file with rows of the
@@ -264,12 +272,16 @@ findDupsBy eq (x : xs) = case partition (eq x) xs of
 --
 -- - The file contains syntax errors.
 --
--- - An MRCA cannot be found.
+-- - An MRCA is not found.
 --
 -- - Redundant or conflicting calibrations are found (i.e., multiple
 --   calibrations affect single nodes).
-loadCalibrations :: Tree e Name -> FilePath -> IO (VB.Vector (Calibration Double))
-loadCalibrations t f = do
+loadCalibrations ::
+  HandleDuplicatesConflictsRedundancies ->
+  Tree e Name ->
+  FilePath ->
+  IO (VB.Vector (Calibration Double))
+loadCalibrations frc t f = do
   d <- BL.readFile f
   let mr = decode HasHeader d :: Either String (VB.Vector (CalibrationData Double))
       cds = either error id mr
@@ -277,16 +289,20 @@ loadCalibrations t f = do
   let calsAll = VB.map (calibrationDataToCalibration t) cds
   -- Check for duplicates and conflicts.
   let calsErrs = findDupsBy ((==) `on` calibrationNodePath) $ VB.toList calsAll
+  -- TODO: Actually check for conflicting calibrations.
   if null calsErrs
-    then -- TODO: Actually check for conflicting calibrations.
-      putStrLn "No duplicates and no conflicting calibrations have been detected."
+    then putStrLn "No duplicate/conflicting/redundant calibrations have been detected."
     else do
       -- Calibrations could also be removed. But then, which one should be removed?
       let render xs =
             unlines $
               "Redundant and/or conflicting calibration:" : map prettyPrintCalibration xs
       mapM_ (putStr . render) calsErrs
-      error "loadCalibrations: Duplicates and/or conflicting calibrations have been detected."
+      case frc of
+        WarnAboutDuplicatesConflictsRedundancies ->
+          hPutStr stderr "WARNING: Duplicate/conflicting/redundant calibrations have been detected."
+        ErrorOnDuplicatesConflictsRedundancies ->
+          error "loadCalibrations: Duplicate/conflicting/redundant calibrations have been detected."
   return calsAll
 
 -- | If the root node is calibrated, get the mean of the root node height.

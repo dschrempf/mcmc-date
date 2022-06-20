@@ -20,6 +20,7 @@ module Options
 where
 
 import Data.Version (showVersion)
+import Mcmc.Tree
 import Options.Applicative
 import Options.Applicative.Help.Pretty
 import Paths_mcmc_date (version)
@@ -44,6 +45,7 @@ data Spec = Spec
     -- | If no calibrations are given, a normalized tree with height 1.0 is
     -- inferred.
     calibrations :: Maybe FilePath,
+    handleDuplicateCalibrations :: HandleDuplicatesConflictsRedundancies,
     constraints :: Maybe FilePath,
     braces :: Maybe FilePath,
     -- | Reuse state and proposal tuning parameters from a previous run; if
@@ -75,6 +77,11 @@ calibrationsP =
         <> help "File name specifying calibrations"
         <> metavar "FILE"
     )
+
+handleDuplicateCalibrationsP :: Parser HandleDuplicatesConflictsRedundancies
+handleDuplicateCalibrationsP =
+  flag ErrorOnDuplicatesConflictsRedundancies WarnAboutDuplicatesConflictsRedundancies $
+    long "ignore-duplicate-calibrations" <> help "Ignore duplicate/conflicting/redundant calibrations"
 
 constraintsP :: Parser FilePath
 constraintsP =
@@ -124,6 +131,7 @@ specP =
   Spec
     <$> analysisNameP
     <*> optional calibrationsP
+    <*> handleDuplicateCalibrationsP
     <*> optional constraintsP
     <*> optional bracesP
     <*> optional initFromSaveP
