@@ -156,14 +156,14 @@ then
     prog_name="cabal"
     prog_cmd="run"
     prog_profiling_flag="--enable-profiling"
-    prog_target="exe:mcmc-date"
+    prog_target="mcmc-date-run"
 elif [[ $use_stack -eq 1 ]]
 then
     echo "Using Stack."
     prog_name="stack"
     prog_cmd="exec"
     prog_profiling_flag="--profile"
-    prog_target="mcmc-date"
+    prog_target="mcmc-date-run"
 else
     echo "Error: use_stack is neither 0 nor 1: ${use_stack}."
     exit 1

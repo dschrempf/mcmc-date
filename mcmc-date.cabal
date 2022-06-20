@@ -56,7 +56,7 @@ common exec
 
   default-language: Haskell2010
 
-library mcmc-date-lib
+library
   import:          lib
   exposed-modules:
     Mcmc.Tree
@@ -84,7 +84,6 @@ library mcmc-date-lib
     Paths_mcmc_date
     Statistics.Distribution.TruncatedNormal
 
-  autogen-modules: Paths_mcmc_date
   hs-source-dirs:  lib
   build-depends:
     , aeson
@@ -104,20 +103,19 @@ library mcmc-date-lib
     , zlib
 
 benchmark mcmc-date-bench
-  import:          bench
-  type:            exitcode-stdio-1.0
-  main-is:         Bench.hs
-  other-modules:   Paths_mcmc_date
-  autogen-modules: Paths_mcmc_date
-  hs-source-dirs:  bench
+  import:         bench
+  type:           exitcode-stdio-1.0
+  main-is:        Bench.hs
+  other-modules:  Paths_mcmc_date
+  hs-source-dirs: bench
   build-depends:
-    , base           >=4.7 && <5
+    , base        >=4.7 && <5
     , criterion
     , elynx-tree
     , lens
-    , mcmc-date-lib
+    , mcmc-date
 
-executable mcmc-date
+executable mcmc-date-run
   import:           exec
   main-is:          Main.hs
   other-modules:
@@ -130,7 +128,6 @@ executable mcmc-date
     State
     Tools
 
-  autogen-modules:  Paths_mcmc_date
   hs-source-dirs:   app
   build-depends:
     , aeson
@@ -145,7 +142,7 @@ executable mcmc-date
     , math-functions
     , matrices
     , mcmc
-    , mcmc-date-lib
+    , mcmc-date
     , mwc-random
     , optparse-applicative
     , statistics
