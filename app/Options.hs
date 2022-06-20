@@ -46,9 +46,9 @@ data Spec = Spec
     calibrations :: Maybe FilePath,
     constraints :: Maybe FilePath,
     braces :: Maybe FilePath,
-    -- | Try to reuse state and proposal tuning parameters from a previous run;
-    -- if successful also reduce burn in.
-    initFromSave :: Bool,
+    -- | Reuse state and proposal tuning parameters from a previous run; if
+    -- successful also reduce burn in.
+    initFromSave :: Maybe FilePath,
     -- | Activate profiling (change the number of iterations).
     profile :: Bool,
     -- | Activate Hamiltonian proposal.
@@ -92,11 +92,12 @@ bracesP =
         <> metavar "FILE"
     )
 
-initFromSaveP :: Parser Bool
+initFromSaveP :: Parser FilePath
 initFromSaveP =
-  switch
+  strOption
     ( long "init-from-save"
-        <> help "Try to reuse state and proposal tuning parameters from a previous run; if successful, also reduce burn in"
+        <> help "Reuse state and proposal tuning parameters from a previous run; if successful, also reduce burn in"
+        <> metavar "ANALYSIS_NAME"
     )
 
 profileP :: Parser Bool
@@ -125,7 +126,7 @@ specP =
     <*> optional calibrationsP
     <*> optional constraintsP
     <*> optional bracesP
-    <*> initFromSaveP
+    <*> optional initFromSaveP
     <*> profileP
     <*> hamiltonianP
     <*> likelihoodSpecP

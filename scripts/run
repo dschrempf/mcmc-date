@@ -11,7 +11,7 @@ usage() {
     echo "-k Activate constraints"
     echo
     echo "Algorithm related options:"
-    echo "-i Initialize state and cycle from save file"
+    echo "-i NAME Initialize state and cycle from previous analysis with NAME"
     echo "-H Activate Hamiltonian proposal (slow, but great convergence)"
     echo "-m Use Mc3 algorithm insteahd of Mhg"
     echo
@@ -45,6 +45,7 @@ calibrations_activated=0
 constraints_activated=0
 
 init_from_save_activated=0
+init_from_save_name=
 hamiltonian_activated=0
 mc3_activated=0
 
@@ -55,7 +56,7 @@ analysis_configuration_file="analysis.conf"
 analysis_suffix=
 
 OPTIND=1
-while getopts "h?bckiHmf:n:ps" opt; do
+while getopts "h?bcki:Hmf:n:ps" opt; do
     case "$opt" in
         h|\?)
            usage
@@ -68,6 +69,7 @@ while getopts "h?bckiHmf:n:ps" opt; do
         k) constraints_activated=1
            ;;
         i) init_from_save_activated=1
+           init_from_save_name=$OPTARG
            ;;
         H) hamiltonian_activated=1
            ;;
@@ -236,7 +238,7 @@ esac
 if [[ $init_from_save_activated -eq 1 ]]
 then
     echo "Initialize from save activated."
-    c_flags+=(--init-from-save)
+    c_flags+=(--init-from-save "$init_from_save_name")
 fi
 
 if [[ $hamiltonian_activated -eq 1 ]]
