@@ -20,6 +20,7 @@ module Mcmc.Tree.Prior.Node.Constraint
     getConstraintOldNodeIndex,
     getConstraintOldNodePath,
     getConstraintProbabilityMass,
+    ConstraintData (..),
     loadConstraints,
     constrainSoftS,
     constrainSoftF,
@@ -186,10 +187,28 @@ constraint t n ys os p
   Constraint Double
   #-}
 
-data ConstraintData a = ConstraintData String String String String String a
+-- | Data structure used to encode and decode the constraints CSV file.
+--
+-- Useful to save constraints.
+data ConstraintData a
+  = ConstraintData
+      String
+      -- ^ Name.
+      String
+      -- ^ Younger leaf A.
+      String
+      -- ^ Younger leaf B.
+      String
+      -- ^ Older leaf A.
+      String
+      -- ^ Older leaf B.
+      a
+      -- ^ Probability mass.
   deriving (Generic, Show)
 
 instance FromField a => FromRecord (ConstraintData a)
+
+instance ToField a => ToRecord (ConstraintData a)
 
 constraintDataToConstraint :: (Num a, Ord a) => Tree e Name -> ConstraintData a -> Constraint a
 constraintDataToConstraint t (ConstraintData n yL yR oL oR p) =

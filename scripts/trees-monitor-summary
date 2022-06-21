@@ -1,5 +1,4 @@
 #!/usr/bin/env cabal
-
 {- cabal:
   build-depends:
     attoparsec

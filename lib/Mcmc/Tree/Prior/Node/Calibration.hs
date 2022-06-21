@@ -178,10 +178,9 @@ calibration t n xs l = Calibration n p i l
   Calibration Double
   #-}
 
--- | Calibration data structure used to encode and decode the calibration CSV
--- file.
+-- | Data structure used to encode and decode the calibration CSV file.
 --
--- Useful to save calibration files.
+-- Useful to save calibrations.
 data CalibrationData a
   = CalibrationData
       String
