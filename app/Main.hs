@@ -295,16 +295,20 @@ prepare (PrepSpec an rt ts lhsp) = do
   BL.writeFile (getMeanTreeFn an) (toNewick $ lengthToPhyloTree meanTreeRooted)
 
 getCalibrations ::
-  HandleDuplicatesConflictsRedundancies ->
+  HandleProblematicCalibrations ->
   Tree e Name ->
   Maybe FilePath ->
   IO (VB.Vector (Calibration Double))
 getCalibrations _ _ Nothing = return VB.empty
 getCalibrations frc t (Just f) = loadCalibrations frc t f
 
-getConstraints :: Tree e Name -> Maybe FilePath -> IO (VB.Vector (Constraint Double))
-getConstraints _ Nothing = return VB.empty
-getConstraints t (Just f) = loadConstraints t f
+getConstraints ::
+  HandleProblematicConstraints ->
+  Tree e Name ->
+  Maybe FilePath ->
+  IO (VB.Vector (Constraint Double))
+getConstraints _ _ Nothing = return VB.empty
+getConstraints frc t (Just f) = loadConstraints frc t f
 
 getBraces :: Tree e Name -> Maybe FilePath -> IO (VB.Vector (Brace Double))
 getBraces _ Nothing = return VB.empty
@@ -357,7 +361,7 @@ getMcmcProps ::
       Monitor I,
       Settings
     )
-getMcmcProps (Spec an cls clsFlag cns brs ifs prof ham lhsp rmcm) malg = do
+getMcmcProps (Spec an cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
 
@@ -368,7 +372,7 @@ getMcmcProps (Spec an cls clsFlag cns brs ifs prof ham lhsp rmcm) malg = do
   cb <- getCalibrations clsFlag meanTree cls
   let ht = fromMaybe 1.0 $ getMeanRootHeight cb
   -- Constraints.
-  cs <- getConstraints meanTree cns
+  cs <- getConstraints cnsFlag meanTree cns
   -- Braces.
   bs <- getBraces meanTree brs
   -- Likelihood function.

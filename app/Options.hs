@@ -45,8 +45,9 @@ data Spec = Spec
     -- | If no calibrations are given, a normalized tree with height 1.0 is
     -- inferred.
     calibrations :: Maybe FilePath,
-    handleDuplicateCalibrations :: HandleDuplicatesConflictsRedundancies,
+    handleProblematicCalibrations :: HandleProblematicCalibrations,
     constraints :: Maybe FilePath,
+    handleProblematicConstraints :: HandleProblematicConstraints,
     braces :: Maybe FilePath,
     -- | Reuse state and proposal tuning parameters from a previous run; if
     -- successful also reduce burn in.
@@ -78,10 +79,10 @@ calibrationsP =
         <> metavar "FILE"
     )
 
-handleDuplicateCalibrationsP :: Parser HandleDuplicatesConflictsRedundancies
-handleDuplicateCalibrationsP =
-  flag ErrorOnDuplicatesConflictsRedundancies WarnAboutDuplicatesConflictsRedundancies $
-    long "ignore-duplicate-calibrations" <> help "Ignore duplicate/conflicting/redundant calibrations"
+handleProblematicCalibrationsP :: Parser HandleProblematicCalibrations
+handleProblematicCalibrationsP =
+  flag ErrorOnProblematicCalibrations WarnAboutProblematicCalibrations $
+    long "ignore-problematic-calibrations" <> help "Ignore and use problematic calibrations"
 
 constraintsP :: Parser FilePath
 constraintsP =
@@ -90,6 +91,11 @@ constraintsP =
         <> help "File name specifying constraints"
         <> metavar "FILE"
     )
+
+handleProblematicConstraintsP :: Parser HandleProblematicConstraints
+handleProblematicConstraintsP =
+  flag ErrorOnProblematicConstraints WarnAboutAndDropProblematicConstraints $
+    long "ignore-problematic-constraints" <> help "Ignore and drop problematic constraints"
 
 bracesP :: Parser FilePath
 bracesP =
@@ -131,8 +137,9 @@ specP =
   Spec
     <$> analysisNameP
     <*> optional calibrationsP
-    <*> handleDuplicateCalibrationsP
+    <*> handleProblematicCalibrationsP
     <*> optional constraintsP
+    <*> handleProblematicConstraintsP
     <*> optional bracesP
     <*> optional initFromSaveP
     <*> profileP

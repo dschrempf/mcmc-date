@@ -20,7 +20,7 @@ module Mcmc.Tree.Prior.Node.Calibration
     getCalibrationNodeIndex,
     getCalibrationInterval,
     CalibrationData (..),
-    HandleDuplicatesConflictsRedundancies (..),
+    HandleProblematicCalibrations (..),
     loadCalibrations,
     getMeanRootHeight,
     calibrateSoftS,
@@ -244,10 +244,12 @@ findDupsBy eq (x : xs) = case partition (eq x) xs of
   ([], _) -> findDupsBy eq xs
   (ys, xs') -> (x : ys) : findDupsBy eq xs'
 
--- | Warn or error when duplicate/conflicting/reduncant calibrations are found?
-data HandleDuplicatesConflictsRedundancies
-  = WarnAboutDuplicatesConflictsRedundancies
-  | ErrorOnDuplicatesConflictsRedundancies
+-- | Warn or error when problematic calibrations are found?
+--
+-- For now, duplicates, conflicts, and redundancies qualify as problematic.
+data HandleProblematicCalibrations
+  = WarnAboutProblematicCalibrations
+  | ErrorOnProblematicCalibrations
   deriving (Eq, Read, Show)
 
 -- | Load and validate calibrations from file.
@@ -272,11 +274,8 @@ data HandleDuplicatesConflictsRedundancies
 -- - The file contains syntax errors.
 --
 -- - An MRCA is not found.
---
--- - Redundant or conflicting calibrations are found (i.e., multiple
---   calibrations affect single nodes).
 loadCalibrations ::
-  HandleDuplicatesConflictsRedundancies ->
+  HandleProblematicCalibrations ->
   Tree e Name ->
   FilePath ->
   IO (VB.Vector (Calibration Double))
@@ -298,9 +297,9 @@ loadCalibrations frc t f = do
               "Redundant and/or conflicting calibration:" : map prettyPrintCalibration xs
       mapM_ (putStr . render) calsErrs
       case frc of
-        WarnAboutDuplicatesConflictsRedundancies ->
+        WarnAboutProblematicCalibrations ->
           hPutStr stderr "WARNING: Duplicate/conflicting/redundant calibrations have been detected."
-        ErrorOnDuplicatesConflictsRedundancies ->
+        ErrorOnProblematicCalibrations ->
           error "loadCalibrations: Duplicate/conflicting/redundant calibrations have been detected."
   return calsAll
 

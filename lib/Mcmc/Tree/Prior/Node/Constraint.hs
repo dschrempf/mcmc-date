@@ -21,6 +21,7 @@ module Mcmc.Tree.Prior.Node.Constraint
     getConstraintOldNodePath,
     getConstraintProbabilityMass,
     ConstraintData (..),
+    HandleProblematicConstraints (..),
     loadConstraints,
     constrainSoftS,
     constrainSoftF,
@@ -35,6 +36,7 @@ import Control.Lens
 import Control.Monad
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Csv hiding (Name)
+import Data.Either
 import Data.List
 import qualified Data.Vector as VB
 import ELynx.Tree
@@ -117,25 +119,22 @@ prettyPrintConstraint (Constraint n yP yI oP oI p) =
 -- See also 'validateConstraints' and 'validateConstraintVector' which perform
 -- checks on a multiple possibly redundant or conflicting constraints.
 --
+-- Call 'error' if:
+--
+-- - Both nodes are equal.
+--
+-- - The younger node is a direct ancestor of the older node.
+--
 -- Return 'Left' if:
 --
--- - The younger node is a direct ancestor of the old node.
---
 -- - The older node is a direct ancestor of the young node.
---
--- NOTE: Any node is a direct ancestor of itself, and so, bogus constraints
--- including the same node twice are also filtered out.
 validateConstraint :: Constraint a -> Either String (Constraint a)
 validateConstraint c = case areDirectDescendants y o of
-  Equal ->
-    Left $
-      getErrMsg "Bogus constraint; both nodes are equal (?)."
+  Equal -> error $ getErrMsg "Bogus constraint; both nodes are equal (?)."
   LeftIsAncestorOfRight ->
-    Left $
-      getErrMsg "Bogus constraint; younger node is direct ancestor of older node (?)."
+    error $ getErrMsg "Bogus constraint; younger node is direct ancestor of older node (?)."
   LeftIsDescendantOfRight ->
-    Left $
-      getErrMsg "Redundant constraint; old node is direct ancestors of young node."
+    Left $ getErrMsg "Redundant constraint; old node is direct ancestors of young node."
   Unrelated -> Right c
   where
     n = constraintName c
@@ -149,7 +148,11 @@ validateConstraint c = case areDirectDescendants y o of
 --
 -- - A node cannot be found on the tree.
 --
--- - The younger node is a direct ancestor of the old node.
+-- - Both nodes are equal.
+--
+-- - The younger node is a direct ancestor of the older node.
+--
+-- Return 'Left' if:
 --
 -- - The older node is a direct ancestor of the young node.
 constraint ::
@@ -162,12 +165,8 @@ constraint ::
   -- | The most recent common ancestor of the given leave is the older node.
   [a] ->
   ProbabilityMass b ->
-  Constraint b
-constraint t n ys os p
-  | otherwise =
-      either error id $
-        validateConstraint $
-          Constraint n pY iY pO iO p
+  Either String (Constraint b)
+constraint t n ys os p = validateConstraint $ Constraint n pY iY pO iO p
   where
     err msg = error $ "constraint: " ++ show n ++ ": " ++ msg
     -- NOTE: Identifying the tree multiple times may be slow when creating many
@@ -184,7 +183,7 @@ constraint t n ys os p
   [a] ->
   [a] ->
   ProbabilityMass Double ->
-  Constraint Double
+  Either String (Constraint Double)
   #-}
 
 -- | Data structure used to encode and decode the constraints CSV file.
@@ -210,7 +209,7 @@ instance FromField a => FromRecord (ConstraintData a)
 
 instance ToField a => ToRecord (ConstraintData a)
 
-constraintDataToConstraint :: (Num a, Ord a) => Tree e Name -> ConstraintData a -> Constraint a
+constraintDataToConstraint :: (Num a, Ord a) => Tree e Name -> ConstraintData a -> Either String (Constraint a)
 constraintDataToConstraint t (ConstraintData n yL yR oL oR p) =
   constraint t n [f yL, f yR] [f oL, f oR] (either err id $ probabilityMass p)
   where
@@ -263,6 +262,14 @@ describeRedundant :: (Constraint a, Constraint a) -> String
 describeRedundant (l, r) =
   "Constraint " <> constraintName r <> " is redundant given constraint " <> constraintName l <> "."
 
+-- | Warn or error when problematic constraints are found?
+--
+-- For now, duplicates, conflicts, and redundancies qualify as problematic.
+data HandleProblematicConstraints
+  = WarnAboutAndDropProblematicConstraints
+  | ErrorOnProblematicConstraints
+  deriving (Eq, Read, Show)
+
 -- | Load and validate constraints from file.
 --
 -- The constraint file is a comma separated values (CSV) file with rows of the
@@ -288,22 +295,30 @@ describeRedundant (l, r) =
 --
 -- - An MRCA cannot be found.
 --
+-- - A constraint is erroneous (i.e., both nodes are equal, younger node is
+--   direct ancestor of older node).
+--
+-- - The younger node is a direct ancestor of the old node.
+--
 -- - Conflicting constraints are found.
-loadConstraints :: Tree e Name -> FilePath -> IO (VB.Vector (Constraint Double))
-loadConstraints t f = do
+loadConstraints :: HandleProblematicConstraints -> Tree e Name -> FilePath -> IO (VB.Vector (Constraint Double))
+loadConstraints frc t f = do
   d <- BL.readFile f
   let mr = decode HasHeader d :: Either String (VB.Vector (ConstraintData Double))
       cds = either error id mr
   when (VB.null cds) $ error $ "loadConstraints: No constraints found in file: " <> f <> "."
-  let allConstraints = VB.toList $ VB.map (constraintDataToConstraint t) cds
-  putStrLn $ "The total number constraints is: " <> show (length allConstraints) <> "."
-  -- Call 'error' when constraints are conflicting. We don't want to repair
-  -- this.
+  let (errs, allConstraints) = partitionEithers $ VB.toList $ VB.map (constraintDataToConstraint t) cds
+  when (not $ null errs) $ case frc of
+    WarnAboutAndDropProblematicConstraints -> mapM_ (putStrLn . ("Dropping constraint: " <>)) errs
+    ErrorOnProblematicConstraints -> error $ unlines errs
+  putStrLn $ "The total number of constraints is: " <> show (length allConstraints) <> "."
   let conflictingCs = validateWith isConflictingWith allConstraints
   if null conflictingCs
     then putStrLn "No conflicting constraints have been detected."
     else do
       mapM_ (putStrLn . describeConflicting) conflictingCs
+      -- Call 'error' when constraints are conflicting. We don't want to repair
+      -- this.
       error "loadConstraints: Conflicting constraints have been detected."
   -- We do remove duplicate constraints, but we are very verbose about it.
   let equalCs = validateWithCommutative duplicate allConstraints
