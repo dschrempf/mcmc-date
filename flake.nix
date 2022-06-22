@@ -43,7 +43,7 @@
                 {
                   circular = circular.packages.${system}.default;
                   covariance = covariance.packages.${system}.default;
-                  dirichlet = dirichlet.packages.${system}.efault;
+                  dirichlet = dirichlet.packages.${system}.default;
                   mcmc = mcmc.packages.${system}.default;
                   pava = pava.packages.${system}.default;
                 } // elynx.packages.${system};
