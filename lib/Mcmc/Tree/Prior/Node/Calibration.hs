@@ -275,11 +275,13 @@ data HandleProblematicCalibrations
 --
 -- - An MRCA is not found.
 loadCalibrations ::
+  -- | Log file handle.
+  Handle ->
   HandleProblematicCalibrations ->
   Tree e Name ->
   FilePath ->
   IO (VB.Vector (Calibration Double))
-loadCalibrations frc t f = do
+loadCalibrations h frc t f = do
   d <- BL.readFile f
   let mr = decode HasHeader d :: Either String (VB.Vector (CalibrationData Double))
       cds = either error id mr
@@ -289,16 +291,16 @@ loadCalibrations frc t f = do
   let calsErrs = findDupsBy ((==) `on` calibrationNodePath) $ VB.toList calsAll
   -- TODO: Actually check for conflicting calibrations.
   if null calsErrs
-    then putStrLn "No duplicate/conflicting/redundant calibrations have been detected."
+    then hPutStrLn h "No duplicate/conflicting/redundant calibrations have been detected."
     else do
       -- Calibrations could also be removed. But then, which one should be removed?
       let render xs =
             unlines $
               "Redundant and/or conflicting calibration:" : map prettyPrintCalibration xs
-      mapM_ (putStr . render) calsErrs
+      mapM_ (hPutStr h . render) calsErrs
       case frc of
         WarnAboutProblematicCalibrations ->
-          hPutStr stderr "WARNING: Duplicate/conflicting/redundant calibrations have been detected."
+          hPutStr h "WARNING: Duplicate/conflicting/redundant calibrations have been detected."
         ErrorOnProblematicCalibrations ->
           error "loadCalibrations: Duplicate/conflicting/redundant calibrations have been detected."
   return calsAll

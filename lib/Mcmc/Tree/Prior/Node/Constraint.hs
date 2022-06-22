@@ -46,6 +46,7 @@ import Mcmc.Tree.Lens
 import Mcmc.Tree.Mrca
 import Mcmc.Tree.Prior.Node.Internal
 import Mcmc.Tree.Types
+import System.IO
 
 -- | Constraints define node orders.
 --
@@ -301,22 +302,29 @@ data HandleProblematicConstraints
 -- - The younger node is a direct ancestor of the old node.
 --
 -- - Conflicting constraints are found.
-loadConstraints :: HandleProblematicConstraints -> Tree e Name -> FilePath -> IO (VB.Vector (Constraint Double))
-loadConstraints frc t f = do
+loadConstraints ::
+  -- | Log file handle.
+  Handle ->
+  HandleProblematicConstraints ->
+  Tree e Name ->
+  FilePath ->
+  IO (VB.Vector (Constraint Double))
+loadConstraints h frc t f = do
   d <- BL.readFile f
   let mr = decode HasHeader d :: Either String (VB.Vector (ConstraintData Double))
       cds = either error id mr
   when (VB.null cds) $ error $ "loadConstraints: No constraints found in file: " <> f <> "."
   let (errs, allConstraints) = partitionEithers $ VB.toList $ VB.map (constraintDataToConstraint t) cds
   when (not $ null errs) $ case frc of
-    WarnAboutAndDropProblematicConstraints -> mapM_ (putStrLn . ("Dropping constraint: " <>)) errs
+    WarnAboutAndDropProblematicConstraints ->
+      mapM_ (hPutStrLn h . ("WARNING: Dropping constraint: " <>)) errs
     ErrorOnProblematicConstraints -> error $ unlines errs
-  putStrLn $ "The total number of constraints is: " <> show (length allConstraints) <> "."
+  hPutStrLn h $ "The total number of constraints is: " <> show (length allConstraints) <> "."
   let conflictingCs = validateWith isConflictingWith allConstraints
   if null conflictingCs
-    then putStrLn "No conflicting constraints have been detected."
+    then hPutStrLn h "No conflicting constraints have been detected."
     else do
-      mapM_ (putStrLn . describeConflicting) conflictingCs
+      mapM_ (hPutStrLn h . describeConflicting) conflictingCs
       -- Call 'error' when constraints are conflicting. We don't want to repair
       -- this.
       error "loadConstraints: Conflicting constraints have been detected."
@@ -325,15 +333,15 @@ loadConstraints frc t f = do
   uniqueConstraints <-
     if null equalCs
       then do
-        putStrLn "No duplicate constraints have been detected."
+        hPutStrLn h "No duplicate constraints have been detected."
         return allConstraints
       else do
-        putStrLn "The following duplicates have been detected:"
-        mapM_ (putStrLn . describeEqual) equalCs
+        hPutStrLn h "The following duplicates have been detected:"
+        mapM_ (hPutStrLn h . describeEqual) equalCs
         -- Extract the unique duplicate constraints (they are the right ones of
         -- each tuple).
         let uniqueDuplicateConstraints = nub $ map snd equalCs
-        putStrLn $
+        hPutStrLn h $
           "The number of unique duplicate constraints is: "
             <> show (length uniqueDuplicateConstraints)
             <> "."
@@ -343,25 +351,25 @@ loadConstraints frc t f = do
   informativeConstraints <-
     if null redundantCs
       then do
-        putStrLn "No redundant constraints have been detected."
+        hPutStrLn h "No redundant constraints have been detected."
         return uniqueConstraints
       else do
-        putStrLn "The following redundancies have been detected:"
-        mapM_ (putStrLn . describeRedundant) redundantCs
+        hPutStrLn h "The following redundancies have been detected:"
+        mapM_ (hPutStrLn h . describeRedundant) redundantCs
         -- Extract the unique redundant constraints (they are the right ones of
         -- each tuple).
         let uniqueRedundantConstraints = nub $ map snd redundantCs
-        putStrLn $
+        hPutStrLn h $
           "The number of unique redundant constraints is: "
             <> show (length uniqueRedundantConstraints)
             <> "."
         return $ uniqueConstraints \\ uniqueRedundantConstraints
-  putStrLn $
+  hPutStrLn h $
     "The number of informative constraints is: "
       <> show (length informativeConstraints)
       <> "."
-  putStrLn "The informative constraints are:"
-  mapM_ (putStrLn . prettyPrintConstraint) informativeConstraints
+  hPutStrLn h "The informative constraints are:"
+  mapM_ (hPutStrLn h . prettyPrintConstraint) informativeConstraints
   return $ VB.fromList informativeConstraints
 
 -- | Soft constrain order of a single pair of nodes with given paths.

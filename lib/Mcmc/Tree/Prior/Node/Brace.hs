@@ -41,6 +41,7 @@ import Mcmc.Tree.Lens
 import Mcmc.Tree.Mrca
 import Mcmc.Tree.Prior.Node.Internal
 import Mcmc.Tree.Types
+import System.IO
 
 -- | Brace.
 --
@@ -132,8 +133,8 @@ braceDataToBrace t (BraceData n lvss w) = brace t n [[pn lvA, pn lvB] | (lvA, lv
 checkBraces :: Brace a -> Brace a -> [String]
 checkBraces (Brace nX nsX _) (Brace nY nsY _) =
   catMaybes $
-    equalNodeIndices :
-    [indicesMismatch x y | x <- nsX, y <- nsY]
+    equalNodeIndices
+      : [indicesMismatch x y | x <- nsX, y <- nsY]
       ++ [pathsMismatch x y | x <- nsX, y <- nsY]
   where
     msg m = "Braces " ++ nX ++ " and " ++ nY ++ ":" ++ m
@@ -169,8 +170,13 @@ checkBraces (Brace nX nsX _) (Brace nY nsY _) =
 -- - Node X and Y of a brace are equal.
 --
 -- - There are duplicate braces.
-loadBraces :: Tree e Name -> FilePath -> IO (VB.Vector (Brace Double))
-loadBraces t f = do
+loadBraces ::
+  -- | Log file handle.
+  Handle ->
+  Tree e Name ->
+  FilePath ->
+  IO (VB.Vector (Brace Double))
+loadBraces h t f = do
   d <- BL.readFile f
   let mr = eitherDecode d :: Either String (VB.Vector (BraceData Double))
       bs = either error id mr
@@ -179,9 +185,9 @@ loadBraces t f = do
   -- Check for duplicates and conflicts. Only check each pair once.
   let bsErrs = concat [checkBraces x y | (x : ys) <- tails (VB.toList bsAll), y <- ys]
   if null bsErrs
-    then putStrLn "No duplicates and no conflicting braces have been detected."
+    then hPutStrLn h "No duplicates and no conflicting braces have been detected."
     else do
-      mapM_ putStr bsErrs
+      mapM_ (hPutStr h) bsErrs
       error "loadBraces: Duplicates and/or conflicting braces have been detected."
   return bsAll
 

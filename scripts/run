@@ -285,8 +285,7 @@ if [[ "$command" == "p" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} prepare \
           --analysis-name "$analysis_name" --rooted-tree "../$rooted_tree" --trees "../$trees" \
-          "${likelihood_specification_flags[@]}" \
-          | tee prepare.log
+          "${likelihood_specification_flags[@]}"
 elif [[ "$command" == "r" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} run \

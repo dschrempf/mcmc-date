@@ -32,6 +32,7 @@ import qualified Data.Vector as VB
 import qualified Data.Vector.Storable as VS
 import qualified Numeric.LinearAlgebra as L
 import Options
+import System.IO
 import System.Random.MWC hiding (uniform)
 import Prelude hiding (cycle)
 
@@ -152,108 +153,108 @@ toAssocMatrix xs
 
 -- Read in all trees, calculate posterior means and covariances of the branch
 -- lengths, and find the midpoint root of the mean tree.
-prepare :: PrepSpec -> IO ()
-prepare (PrepSpec an rt ts lhsp) = do
-  putStrLn "Read trees."
+prepare :: Handle -> PrepSpec -> IO ()
+prepare h (PrepSpec an rt ts lhsp) = do
+  hPutStrLn h "Read trees."
   treesAll <- someTrees Standard ts
   let nTrees = length treesAll
-  putStrLn $ show nTrees ++ " trees read."
+  hPutStrLn h $ show nTrees ++ " trees read."
 
   let nBurnInTrees = nTrees `div` 10
-  putStrLn $ "Skip a burn in of " ++ show nBurnInTrees ++ " trees."
+  hPutStrLn h $ "Skip a burn in of " ++ show nBurnInTrees ++ " trees."
   let trs = drop nBurnInTrees treesAll
 
-  putStrLn "Check if trees have unique leaves."
+  hPutStrLn h "Check if trees have unique leaves."
   if any duplicateLeaves treesAll
     then error "prepare: Trees have duplicate leaves."
-    else putStrLn "OK."
+    else hPutStrLn h "OK."
 
-  putStrLn "Read rooted tree."
+  hPutStrLn h "Read rooted tree."
   treeRooted <- oneTree Standard rt
 
-  putStrLn "Root the trees at the same point as the given rooted tree."
+  hPutStrLn h "Root the trees at the same point as the given rooted tree."
   let og = fst $ fromBipartition $ either error id $ bipartition treeRooted
       !treesRooted = force $ map (either error id . outgroup og) trs
 
-  putStrLn "Check if topologies of the trees in the tree list are equal."
-  putStrLn "Topology AND sub tree orders need to match."
+  hPutStrLn h "Check if topologies of the trees in the tree list are equal."
+  hPutStrLn h "Topology AND sub tree orders need to match."
   let differentTrees = nub $ map T.fromBranchLabelTree treesRooted
   if length differentTrees == 1
-    then putStrLn "OK."
+    then hPutStrLn h "OK."
     else do
-      putStrLn "Trees have different topologies or sub tree orders:"
-      BL.putStrLn $ BL.unlines $ map toNewickTopology differentTrees
+      hPutStrLn h "Trees have different topologies or sub tree orders:"
+      BL.hPutStrLn h $ BL.unlines $ map toNewickTopology differentTrees
       error "prepare: A single topology and equal sub tree orders are required."
 
-  putStrLn "Check the topology of the rooted tree."
-  putStrLn "The topology has to match the one of the trees in the tree list."
-  putStrLn "The sub tree orders may differ."
+  hPutStrLn h "Check the topology of the rooted tree."
+  hPutStrLn h "The topology has to match the one of the trees in the tree list."
+  hPutStrLn h "The sub tree orders may differ."
   let topoRooted = T.fromBranchLabelTree treeRooted
       topoHead = T.fromBranchLabelTree $ head treesRooted
   if T.equal' topoRooted topoHead
-    then putStrLn "OK."
+    then hPutStrLn h "OK."
     else do
-      putStrLn "Trees have different topologies."
-      BL.putStrLn $ toNewickTopology topoRooted
-      BL.putStrLn $ toNewickTopology topoHead
+      hPutStrLn h "Trees have different topologies."
+      BL.hPutStrLn h $ toNewickTopology topoRooted
+      BL.hPutStrLn h $ toNewickTopology topoHead
       error "prepare: A single topology is required."
 
-  putStrLn ""
-  putStrLn "Get the posterior means and the posterior covariance matrix."
+  hPutStrLn h ""
+  hPutStrLn h "Get the posterior means and the posterior covariance matrix."
   let pmR = getPosteriorMatrixMergeBranchesToRoot $ map (first fromLength) treesRooted
       (mu, sigma) = second L.unSym $ L.meanCov pmR
-  putStrLn $ "Number of branches: " <> show (L.size mu) <> "."
-  putStrLn "The mean branch lengths are:"
-  print mu
-  putStrLn $ "Minimum mean branch length: " <> show (VS.minimum mu)
-  putStrLn $ "Maximum mean branch length: " <> show (VS.maximum mu)
-  putStrLn $ "Minimum absolute covariance: " ++ show (L.minElement $ L.cmap abs sigma)
-  putStrLn $ "Maximum absolute covariance: " ++ show (L.maxElement $ L.cmap abs sigma)
+  hPutStrLn h $ "Number of branches: " <> show (L.size mu) <> "."
+  hPutStrLn h "The mean branch lengths are:"
+  hPutStrLn h $ show mu
+  hPutStrLn h $ "Minimum mean branch length: " <> show (VS.minimum mu)
+  hPutStrLn h $ "Maximum mean branch length: " <> show (VS.maximum mu)
+  hPutStrLn h $ "Minimum absolute covariance: " ++ show (L.minElement $ L.cmap abs sigma)
+  hPutStrLn h $ "Maximum absolute covariance: " ++ show (L.maxElement $ L.cmap abs sigma)
   let variances = L.takeDiag sigma
-  putStrLn "The variances are: "
-  print variances
+  hPutStrLn h "The variances are: "
+  hPutStrLn h $ show variances
   let minVariance = L.minElement variances
   when (minVariance <= 0) $ error "prepare: Minimum variance is zero or negative."
-  putStrLn $ "Minimum variance: " ++ show minVariance
-  putStrLn $ "Maximum variance: " ++ show (L.maxElement variances)
-  putStrLn "Comparison with complete covariance matrix:"
+  hPutStrLn h $ "Minimum variance: " ++ show minVariance
+  hPutStrLn h $ "Maximum variance: " ++ show (L.maxElement variances)
+  hPutStrLn h "Comparison with complete covariance matrix:"
   let f x = if abs x >= minVariance then (1.0 :: Double) else 0.0
       nSmaller = L.sumElements $ L.cmap f sigma
-  putStrLn $ "Number of elements of complete covariance matrix that are smaller than the minimum variance: " <> show nSmaller <> "."
+  hPutStrLn h $ "Number of elements of complete covariance matrix that are smaller than the minimum variance: " <> show nSmaller <> "."
 
-  putStrLn ""
-  putStrLn "Prepare the covariance matrix for phylogenetic likelihood calculation."
+  hPutStrLn h ""
+  hPutStrLn h "Prepare the covariance matrix for phylogenetic likelihood calculation."
   let (sigmaInv, (logDetSigma, sign)) = L.invlndet sigma
   when (sign /= 1.0) $ error "prepare: Determinant of covariance matrix is negative?"
   let (n, m) = L.size sigmaInv
-  putStrLn $ "Average element size of inverse covariance matrix: " <> show (L.sumElements sigmaInv / fromIntegral (n * m)) <> "."
-  putStrLn $ "The logarithm of the determinant of the covariance matrix is: " ++ show logDetSigma
+  hPutStrLn h $ "Average element size of inverse covariance matrix: " <> show (L.sumElements sigmaInv / fromIntegral (n * m)) <> "."
+  hPutStrLn h $ "The logarithm of the determinant of the covariance matrix is: " ++ show logDetSigma
 
-  putStrLn ""
+  hPutStrLn h ""
   lhd <- case lhsp of
     FullMultivariateNormal -> do
-      putStrLn "Use full covariance matrix."
+      hPutStrLn h "Use full covariance matrix."
       pure $ FullS mu (L.toRows $ sigmaInv) logDetSigma
     -- SparseMultivariateNormal rho -> do
-    --   putStrLn "Use a sparse covariance matrix to speed up phylogenetic likelihood calculation."
-    --   putStrLn "Table of \"Relative threshold, proportion of entries kept\"."
+    --   hPutStrLn "Use a sparse covariance matrix to speed up phylogenetic likelihood calculation."
+    --   hPutStrLn "Table of \"Relative threshold, proportion of entries kept\"."
     --   let rs = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-8, 1e-16]
-    --   putStrLn $
+    --   hPutStrLn $
     --     intercalate "\n" $
     --       [ show r ++ ", " ++ show p
     --         | r <- rs,
     --           let (_, _, p) = makeSparseWith r sigmaInv
     --       ]
-    --   putStrLn $ "Use a (provided) relative threshold of: " <> show rho <> "."
+    --   hPutStrLn $ "Use a (provided) relative threshold of: " <> show rho <> "."
     --   let (_, sigmaInvSL, _) = makeSparseWith rho sigmaInv
     --       sigmaS = L.inv (L.toDense sigmaInvSL)
     --       (_, (logDetSigmaS, signS)) = L.invlndet sigmaS
     --   when (signS /= 1.0) $ error "prepare: Determinant of sparse covariance matrix is negative?"
     --   pure $ SparseS mu sigmaInvSL logDetSigmaS
     SparseMultivariateNormal rho -> do
-      putStrLn "Use a sparse covariance/precision matrix to speed up phylogenetic likelihood calculation."
-      putStrLn "Estimate amtrices with glasso (graphical lasso)."
-      putStrLn $ "Use a (provided) penalty parameter of: " <> show rho <> "."
+      hPutStrLn h "Use a sparse covariance/precision matrix to speed up phylogenetic likelihood calculation."
+      hPutStrLn h "Estimate amtrices with glasso (graphical lasso)."
+      hPutStrLn h $ "Use a (provided) penalty parameter of: " <> show rho <> "."
       let (muS, ssS, xsNormalizedS) = S.scale pmR
           -- The precision matrix is the inverted correlation matrix sigma.
           (sigmaNormalizedSparse, precNormalizedSparse) = either error id $ S.graphicalLasso rho xsNormalizedS
@@ -267,18 +268,18 @@ prepare (PrepSpec an rt ts lhsp) = do
       let -- Some debug output.
           nFull = L.rows sigmaSparse * L.rows sigmaSparse
           nSparse = length precSparseList
-      putStrLn $ "Number of elements of full matrix: " <> show nFull
-      putStrLn $ "Number of elements of sparse matrix: " <> show nSparse
-      putStrLn $ "Proportion of elements kept: " <> show (fromIntegral nSparse / fromIntegral nFull :: Double)
+      hPutStrLn h $ "Number of elements of full matrix: " <> show nFull
+      hPutStrLn h $ "Number of elements of sparse matrix: " <> show nSparse
+      hPutStrLn h $ "Proportion of elements kept: " <> show (fromIntegral nSparse / fromIntegral nFull :: Double)
       pure $ SparseS muS precSparseList logDetSigmaS
     UnivariateNormal -> do
-      putStrLn "Use univariate normal distributions to speed up phylogenetic likelihood calculation."
+      hPutStrLn h "Use univariate normal distributions to speed up phylogenetic likelihood calculation."
       let vs = L.takeDiag sigma
       pure $ UnivariateS mu vs
-  putStrLn $ "Save the posterior means and (co)variances to " <> getDataFn an <> "."
+  hPutStrLn h $ "Save the posterior means and (co)variances to " <> getDataFn an <> "."
   encodeFile (getDataFn an) lhd
 
-  putStrLn "Prepare the rooted tree with mean branch lengths (used as initial state)."
+  hPutStrLn h "Prepare the rooted tree with mean branch lengths (used as initial state)."
   -- Use one of the trees of the tree list in case the given rooted tree has a
   -- different sub tree order. This case really happened to me...
   let treeR = head treesRooted
@@ -289,43 +290,45 @@ prepare (PrepSpec an rt ts lhsp) = do
       meanTreeRooted =
         fromMaybe (error "prepare: Could not label tree with mean branch lengths") $
           setBranches (map toLength' $ VS.toList means) treeR
-  putStrLn "The rooted tree with mean branch lengths is:"
-  BL.putStrLn $ toNewick $ lengthToPhyloTree meanTreeRooted
-  putStrLn $ "Save the rooted tree with mean branch lengths to " <> getMeanTreeFn an <> "."
+  hPutStrLn h "The rooted tree with mean branch lengths is:"
+  BL.hPutStrLn h $ toNewick $ lengthToPhyloTree meanTreeRooted
+  hPutStrLn h $ "Save the rooted tree with mean branch lengths to " <> getMeanTreeFn an <> "."
   BL.writeFile (getMeanTreeFn an) (toNewick $ lengthToPhyloTree meanTreeRooted)
 
 getCalibrations ::
+  Handle ->
   HandleProblematicCalibrations ->
   Tree e Name ->
   Maybe FilePath ->
   IO (VB.Vector (Calibration Double))
-getCalibrations _ _ Nothing = return VB.empty
-getCalibrations frc t (Just f) = loadCalibrations frc t f
+getCalibrations _ _ _ Nothing = return VB.empty
+getCalibrations h frc t (Just f) = loadCalibrations h frc t f
 
 getConstraints ::
+  Handle ->
   HandleProblematicConstraints ->
   Tree e Name ->
   Maybe FilePath ->
   IO (VB.Vector (Constraint Double))
-getConstraints _ _ Nothing = return VB.empty
-getConstraints frc t (Just f) = loadConstraints frc t f
+getConstraints _ _ _ Nothing = return VB.empty
+getConstraints h frc t (Just f) = loadConstraints h frc t f
 
-getBraces :: Tree e Name -> Maybe FilePath -> IO (VB.Vector (Brace Double))
-getBraces _ Nothing = return VB.empty
-getBraces t (Just f) = loadBraces t f
+getBraces :: Handle -> Tree e Name -> Maybe FilePath -> IO (VB.Vector (Brace Double))
+getBraces _ _ Nothing = return VB.empty
+getBraces h t (Just f) = loadBraces h t f
 
-getLikelihoodFunction :: String -> LikelihoodSpec -> IO (LikelihoodFunction I)
-getLikelihoodFunction an lhsp = do
+getLikelihoodFunction :: Handle -> String -> LikelihoodSpec -> IO (LikelihoodFunction I)
+getLikelihoodFunction h an lhsp = do
   lhd <- getData an
   -- Assert that likelihood specification on command line, and stored likelihood
   -- data are in agreement.
   case (lhsp, lhd) of
-    (FullMultivariateNormal, Full _ _ _) -> putStrLn "Using full multivariate normal distribution."
-    (SparseMultivariateNormal _, Sparse _ _ _) -> putStrLn "Using sparse multivariate normal distribution."
-    (UnivariateNormal, Univariate _ _) -> putStrLn "Using univariate normal distributions."
+    (FullMultivariateNormal, Full _ _ _) -> hPutStrLn h "Using full multivariate normal distribution."
+    (SparseMultivariateNormal _, Sparse _ _ _) -> hPutStrLn h "Using sparse multivariate normal distribution."
+    (UnivariateNormal, Univariate _ _) -> hPutStrLn h "Using univariate normal distributions."
     (l, r) -> do
-      putStrLn $ "Likelihood specification: " <> show l
-      putStrLn $ "Likelihood data: " <> show r
+      hPutStrLn h $ "Likelihood specification: " <> show l
+      hPutStrLn h $ "Likelihood data: " <> show r
       error "Likelihood specification and data do not match (see above)."
   pure $ likelihoodFunction lhd
 
@@ -351,6 +354,7 @@ getHTarget an lhsp ht md cb cs bs = do
       throwIO $ PatternMatchFail msg
 
 getMcmcProps ::
+  Handle ->
   Spec ->
   Maybe Algorithm ->
   IO
@@ -361,7 +365,7 @@ getMcmcProps ::
       Monitor I,
       Settings
     )
-getMcmcProps (Spec an cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg = do
+getMcmcProps h (Spec an cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg = do
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree an
 
@@ -369,14 +373,14 @@ getMcmcProps (Spec an cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg =
   -- various objects.
   --
   -- Calibrations.
-  cb <- getCalibrations clsFlag meanTree cls
+  cb <- getCalibrations h clsFlag meanTree cls
   let ht = fromMaybe 1.0 $ getMeanRootHeight cb
   -- Constraints.
-  cs <- getConstraints cnsFlag meanTree cns
+  cs <- getConstraints h cnsFlag meanTree cns
   -- Braces.
-  bs <- getBraces meanTree brs
+  bs <- getBraces h meanTree brs
   -- Likelihood function.
-  lh' <- getLikelihoodFunction an lhsp
+  lh' <- getLikelihoodFunction h an lhsp
   -- Generalized posterior function for Hamiltonian proposal.
   mHTarget <-
     if ham
@@ -401,18 +405,18 @@ getMcmcProps (Spec an cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg =
         Just Mc3A -> eWith "Loading initial state not implemented for MC3 algorithm."
         Nothing -> eWith "Loading initial state not possible."
         Just MhgA -> do
-          putStrLn "Loading old state; if this fails fail, try without '--init-from-save'."
+          hPutStrLn h "Loading old state; if this fails fail, try without '--init-from-save'."
           mhgA <- mhgLoadUnsafe pr' lh' ccNaive mon' (AnalysisName anSave)
           let startInformed = state $ link $ fromMHG mhgA
               ccInformed = cycle $ fromMHG mhgA
-          putStrLn "Success."
-          putStrLn "Initializing chain with last state from save."
+          hPutStrLn h "Success."
+          hPutStrLn h "Initializing chain with last state from save."
           if length (ccProposals ccInformed) == length (ccProposals ccNaive)
             then do
-              putStrLn "Using tuning parameters from save."
+              hPutStrLn h "Using tuning parameters from save."
               pure (startInformed, ccInformed, burnInInformed)
             else do
-              putStrLn "Cycle has changed, start with untuned proposals."
+              hPutStrLn h "Cycle has changed, start with untuned proposals."
               pure (startInformed, ccNaive, burnIn)
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
@@ -433,9 +437,9 @@ getMcmcProps (Spec an cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg =
   return (start', pr', lh', cc', mon', mcmcS)
 
 -- Run the Metropolis-Hastings-Green algorithm.
-runMetropolisHastingsGreen :: Spec -> Algorithm -> IO ()
-runMetropolisHastingsGreen spec alg = do
-  (i, p, l, c, m, s) <- getMcmcProps spec (Just alg)
+runMetropolisHastingsGreen :: Handle -> Spec -> Algorithm -> IO ()
+runMetropolisHastingsGreen h spec alg = do
+  (i, p, l, c, m, s) <- getMcmcProps h spec (Just alg)
 
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For
@@ -460,13 +464,13 @@ runMetropolisHastingsGreen spec alg = do
 --     startX = x & rateMean -~ 0.002
 --     startY = x & rateMean +~ 0.002
 --     dNm = numDiffLogPosteriorFunc cb cs muBoxed sigmaInvBoxed logDetSigma startX startY 0.004
--- putStrLn $ "GRAD: " <> show gAd
--- putStrLn $ "NUM: " <> show dNm
+-- hPutStrLn $ "GRAD: " <> show gAd
+-- hPutStrLn $ "NUM: " <> show dNm
 -- error "Debug."
 
-continueMetropolisHastingsGreen :: Spec -> Algorithm -> IO ()
-continueMetropolisHastingsGreen spec alg = do
-  (_, p, l, c, m, _) <- getMcmcProps spec Nothing
+continueMetropolisHastingsGreen :: Handle -> Spec -> Algorithm -> IO ()
+continueMetropolisHastingsGreen h spec alg = do
+  (_, p, l, c, m, _) <- getMcmcProps h spec Nothing
   let an = AnalysisName $ analysisName spec
   s <- settingsLoad an
   let is = if profile spec then iterationsProf else iterations
@@ -478,9 +482,9 @@ continueMetropolisHastingsGreen spec alg = do
       a <- mc3Load p l c m an
       void $ mcmcContinue is s a
 
-runMarginalLikelihood :: Spec -> IO ()
-runMarginalLikelihood spec = do
-  (i, p, l, c, m, _) <- getMcmcProps spec Nothing
+runMarginalLikelihood :: Handle -> Spec -> IO ()
+runMarginalLikelihood h spec = do
+  (i, p, l, c, m, _) <- getMcmcProps h spec Nothing
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For
   -- real analyses, use 'createSystemRandom'.
@@ -511,7 +515,15 @@ main :: IO ()
 main = do
   cmd <- parseArgs
   case cmd of
-    Prepare p -> prepare p
-    Run s a -> runMetropolisHastingsGreen s a
-    Continue s a -> continueMetropolisHastingsGreen s a
-    MarginalLikelihood s -> runMarginalLikelihood s
+    Prepare p -> do
+      let fn = (prepAnalysisName p <> ".prepare.log")
+      withFile fn WriteMode $ \h -> prepare h p
+    Run s a -> do
+      let fn = (analysisName s <> ".run.log")
+      withFile fn WriteMode $ \h -> runMetropolisHastingsGreen h s a
+    Continue s a -> do
+      let fn = (analysisName s <> ".continue.log")
+      withFile fn WriteMode $ \h -> continueMetropolisHastingsGreen h s a
+    MarginalLikelihood s -> do
+      let fn = (analysisName s <> ".mlh.log")
+      withFile fn WriteMode $ \h -> runMarginalLikelihood h s
