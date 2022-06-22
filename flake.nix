@@ -65,12 +65,9 @@
           pkgs.haskell.lib.doBenchmark p;
       in
       {
-        packages = {
-          mcmc-date = mcmc-date-package;
-          default = mcmc-date-package;
-        };
+        packages.default = mcmc-date-package;
 
-        devShell = hpkgs.shellFor {
+        devShells.default = hpkgs.shellFor {
           shellHook =
             let
               scripts = ./scripts;
