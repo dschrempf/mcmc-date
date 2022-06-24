@@ -135,7 +135,7 @@ validateConstraint c = case areDirectDescendants y o of
   LeftIsAncestorOfRight ->
     error $ getErrMsg "Bogus constraint; younger node is direct ancestor of older node (?)."
   LeftIsDescendantOfRight ->
-    Left $ getErrMsg "Redundant constraint; old node is direct ancestors of young node."
+    Left $ getErrMsg "Redundant constraint; old node is direct ancestor of young node."
   Unrelated -> Right c
   where
     n = constraintName c
@@ -336,13 +336,13 @@ loadConstraints h frc t f = do
         hPutStrLn h "No duplicate constraints have been detected."
         return allConstraints
       else do
-        hPutStrLn h "The following duplicates have been detected:"
+        hPutStrLn h "The following duplicate constraints have been detected:"
         mapM_ (hPutStrLn h . describeEqual) equalCs
         -- Extract the unique duplicate constraints (they are the right ones of
         -- each tuple).
         let uniqueDuplicateConstraints = nub $ map snd equalCs
         hPutStrLn h $
-          "The number of unique duplicate constraints is: "
+          "The following number of unnecessary duplicate constraints will be removed:"
             <> show (length uniqueDuplicateConstraints)
             <> "."
         return $ allConstraints \\ uniqueDuplicateConstraints
@@ -360,7 +360,7 @@ loadConstraints h frc t f = do
         -- each tuple).
         let uniqueRedundantConstraints = nub $ map snd redundantCs
         hPutStrLn h $
-          "The number of unique redundant constraints is: "
+          "The following number of unnecessary redundant constraints will be removed: "
             <> show (length uniqueRedundantConstraints)
             <> "."
         return $ uniqueConstraints \\ uniqueRedundantConstraints
