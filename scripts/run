@@ -11,9 +11,9 @@ usage() {
     echo "-k Activate constraints"
     echo
     echo "Algorithm related options:"
-    echo "-i NAME Initialize state and cycle from previous analysis with NAME"
-    echo "-H Activate Hamiltonian proposal (slow, but great convergence)"
-    echo "-m Use Mc3 algorithm insteahd of Mhg"
+    echo "-i NAME  Initialize state and cycle from previous analysis with NAME"
+    echo "-H       Activate Hamiltonian proposal (slow, but great convergence)"
+    echo "-m       Use Mc3 algorithm insteahd of Mhg"
     echo
     echo "Other options:"
     echo "-f FILE    Use a different analysis configuration file (relative path)"
