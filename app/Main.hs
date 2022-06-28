@@ -520,10 +520,16 @@ main = do
       withFile fn WriteMode $ \h -> prepare h p
     Run s a -> do
       let fn = (analysisName s <> ".run.log")
-      withFile fn WriteMode $ \h -> runMetropolisHastingsGreen h s a
+      withFile fn WriteMode $ \h ->
+        hSetBuffering h LineBuffering
+          >> runMetropolisHastingsGreen h s a
     Continue s a -> do
       let fn = (analysisName s <> ".continue.log")
-      withFile fn WriteMode $ \h -> continueMetropolisHastingsGreen h s a
+      withFile fn WriteMode $ \h ->
+        hSetBuffering h LineBuffering
+          >> continueMetropolisHastingsGreen h s a
     MarginalLikelihood s -> do
       let fn = (analysisName s <> ".mlh.log")
-      withFile fn WriteMode $ \h -> runMarginalLikelihood h s
+      withFile fn WriteMode $ \h ->
+        hSetBuffering h LineBuffering
+          >> runMarginalLikelihood h s
