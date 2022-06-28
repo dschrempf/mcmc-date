@@ -27,7 +27,6 @@ import Data.Maybe
 import qualified Data.Vector.Unboxed as VU
 import qualified ELynx.Topology as T
 import ELynx.Tree
-import Statistics.Function
 import Statistics.Sample
 import System.Environment
 import System.FilePath
