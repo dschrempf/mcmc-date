@@ -37,11 +37,13 @@ getTree l =
   either error id $
     toLengthTree $
       either error id $
-        parseOnly (oneNewick Standard) $ BS.split '\t' l !! 4
+        parseOnly (oneNewick Standard) $
+          BS.split '\t' l !! 4
 
 toNewickTopology :: T.Topology Name -> BL.ByteString
 toNewickTopology =
-  toNewick . first (const $ Phylo Nothing Nothing)
+  toNewick
+    . first (const $ Phylo Nothing Nothing)
     . T.toBranchLabelTreeWith (0 :: Int) ""
 
 checkTopologies :: [Tree e Name] -> IO ()
@@ -70,8 +72,19 @@ type CiLower = Double
 -- 95 percent confidence interval, upper bound.
 type CiUpper = Double
 
-getMeanVarianceTrees :: [Tree Length Name] -> (Tree Length Name, Tree Length Name)
-getMeanVarianceTrees ts = (meanTree, varianceTree)
+-- Ugly!
+--
+-- Here, we calculate the mean and variance of each branch separately. It is a
+-- fact but also a miracle, that the tree with mean branch lengths is again
+-- ultrametric. This is, because the mean of a sum of variables (here, branch
+-- lengths) is equal to the sum of the means.
+--
+-- Easier: Work with the heights only (hss).
+getMeanVarianceTrees ::
+  [(Int, Name, Mean, Variance, MinimumAge, MaximumAge, CiLower, CiUpper)] ->
+  [Tree Length Name] ->
+  (Tree Length Name, Tree Length Name, Tree Length Name)
+getMeanVarianceTrees hss ts = (meanTree, varianceTree, combinedTree)
   where
     -- The data types are similar to the ones in 'getHeights'.
     lss :: [VU.Vector Double]
@@ -79,13 +92,38 @@ getMeanVarianceTrees ts = (meanTree, varianceTree)
     lss' = MU.toRows $ MU.fromColumns lss
     msvs :: [(Mean, Variance)]
     msvs = map meanVariance lss'
+    ms = map fst msvs
+    vs = map snd msvs
+    t = head ts
     toLength' = either (error . (<>) "getMeanVarianceTrees: ") id . toLength
     meanTree =
       fromMaybe (error "getMeanVarianceTrees: Could not label tree with means lengths.") $
-        setBranches (map (toLength' . fst) msvs) $ head ts
+        setBranches (map toLength' ms) t
     varianceTree =
       fromMaybe (error "getMeanVarianceTrees: Could not label tree with variance lengths.") $
-        setBranches (map (toLength' . snd) msvs) $ head ts
+        setBranches (map toLength' vs) t
+    ls = map (\(_, _, _, _, _, _, x, _) -> x) hss
+    rs = map (\(_, _, _, _, _, _, _, x) -> x) hss
+    is = labels $ identify t
+    ns = labels t
+    combinedLabels = [setNodeLabel i m v n | (i, m, v, n) <- zip4 is ls rs ns]
+    combinedTree =
+      fromMaybe (error "getMeanVarianceTrees: Could not label tree with combined information.") $
+        setLabels combinedLabels meanTree
+
+setNodeLabel :: Int -> CiLower -> CiUpper -> Name -> Name
+setNodeLabel i l r n =
+  n
+    <> "[&index="
+    <> toNmI i
+    <> ",posterior=1.0,age_95%_HPD={"
+    <> toNm l
+    <> ","
+    <> toNm r
+    <> "}]"
+  where
+    toNm = Name . BB.toLazyByteString . BB.doubleDec
+    toNmI = Name . BB.toLazyByteString . BB.intDec
 
 -- Returns [(NodeIndex, NodeName, Heights)].
 getHeights :: [Tree Length Name] -> [(Int, Name, VU.Vector Double)]
@@ -117,16 +155,19 @@ summarizeHeights ((i, nm, hs) : xs) = (i, nm, mu, va, minA, maxA, ciL, ciU) : su
     (mu, va) = meanVariance hs
     minA = VU.minimum hs
     maxA = VU.maximum hs
-    l = VU.length hs
-    -- 2.5% of the length. To calculate the 95% confidence intervals.
-    iCi :: Int
-    iCi = floor (fromIntegral l * 0.025 :: Double)
-    nCi :: Int
-    nCi = floor (fromIntegral l * 0.95 :: Double)
-    hsSorted = sort hs
-    hsCi = VU.slice iCi nCi hsSorted
-    ciL = VU.head hsCi
-    ciU = VU.last hsCi
+    -- -- 2.5% of the length. To calculate the 95% confidence intervals.
+    -- l = VU.length hs
+    -- iCi :: Int
+    -- iCi = floor (fromIntegral l * 0.025 :: Double)
+    -- nCi :: Int
+    -- nCi = floor (fromIntegral l * 0.95 :: Double)
+    -- hsSorted = sort hs
+    -- hsCi = VU.slice iCi nCi hsSorted
+    -- ciL = VU.head hsCi
+    -- ciU = VU.last hsCi
+    s = sqrt va
+    ciL = max 0 $ mu - 2 * s
+    ciU = mu + 2 * s
 
 headerSummary :: BL.ByteString
 headerSummary = "Index\tName\tMean\tVariance\tMin\tMax\t95CILower\t95CIUpper"
@@ -197,13 +238,16 @@ main = do
       toDrop = round (fromIntegral l * bi) :: Int
       trs = drop toDrop trs'
   checkTopologies trs
-  let (meanTree, varianceTree) = getMeanVarianceTrees trs
-      hss = getHeights trs
+  let hss = getHeights trs
+      hssS = summarizeHeights hss
+      (meanTree, varianceTree, combinedTree) = getMeanVarianceTrees hssS trs
       fnMeanTree = dropExtension fn ++ ".tree.mean"
       fnVarianceTree = dropExtension fn ++ ".tree.variance"
+      fnCombinedTree = dropExtension fn ++ ".tree.combined"
       fnSummary = dropExtension fn ++ ".ages.summary"
       fnFull = dropExtension fn ++ ".ages.full"
   BL.writeFile fnMeanTree $ toNewick $ lengthToPhyloTree meanTree
   BL.writeFile fnVarianceTree $ toNewick $ lengthToPhyloTree varianceTree
-  BL.writeFile fnSummary $ renderTableSummary $ summarizeHeights hss
+  BL.writeFile fnCombinedTree $ toNexusTrees [("Tree1", lengthToPhyloTree combinedTree)]
+  BL.writeFile fnSummary $ renderTableSummary hssS
   BL.writeFile fnFull $ renderTable hss
