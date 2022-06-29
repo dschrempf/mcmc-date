@@ -39,12 +39,12 @@ import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Csv hiding (Name)
 import Data.Function
 import Data.List
+import qualified Data.Set as S
 import qualified Data.Vector as VB
 import ELynx.Tree hiding (partition)
 import GHC.Generics
 import Mcmc.Prior hiding (positive)
 import Mcmc.Tree.Lens
-import Mcmc.Tree.Mrca
 import Mcmc.Tree.Prior.Node.Internal
 import Mcmc.Tree.Types
 import System.IO
@@ -165,7 +165,7 @@ calibration ::
 calibration t n xs l = Calibration n p i l
   where
     err msg = error $ "calibration: " ++ n ++ ": " ++ msg
-    p = either err id $ mrca xs t
+    p = either err id $ getPathToMrca (S.fromList xs) t
     -- NOTE: Identifying the tree multiple times may be slow when creating many
     -- calibrations. But this is only done once in the beginning.
     i = label $ getSubTreeUnsafe p $ identify t

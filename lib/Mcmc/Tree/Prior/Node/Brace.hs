@@ -33,12 +33,12 @@ import Data.Aeson
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.List
 import Data.Maybe
+import qualified Data.Set as S
 import qualified Data.Vector as VB
 import ELynx.Tree hiding (partition)
 import GHC.Generics
 import Mcmc
 import Mcmc.Tree.Lens
-import Mcmc.Tree.Mrca
 import Mcmc.Tree.Prior.Node.Internal
 import Mcmc.Tree.Types
 import System.IO
@@ -101,7 +101,7 @@ brace t n xss s
     msg m = "brace: " ++ n ++ ": " ++ m
     err m = error $ msg m
     iTr = identify t
-    ps = map (\xs -> either err id $ mrca xs t) xss
+    ps = map (\xs -> either err id $ getPathToMrca (S.fromList xs) t) xss
     is = map (\p -> label $ getSubTreeUnsafe p iTr) ps
     -- We also check for equal paths above, but well.
     getErr Equal = Just $ msg "Bogus brace; two nodes are equal (?)."

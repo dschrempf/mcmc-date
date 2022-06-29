@@ -139,11 +139,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1655882210,
-        "narHash": "sha256-g67aPAE8zsVOfrYq80x+JqghmvOcpbZmn9xUM/dynQs=",
+        "lastModified": 1656514818,
+        "narHash": "sha256-rJX621kuROYRBcGU677j3yY4XBbn59LhX3ehdZeOcTc=",
         "owner": "dschrempf",
         "repo": "elynx",
-        "rev": "1abf25d576c03ce0d1a35a6de583963300215828",
+        "rev": "b9315fee6cfb4b3d41041da29e0ad98290296ba3",
         "type": "github"
       },
       "original": {

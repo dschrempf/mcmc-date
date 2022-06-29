@@ -38,12 +38,12 @@ import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Csv hiding (Name)
 import Data.Either
 import Data.List
+import qualified Data.Set as S
 import qualified Data.Vector as VB
-import ELynx.Tree
+import ELynx.Tree hiding (isAncestor)
 import GHC.Generics
 import Mcmc.Prior
 import Mcmc.Tree.Lens
-import Mcmc.Tree.Mrca
 import Mcmc.Tree.Prior.Node.Internal
 import Mcmc.Tree.Types
 import System.IO
@@ -173,9 +173,9 @@ constraint t n ys os p = validateConstraint $ Constraint n pY iY pO iO p
     -- NOTE: Identifying the tree multiple times may be slow when creating many
     -- constraints. But this is only done once in the beginning.
     iTr = identify t
-    pY = either err id $ mrca ys t
+    pY = either err id $ getPathToMrca (S.fromList ys) t
     iY = label $ getSubTreeUnsafe pY iTr
-    pO = either err id $ mrca os t
+    pO = either err id $ getPathToMrca (S.fromList os) t
     iO = label $ getSubTreeUnsafe pO iTr
 {-# SPECIALIZE constraint ::
   (Ord a, Show a) =>
