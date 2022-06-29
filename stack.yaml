@@ -1,22 +1,22 @@
-resolver: nightly-2022-03-21
+resolver: nightly-2022-05-12
 
 packages:
   - .
 
 extra-deps:
   - glasso-0.1.0@sha256:abf1b0cb0b9cc8c106f833a2549e2be95111a58296d6cc01c39e18c03abef797,930
-  - ../circular
-  - ../covariance
-  - ../dirichlet
-  - ../elynx/elynx-nexus
-  - ../elynx/elynx-tools
-  - ../elynx/elynx-tree
+  # - ../circular
+  # - ../covariance
+  # - ../dirichlet
+  # - ../elynx/elynx-nexus
+  # - ../elynx/elynx-tools
+  # - ../elynx/elynx-tree
   - ../mcmc/mcmc
 
 ghc-options:
-  #   # Optimizations.
+  # Optimizations.
   "$everything": -fllvm -O2
-#   # # Profiling.
-#   # "$locals": -eventlog
-#   # Weeder 2.0.
-#   "$locals": -fwrite-ide-info
+  # # Profiling.
+  # "$locals": -eventlog
+  # # Weeder 2.0.
+  # "$locals": -fwrite-ide-info
