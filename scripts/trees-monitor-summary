@@ -27,6 +27,7 @@ import Data.Maybe
 import qualified Data.Vector.Unboxed as VU
 import qualified ELynx.Topology as T
 import ELynx.Tree
+import Statistics.Function
 import Statistics.Sample
 import System.Environment
 import System.FilePath
@@ -154,19 +155,21 @@ summarizeHeights ((i, nm, hs) : xs) = (i, nm, mu, va, minA, maxA, ciL, ciU) : su
     (mu, va) = meanVariance hs
     minA = VU.minimum hs
     maxA = VU.maximum hs
-    -- -- 2.5% of the length. To calculate the 95% confidence intervals.
-    -- l = VU.length hs
-    -- iCi :: Int
-    -- iCi = floor (fromIntegral l * 0.025 :: Double)
-    -- nCi :: Int
-    -- nCi = floor (fromIntegral l * 0.95 :: Double)
-    -- hsSorted = sort hs
-    -- hsCi = VU.slice iCi nCi hsSorted
-    -- ciL = VU.head hsCi
-    -- ciU = VU.last hsCi
-    s = sqrt va
-    ciL = max 0 $ mu - 2 * s
-    ciU = mu + 2 * s
+    -- -- Use normal distribution to approximate confidence intervals. Tom didn't like this.
+    -- s = sqrt va
+    -- ciL = max 0 $ mu - 2 * s
+    -- ciU = mu + 2 * s
+    --
+    -- 2.5% of the length. To calculate the 95% confidence intervals.
+    l = VU.length hs
+    iCi :: Int
+    iCi = floor (fromIntegral l * 0.025 :: Double)
+    nCi :: Int
+    nCi = floor (fromIntegral l * 0.95 :: Double)
+    hsSorted = sort hs
+    hsCi = VU.slice iCi nCi hsSorted
+    ciL = VU.head hsCi
+    ciU = VU.last hsCi
 
 headerSummary :: BL.ByteString
 headerSummary = "Index\tName\tMean\tVariance\tMin\tMax\t95CILower\t95CIUpper"
