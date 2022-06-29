@@ -19,6 +19,7 @@ module Mcmc.Tree.Proposal.Unconstrained
     pulley,
     scaleNormAndTreeContrarily,
     scaleVarianceAndTree,
+    scaleVarianceAndTreeAutocorrelated,
 
     -- * Helper functions
     scaleUnconstrainedTreeF,
@@ -282,18 +283,19 @@ scaleNormAndTreeContrarily tr sd =
     -- Ignore the stem, see note above.
     nBranches = length tr - 1
 
-scaleVarianceAndTreeFunction ::
+scaleVarianceAndTreeF ::
+  -- Number of branches excluding the root.
   Int ->
   (Double, LengthTree Double) ->
   Double ->
   (Double, LengthTree Double)
 -- Do not touch the stem, this leads to problems with negative stem lengths (or
 -- NaNs).
-scaleVarianceAndTreeFunction n (x, LengthTree tr) u =
+scaleVarianceAndTreeF n (x, LengthTree tr) u =
   (x * u * u, LengthTree $ tr & forestL %~ map (first f))
   where
     -- The calculation of sample mean requires a separate traversal of the tree.
-    -- This may be slow.
+    -- This is slow.
     --
     -- Specifically ignore the stem.
     s = sum $ concatMap branches $ forest tr
@@ -303,16 +305,16 @@ scaleVarianceAndTreeFunction n (x, LengthTree tr) u =
     -- negative branch lengths.
     f b = let b' = (b - mu) * u + mu in if b' > 0 then b' else 0 / 0
 
-scaleVarianceAndTreePFunction ::
-  -- Number of branches.
+scaleVarianceAndTreeP ::
+  -- Number of branches excluding the root.
   Int ->
   Shape Double ->
   TuningParameter ->
   PFunction (Double, LengthTree Double)
-scaleVarianceAndTreePFunction n k t =
+scaleVarianceAndTreeP n k t =
   genericContinuous
     (gammaDistr (k / t) (t / k))
-    (scaleVarianceAndTreeFunction n)
+    (scaleVarianceAndTreeF n)
     (Just recip)
     (Just jacobianFunction)
   where
@@ -354,11 +356,12 @@ scaleVarianceAndTree ::
   PName ->
   PWeight ->
   Tune ->
+  -- | (Variance, Tree).
   Proposal (Double, LengthTree Double)
 scaleVarianceAndTree tr sd =
   createProposal
     description
-    (scaleVarianceAndTreePFunction nBranches sd)
+    (scaleVarianceAndTreeP nBranches sd)
     PFast
     (PDimension $ nBranches + 1)
   where
@@ -373,3 +376,64 @@ scaleUnconstrainedTreeF u = first (* u)
 -- | Scale the branches of an unconstrained tree. Do not scale the stem.
 scaleUnconstrainedTreeWithoutStemF :: Double -> Tree Double a -> Tree Double a
 scaleUnconstrainedTreeWithoutStemF u tr = tr & forestL %~ map (scaleUnconstrainedTreeF u)
+
+-- The same notes as in 'scaleVarianceAndTreeF' apply.
+scaleVarianceAndTreeAutocorrelatedF ::
+  -- (Mean rate at root (unchanged but used), variance, rate tree).
+  (Double, Double, LengthTree Double) ->
+  Double ->
+  (Double, Double, LengthTree Double)
+scaleVarianceAndTreeAutocorrelatedF (muR, v, LengthTree (Node rR lbR tsR)) u =
+  (muR, v * u * u, LengthTree $ Node rR lbR $ map (scaleF muR muR) tsR)
+  where
+    -- Read like "scaleF oldParentRate newParentRate tree".
+    scaleF mu mu' (Node r lb ts) =
+      let -- Old difference.
+          d = (r - mu)
+          -- New difference.
+          d' = u * d
+          -- New value; use new mean here!
+          y = mu' + d'
+          r' = if y > 0 then y else 0 / 0
+       in (Node r' lb $ map (scaleF r y) ts)
+
+scaleVarianceAndTreeAutocorrelatedP ::
+  -- Number of branches excluding the root.
+  Int ->
+  Shape Double ->
+  TuningParameter ->
+  PFunction (Double, Double, LengthTree Double)
+scaleVarianceAndTreeAutocorrelatedP n k t =
+  genericContinuous
+    (gammaDistr (k / t) (t / k))
+    scaleVarianceAndTreeAutocorrelatedF
+    (Just recip)
+    (Just jacobianFunction)
+  where
+    -- Minus 2 because of the reverse transform.
+    -- Plus 2 because of the scaling of the variance.
+    -- Is 0 :).
+    -- Plus n because the branches are scaled.
+    jacobianFunction _ u = Exp $ fromIntegral n * log u
+
+-- | See 'scaleVarianceAndTree', but scale the difference between current branch
+-- and parent branch.
+scaleVarianceAndTreeAutocorrelated ::
+  -- | The topology of the tree is used to precompute the number of inner branches.
+  Tree e a ->
+  StandardDeviation Double ->
+  PName ->
+  PWeight ->
+  Tune ->
+  -- | (Mean (used but unchanged), Variance, Tree).
+  Proposal (Double, Double, LengthTree Double)
+scaleVarianceAndTreeAutocorrelated tr sd =
+  createProposal
+    description
+    (scaleVarianceAndTreeAutocorrelatedP nBranches sd)
+    PFast
+    (PDimension $ nBranches + 1)
+  where
+    description = PDescription $ "Scale variance and autocorrelated tree; sd: " <> show sd
+    -- Ignore the stem.
+    nBranches = length tr - 1

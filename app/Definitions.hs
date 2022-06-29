@@ -172,20 +172,25 @@ rateMeanRateTreeL = tupleLens rateMean rateTree
 rateVarianceRateTreeL :: Lens' I (Double, LengthTree Double)
 rateVarianceRateTreeL = tupleLens rateVariance rateTree
 
+rateMeanVarianceTreeL :: Lens' I (Double, Double, LengthTree Double)
+rateMeanVarianceTreeL = tripleLens rateMean rateVariance rateTree
+
 -- Proposals on the rate tree.
 proposalsRateTree :: Tree e a -> [Proposal I]
 proposalsRateTree t =
-  liftProposalWith jacobianRootBranch rateMeanRateTreeL psMeanContra
-    : liftProposalWith jacobianRootBranch rateVarianceRateTreeL psVariance
+  liftProposalWith jacobianRootBranch rateMeanRateTreeL pMeanContra
+    : liftProposalWith jacobianRootBranch rateVarianceRateTreeL pVarianceUncorrelated
+    : liftProposalWith jacobianRootBranch rateMeanVarianceTreeL pVarianceAutocorrelated
     : map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
     ++ map (liftProposal rateTree) psOthers
   where
     w = weightNBranches $ length t
     -- I am proud of the next three proposals :).
     nMR = PName "[R] Rate mean, Rate tree"
-    psMeanContra = scaleNormAndTreeContrarily t 100 nMR w Tune
+    pMeanContra = scaleNormAndTreeContrarily t 100 nMR w Tune
     nVR = PName "[R] Rate variance, Rate tree"
-    psVariance = scaleVarianceAndTree t 100 nVR w Tune
+    pVarianceUncorrelated = scaleVarianceAndTree t 100 nVR w Tune
+    pVarianceAutocorrelated = scaleVarianceAndTreeAutocorrelated t 100 nVR w Tune
     ps hn n =
       scaleBranches t hn 100 n (pWeight 3) Tune
         ++ scaleSubTrees t hn 100 n (pWeight 3) (pWeight 8) Tune
