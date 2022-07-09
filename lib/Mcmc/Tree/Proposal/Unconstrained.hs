@@ -40,7 +40,7 @@ import Mcmc.Tree.Proposal.Internal
 import Mcmc.Tree.Types
 import Numeric.Log hiding (sum)
 import Statistics.Distribution.Gamma
-import System.Random.MWC
+import System.Random.Stateful
 
 scaleBranch ::
   Shape Double ->
@@ -178,7 +178,7 @@ pulleyTruncatedNormalSample ::
   StandardDeviation Double ->
   TuningParameter ->
   Tree Double a ->
-  GenIO ->
+  IOGenM StdGen ->
   IO (Double, Log Double)
 pulleyTruncatedNormalSample s t (Node _ _ [l, r])
   | brL <= 0 =

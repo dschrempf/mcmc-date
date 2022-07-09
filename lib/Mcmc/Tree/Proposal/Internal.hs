@@ -30,7 +30,7 @@ import Mcmc.Tree.Types
 import Numeric.Log hiding (sum)
 import Statistics.Distribution hiding (Mean)
 import Statistics.Distribution.TruncatedNormal
-import System.Random.MWC
+import System.Random.Stateful
 
 -- | Height boundary data.
 data HeightBoundaryData = HeightBoundaryData
@@ -110,7 +110,7 @@ truncatedNormalSample ::
   TuningParameter ->
   LowerBoundary Double ->
   UpperBoundary Double ->
-  GenIO ->
+  IOGenM StdGen ->
   -- (NewValue, MHGRatioWithoutJacobian)
   IO (Double, Log Double)
 truncatedNormalSample m s t a b g = do

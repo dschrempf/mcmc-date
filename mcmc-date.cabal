@@ -96,7 +96,7 @@ library
     , log-domain
     , math-functions
     , mcmc
-    , mwc-random
+    , random
     , statistics
     , vector
     , zlib
@@ -142,8 +142,8 @@ executable mcmc-date-run
     , matrices
     , mcmc
     , mcmc-date
-    , mwc-random
     , optparse-applicative
+    , random
     , statistics
     , vector
 

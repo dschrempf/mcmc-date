@@ -45,7 +45,7 @@ import Mcmc.Tree.Lens
 import Mcmc.Tree.Proposal.Internal
 import Mcmc.Tree.Types
 import Numeric.Log hiding (sum)
-import System.Random.MWC
+import System.Random.Stateful
 
 slideNodeAtUltrametricPFunction ::
   Path ->
@@ -229,7 +229,7 @@ pulleyUltrametricTruncatedNormalSample ::
   StandardDeviation Double ->
   TuningParameter ->
   HeightTree Double ->
-  GenIO ->
+  IOGenM StdGen ->
   IO (Double, Log Double)
 pulleyUltrametricTruncatedNormalSample s t (HeightTree (Node ht _ [l, r]))
   | brL <= 0 =
