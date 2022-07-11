@@ -444,7 +444,7 @@ runMetropolisHastingsGreen h spec alg = do
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For
   -- real analyses, use 'createSystemRandom'.
-  g <- newIOGenM $ mkStdGen 0
+  let g = mkStdGen 0
 
   case alg of
     MhgA -> do
@@ -488,7 +488,7 @@ runMarginalLikelihood h spec = do
   -- Create a seed value for the random number generator. Actually, the
   -- 'create' function is deterministic, but useful during development. For
   -- real analyses, use 'createSystemRandom'.
-  g <- newIOGenM $ mkStdGen 0
+  let g = mkStdGen 0
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
   let prof = profile spec
