@@ -355,7 +355,7 @@ calibrateSoftS c (HeightTree t) = calibrateSoftF l h
 -- | See 'calibrateSoftS'.
 calibrateSoftF :: RealFloat a => Interval a -> PriorFunctionG a a
 calibrateSoftF (Interval a' b') h
-  | h < 0 = error "calibrateSoftF: Height is negative."
+  | h < 0 = 0
   | otherwise = lowerCheck * upperCheck
   where
     lowerCheck = case a' of
