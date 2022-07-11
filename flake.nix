@@ -77,18 +77,25 @@
             '';
           packages = _: [ mcmc-date-package ];
           nativeBuildInputs = with pkgs; [
+            # Misc.
             bashInteractive
+            hpkgs.cabal-install
+            hpkgs.haskell-language-server
+
+            # Analysis.
             dschrempf.beast2
             dschrempf.figtree
             dschrempf.iqtree2
             dschrempf.phylobayes
             dschrempf.tracer
+
+            # ELynx.
             hpkgs.elynx
             hpkgs.slynx
             hpkgs.tlynx
 
-            hpkgs.cabal-install
-            hpkgs.haskell-language-server
+            # Profiling.
+            hpkgs.eventlog2html
           ];
           buildInputs = with pkgs; [
           ];
