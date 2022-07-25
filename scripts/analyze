@@ -12,7 +12,11 @@ function analyze_tree_monitor() {
     trees-monitor-to-nexus "${1}.thinned"
 
     echo "Compute other summary statistics."
-    trees-monitor-summary "${1}" 0.25
+    if [[ "$1" == *"timetree"* ]]; then
+      trees-monitor-summary --ages "${1}" 0.25
+    else
+      trees-monitor-summary "${1}" 0.25
+    fi
 }
 
 shopt -s extglob

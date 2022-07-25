@@ -15,6 +15,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Control.Comonad
+import Control.Monad
 import Data.Attoparsec.ByteString
 import Data.Bifunctor
 import qualified Data.ByteString.Builder as BB
@@ -223,13 +224,15 @@ main :: IO ()
 main = do
   as <- getArgs
   pn <- getProgName
-  let (fn, bi) = case as of
-        [x, b] -> (x, read b) :: (String, Double)
+  let (fn, bi, ages) = case as of
+        [x, b] -> (x, read b, False) :: (String, Double, Bool)
+        ["--ages", x, b] -> (x, read b, True)
         _ ->
           let msg =
                 unlines
-                  [ "Usage: " <> pn <> " MONITORFILE BURNIN",
-                    "For example: " <> pn <> " trees.monitor 0.2"
+                  [ "Usage: " <> pn <> " [--ages] MONITORFILE BURNIN",
+                    "For example: " <> pn <> " trees.monitor 0.2",
+                    "--ages:  Also compute node age summary statistics."
                   ]
            in error msg
   c <- BS.readFile fn
@@ -246,10 +249,11 @@ main = do
       fnMeanTree = dropExtension fn ++ ".tree.mean"
       fnVarianceTree = dropExtension fn ++ ".tree.variance"
       fnCombinedTree = dropExtension fn ++ ".tree.combined"
-      fnSummary = dropExtension fn ++ ".ages.summary"
-      fnFull = dropExtension fn ++ ".ages.full"
   BL.writeFile fnMeanTree $ toNewick $ lengthToPhyloTree meanTree
   BL.writeFile fnVarianceTree $ toNewick $ lengthToPhyloTree varianceTree
   BL.writeFile fnCombinedTree $ toNexusTrees [("Tree1", lengthToPhyloTree combinedTree)]
-  BL.writeFile fnSummary $ renderTableSummary hssS
-  BL.writeFile fnFull $ renderTable hss
+  when ages $ do
+    let fnSummary = dropExtension fn ++ ".ages.summary"
+        fnFull = dropExtension fn ++ ".ages.full"
+    BL.writeFile fnSummary $ renderTableSummary hssS
+    BL.writeFile fnFull $ renderTable hss
