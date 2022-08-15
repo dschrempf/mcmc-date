@@ -365,9 +365,12 @@ getMcmcProps ::
       Monitor I,
       Settings
     )
-getMcmcProps h (Spec an cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg = do
+getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg = do
+  let prepName = case mPrepName of
+        Nothing -> an
+        Just pn -> pn
   -- Read the mean tree and the posterior means and covariances.
-  meanTree <- getMeanTree an
+  meanTree <- getMeanTree prepName
 
   -- Use the mean tree, and the posterior means and covariances to initialize
   -- various objects.
@@ -380,11 +383,11 @@ getMcmcProps h (Spec an cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg
   -- Braces.
   bs <- getBraces h meanTree brs
   -- Likelihood function.
-  lh' <- getLikelihoodFunction h an lhsp
+  lh' <- getLikelihoodFunction h prepName lhsp
   -- Generalized posterior function for Hamiltonian proposal.
   mHTarget <-
     if ham
-      then Just <$> getHTarget an lhsp ht rmcm cb cs bs
+      then Just <$> getHTarget prepName lhsp ht rmcm cb cs bs
       else pure Nothing
 
   let -- Naive starting state and proposal cycle.

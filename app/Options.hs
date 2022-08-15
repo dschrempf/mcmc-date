@@ -42,6 +42,8 @@ likelihoodSpecP = option auto (long "likelihood-spec" <> help "Likelihood specif
 
 data Spec = Spec
   { analysisName :: String,
+    -- | Multiple analyses with different names can use the same preparation files.
+    preparationName :: Maybe String,
     -- | If no calibrations are given, a normalized tree with height 1.0 is
     -- inferred.
     calibrations :: Maybe FilePath,
@@ -68,6 +70,14 @@ analysisNameP =
   strOption
     ( long "analysis-name"
         <> help "Analysis name"
+        <> metavar "NAME"
+    )
+
+preparationNameP :: Parser String
+preparationNameP =
+  strOption
+    ( long "preparation-name"
+        <> help "Preparation name"
         <> metavar "NAME"
     )
 
@@ -136,6 +146,7 @@ specP :: Parser Spec
 specP =
   Spec
     <$> analysisNameP
+    <*> optional preparationNameP
     <*> optional calibrationsP
     <*> handleProblematicCalibrationsP
     <*> optional constraintsP
