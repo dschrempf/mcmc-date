@@ -78,7 +78,7 @@ slideBracedNodesUltrametric ::
   PWeight ->
   Tune ->
   Proposal (HeightTree Double)
-slideBracedNodesUltrametric tr b s
+slideBracedNodesUltrametric tr b s nm
   | any null paths =
       error $ "slideBracedNodesUltrametric: Braced root node: Brace: " <> show n <> ", Paths: " <> show paths <> "."
   | not $ all (isValidPath tr) paths =
@@ -87,12 +87,13 @@ slideBracedNodesUltrametric tr b s
       error $ "slideBracedNodesUltrametric: Path of a node leads to a leaf: Brace: " <> show n <> ", Paths: " <> show paths <> "."
   -- NOTE: For hard braces, the dimension is 1.
   | otherwise =
-      createProposal description (slideBracedNodesUltrametricPFunction b s) PFast (PDimension $ length ns)
+      createProposal description (slideBracedNodesUltrametricPFunction b s) PFast (PDimension $ length ns) nm'
   where
     n = getBraceName b
     ns = getBraceNodes b
     paths = map nodePath ns
     description = PDescription $ "Slide braced nodes ultrametric; sd: " ++ show s
+    nm' = nm <> PName " " <> PName n
 
 slideBracedNodesContrarilyPFunction ::
   Brace Double ->
@@ -173,7 +174,7 @@ slideBracedNodesContrarily ::
   PWeight ->
   Tune ->
   Proposal (HeightTree Double, LengthTree Double)
-slideBracedNodesContrarily tr b s
+slideBracedNodesContrarily tr b s nm
   | any null paths =
       error $ "slideBracedNodesContrarily: Braced root node: Brace: " <> show n <> ", Paths: " <> show paths <> "."
   | not $ all (isValidPath tr) paths =
@@ -197,6 +198,7 @@ slideBracedNodesContrarily tr b s
         PFast
         -- NOTE: For hard braces, the dimension is `1 + nStems + nDaughters`.
         (PDimension $ length ns + nStems + nDaughters)
+        nm'
   where
     n = getBraceName b
     ns = getBraceNodes b
@@ -204,3 +206,4 @@ slideBracedNodesContrarily tr b s
     paths = map nodePath ns
     nStems = sum [if null p then 0 else 1 | p <- paths]
     nDaughters = sum [length $ forest $ current $ goPathUnsafe p $ fromTree tr | p <- paths]
+    nm' = nm <> PName " " <> PName n
