@@ -160,7 +160,7 @@ prepare h (PrepSpec an rt ts lhsp) = do
   let nTrees = length treesAll
   hPutStrLn h $ show nTrees ++ " trees read."
 
-  let nBurnInTrees = nTrees `div` 10
+  let nBurnInTrees = nTrees `div` 6
   hPutStrLn h $ "Skip a burn in of " ++ show nBurnInTrees ++ " trees."
   let trs = drop nBurnInTrees treesAll
 
