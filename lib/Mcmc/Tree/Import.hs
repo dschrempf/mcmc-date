@@ -16,6 +16,7 @@
 module Mcmc.Tree.Import
   ( oneTree,
     someTrees,
+    onePTree,
   )
 where
 
@@ -67,3 +68,9 @@ someTrees :: NewickFormat -> FilePath -> IO [Tree Length Name]
 someTrees fm fn = do
   pts <- parseFileWith (someNewick fm) fn
   return $ map (either error id . toLengthTree . setNodeLabels) pts
+
+-- | Parse first Newick tree in file; do not convert branches to lengths.
+onePTree :: NewickFormat -> FilePath -> IO (Tree Phylo Name)
+onePTree fm f = do
+  t <- parseFileWith (newick fm) f
+  return $ setNodeLabels t

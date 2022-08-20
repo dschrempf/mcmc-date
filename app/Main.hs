@@ -170,7 +170,7 @@ prepare h (PrepSpec an rt ts lhsp) = do
     else hPutStrLn h "OK."
 
   hPutStrLn h "Read rooted tree."
-  treeRooted <- oneTree Standard rt
+  treeRooted <- onePTree Standard rt
 
   hPutStrLn h "Root the trees at the same point as the given rooted tree."
   let og = fst $ fromBipartition $ either error id $ bipartition treeRooted
