@@ -408,7 +408,7 @@ getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp 
         Just Mc3A -> eWith "Loading initial state not implemented for MC3 algorithm."
         Nothing -> eWith "Loading initial state not possible."
         Just MhgA -> do
-          hPutStrLn h "Loading old state; if this fails fail, try without '--init-from-save'."
+          hPutStrLn h "Loading old state; if this fails, try without '--init-from-save'."
           mhgA <- mhgLoadUnsafe pr' lh' ccNaive mon' (AnalysisName anSave)
           let startInformed = state $ link $ fromMHG mhgA
               ccInformed = cycle $ fromMHG mhgA
