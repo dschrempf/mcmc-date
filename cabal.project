@@ -1,4 +1,3 @@
 packages: ./*.cabal
 optional-packages:
-          ./analyses/brooting/data/CalibrationsFromAerobicity/*.cabal
           ../mcmc/mcmc/*.cabal
