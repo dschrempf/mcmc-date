@@ -285,28 +285,29 @@ if [[ "$command" == "p" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} prepare \
           --analysis-name "$analysis_name" --rooted-tree "../$rooted_tree" --trees "../$trees" \
-          "${likelihood_specification_flags[@]}"
+          "${likelihood_specification_flags[@]}" \
+          +RTS -N2 "${p_flags_rts[@]}"
 elif [[ "$command" == "r" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} run \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           "${relaxed_molecular_clock_model_flags[@]}" \
           "${likelihood_specification_flags[@]}" \
-           +RTS -N2 "${p_flags_rts[@]}"
+          +RTS -N2 -M8G "${p_flags_rts[@]}"
 elif [[ "$command" == "c" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} continue \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           "${relaxed_molecular_clock_model_flags[@]}" \
           "${likelihood_specification_flags[@]}" \
-          +RTS -N2 "${p_flags_rts[@]}"
+          +RTS -N2 -M8G "${p_flags_rts[@]}"
 elif [[ "$command" == "m" ]]
 then
     ${prog_name} ${prog_cmd} "${p_flags[@]}" -- ${prog_target} marginal-likelihood \
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           "${relaxed_molecular_clock_model_flags[@]}" \
           "${likelihood_specification_flags[@]}" \
-          +RTS -N2 "${p_flags_rts[@]}"
+          +RTS -N2 -M8G "${p_flags_rts[@]}"
 else
     usage
     exit 1
