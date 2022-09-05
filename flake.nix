@@ -36,9 +36,10 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        haskell-overlay = (
+        ghcVersion = "ghc924";
+        haskellOverlay = (
           selfn: supern: {
-            haskellPackages = supern.haskell.packages.ghc924.override {
+            haskellPackages = supern.haskell.packages.${ghcVersion}.override {
               overrides = selfh: superh:
                 {
                   circular = circular.packages.${system}.default;
@@ -50,7 +51,7 @@
             };
           }
         );
-        overlays = [ haskell-overlay ];
+        overlays = [ haskellOverlay ];
         pkgs = import nixpkgs {
           inherit system overlays;
         };
@@ -58,14 +59,14 @@
         dschrempf = import dschrempf-nur {
           inherit pkgs;
         };
-        mcmc-date-package =
+        mcmcDatePackage =
           let
             p = hpkgs.callCabal2nix "mcmc-date" ./. rec { };
           in
           pkgs.haskell.lib.doBenchmark p;
       in
       {
-        packages.default = mcmc-date-package;
+        packages.default = mcmcDatePackage;
 
         devShells.default = hpkgs.shellFor {
           shellHook =
@@ -75,10 +76,14 @@
             ''
               export PATH="${scripts}:$PATH"
             '';
-          packages = _: [ mcmc-date-package ];
+          packages = _: [ mcmcDatePackage ];
           nativeBuildInputs = with pkgs; [
             # Misc.
             bashInteractive
+
+            # TODO: `cabal-fmt` fails to build when using a newer package set.
+            haskell.packages.ghc902.cabal-fmt # Build fails for newer hpkgs.
+
             hpkgs.cabal-install
             hpkgs.haskell-language-server
 
