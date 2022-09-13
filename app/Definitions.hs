@@ -420,7 +420,7 @@ burnInInformed :: BurnInSettings
 burnInInformed = BurnInWithCustomAutoTuning fast slow
   where
     fast = []
-    slow = [100, 200, 300, 400, 400, 400]
+    slow = [100, 100, 100, 100, 100, 100, 100, 100, 200, 300, 400, 400]
 
 -- | Number of burn in iterations when profiling is enabled.
 burnInProf :: BurnInSettings
