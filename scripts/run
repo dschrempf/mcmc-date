@@ -99,6 +99,7 @@ then
 fi
 
 # shellcheck source=analysis.conf
+# shellcheck disable=SC1091
 source "./${analysis_configuration_file}"
 
 relaxed_molecular_clock_model=$1

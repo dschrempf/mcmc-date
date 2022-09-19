@@ -2,24 +2,31 @@
   description = "Date phylogenetic trees with Mcmc";
 
   inputs.circular.url = "github:dschrempf/circular";
+  inputs.circular.inputs.nixpkgs.follows = "nixpkgs";
 
   inputs.covariance.url = "github:dschrempf/covariance";
+  inputs.covariance.inputs.nixpkgs.follows = "nixpkgs";
 
   inputs.dirichlet.url = "github:dschrempf/dirichlet";
+  inputs.dirichlet.inputs.nixpkgs.follows = "nixpkgs";
 
   inputs.dschrempf-nur.url = "github:dschrempf/nur-packages";
+  inputs.dschrempf-nur.inputs.nixpkgs.follows = "nixpkgs";
 
   inputs.elynx.url = "github:dschrempf/elynx";
+  inputs.elynx.inputs.nixpkgs.follows = "nixpkgs";
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   inputs.mcmc.url = "github:dschrempf/mcmc";
   # inputs.mcmc.url = "path:/home/dominik/Shared/haskell/mcmc";
+  inputs.mcmc.inputs.nixpkgs.follows = "nixpkgs";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable-small";
   # inputs.nixpkgs.url = "path:/home/dominik/Nix/Nixpkgs";
 
   inputs.pava.url = "github:dschrempf/pava";
+  inputs.pava.inputs.nixpkgs.follows = "nixpkgs";
 
   outputs =
     { self
