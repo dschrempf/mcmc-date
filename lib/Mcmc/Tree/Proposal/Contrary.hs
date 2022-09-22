@@ -160,7 +160,7 @@ slideNodesContrarily tr hn s n wMin wMax t =
       let focus = tr ^. subTreeAtL pth,
       let currentDepth = depth focus,
       -- Subtract 2 because leaves have depth one and are not scaled.
-      let w = pWeight $ minimum [fromPWeight wMin + currentDepth - 2, fromPWeight wMax],
+      let w = pWeight $ min (fromPWeight wMin + currentDepth - 2) (fromPWeight wMax),
       -- Do not scale the leaves.
       not $ null $ forest focus,
       -- Filter other nodes.
@@ -408,7 +408,7 @@ scaleSubTreesContrarily tr hn s n wMin wMax t =
     | (pth, lb) <- itoList $ identify tr,
       let focus = tr ^. subTreeAtL pth,
       let currentDepth = depth focus,
-      let w = pWeight $ minimum [fromPWeight wMin + currentDepth - 2, fromPWeight wMax],
+      let w = pWeight $ min (fromPWeight wMin + currentDepth - 2) (fromPWeight wMax),
       not $ null $ forest focus,
       hn pth
   ]

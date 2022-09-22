@@ -315,7 +315,7 @@ loadConstraints h frc t f = do
       cds = either error id mr
   when (VB.null cds) $ error $ "loadConstraints: No constraints found in file: " <> f <> "."
   let (errs, allConstraints) = partitionEithers $ VB.toList $ VB.map (constraintDataToConstraint t) cds
-  when (not $ null errs) $ case frc of
+  unless (null errs) $ case frc of
     WarnAboutAndDropProblematicConstraints ->
       mapM_ (hPutStrLn h . ("WARNING: Dropping constraint: " <>)) errs
     ErrorOnProblematicConstraints -> error $ unlines errs
@@ -411,7 +411,7 @@ constrainSoftF p (hY, hO)
     -- 'Constraint'; but then I do not think this is a big issue.
     --
     -- FYI: sqrt (2/pi) = 0.7978845608028654.
-    d = let s = 0.7978845608028654 * (getProbabilityMass p) in normal 0 s
+    d = let s = 0.7978845608028654 * getProbabilityMass p in normal 0 s
 {-# SPECIALIZE constrainSoftF :: ProbabilityMass Double -> PriorFunction (Double, Double) #-}
 
 -- | Constrain nodes of a tree using 'constrainSoftS'.
@@ -424,7 +424,7 @@ constrainSoft ::
   RealFloat a =>
   VB.Vector (Constraint a) ->
   PriorFunctionG (HeightTree a) a
-constrainSoft cs t = VB.product $ VB.map (\c -> constrainSoftS c t) cs
+constrainSoft cs t = VB.product $ VB.map (`constrainSoftS` t) cs
 {-# SPECIALIZE constrainSoft :: VB.Vector (Constraint Double) -> PriorFunction (HeightTree Double) #-}
 
 -- | Convert a constraint on 'Double' to a more general one.

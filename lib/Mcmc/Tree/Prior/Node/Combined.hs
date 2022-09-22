@@ -80,9 +80,9 @@ calibrateConstrainBraceSoft h cs ks bs t
   | otherwise = VB.product csPr * VB.product ksPr * VB.product bsPr
   where
     hs = getAllHeights t
-    csPr = VB.map ((\c -> calibrateV c hs) . transformCalibration h) cs
-    ksPr = VB.map (\k -> constrainV k hs) ks
-    bsPr = VB.map (\b -> braceV b hs) bs
+    csPr = VB.map ((`calibrateV` hs) . transformCalibration h) cs
+    ksPr = VB.map (`constrainV` hs) ks
+    bsPr = VB.map (`braceV` hs) bs
 {-# SPECIALIZE calibrateConstrainBraceSoft ::
   Double ->
   VB.Vector (Calibration Double) ->

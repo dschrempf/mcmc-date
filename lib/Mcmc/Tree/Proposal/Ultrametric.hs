@@ -214,7 +214,7 @@ scaleSubTreesUltrametric tr hn s n wMin wMax t =
       let focus = tr ^. subTreeAtL pth,
       let currentDepth = depth focus,
       -- Subtract 2 because leaves have depth one and are not scaled.
-      let w = pWeight $ minimum [fromPWeight wMin + currentDepth - 2, fromPWeight wMax],
+      let w = pWeight $ min (fromPWeight wMin + currentDepth - 2) (fromPWeight wMax),
       -- Do not scale the leaves.
       not $ null $ forest focus,
       -- Filter other nodes.
@@ -248,8 +248,8 @@ pulleyUltrametricTruncatedNormalSample s t (HeightTree (Node ht _ [l, r]))
     -- The constraints are larger than 0.
     constraintRightBoundary = ht - brL
     constraintLeftBoundary = ht - brR
-    a = negate $ minimum [brL, constraintLeftBoundary]
-    b = minimum [brR, constraintRightBoundary]
+    a = negate $ min brL constraintLeftBoundary
+    b = min brR constraintRightBoundary
 pulleyUltrametricTruncatedNormalSample _ _ _ =
   error "pulleyUltrametricTruncatedNormalSample: Node is not bifurcating."
 

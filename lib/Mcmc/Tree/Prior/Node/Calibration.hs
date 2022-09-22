@@ -162,7 +162,7 @@ calibration ::
   [a] ->
   Interval b ->
   Calibration b
-calibration t n xs l = Calibration n p i l
+calibration t n xs = Calibration n p i
   where
     err msg = error $ "calibration: " ++ n ++ ": " ++ msg
     p = either err id $ getPathToMrca (S.fromList xs) t
@@ -316,7 +316,7 @@ getMeanRootHeight cs =
     >>= getMean
   where
     isRootCalibration :: Calibration a -> Bool
-    isRootCalibration c = calibrationNodePath c == []
+    isRootCalibration c = null $ calibrationNodePath c
     assertZeroOrOneResults :: VB.Vector (Calibration a) -> Maybe (Calibration a)
     assertZeroOrOneResults xs = if VB.length xs == 1 then Just $ VB.unsafeHead xs else Nothing
     getMean :: RealFloat a => Interval a -> Maybe a
@@ -375,7 +375,7 @@ calibrateSoftF (Interval a' b') h
     -- a big issue.
     --
     -- FYI: sqrt (2/pi) = 0.7978845608028654.
-    getD p = let s = 0.7978845608028654 * (getProbabilityMass p) in normal 0 s
+    getD p = let s = 0.7978845608028654 * getProbabilityMass p in normal 0 s
 {-# SPECIALIZE calibrateSoftF :: Interval Double -> PriorFunction Double #-}
 
 -- | Calibrate nodes of a tree using 'calibrateSoftS'.

@@ -237,7 +237,7 @@ braceSoft ::
   RealFloat a =>
   VB.Vector (Brace a) ->
   PriorFunctionG (HeightTree a) a
-braceSoft bs t = VB.product $ VB.map (\b -> braceSoftS b t) bs
+braceSoft bs t = VB.product $ VB.map (`braceSoftS` t) bs
 
 {-# SPECIALIZE braceSoftS :: Brace Double -> PriorFunctionG (HeightTree Double) Double #-}
 

@@ -88,7 +88,7 @@ getData s = do
     Just (FullS mu sigmaInvRows logDetSigma) -> do
       -- We can trust that the matrix is symmetric here, because the matrix was
       -- created by 'meanCov'.
-      let sigmaInv = L.trustSym $ L.fromRows $ sigmaInvRows
+      let sigmaInv = L.trustSym $ L.fromRows sigmaInvRows
       pure $ Full mu sigmaInv logDetSigma
     Just (SparseS mu sigmaInvSparseAssocList logDetSigma) -> do
       let sigmaInvS = L.mkSparse sigmaInvSparseAssocList
@@ -205,14 +205,14 @@ prepare h (PrepSpec an rt ts lhsp) = do
       (mu, sigma) = second L.unSym $ L.meanCov pmR
   hPutStrLn h $ "Number of branches: " <> show (L.size mu) <> "."
   hPutStrLn h "The mean branch lengths are:"
-  hPutStrLn h $ show mu
+  hPrint h mu
   hPutStrLn h $ "Minimum mean branch length: " <> show (VS.minimum mu)
   hPutStrLn h $ "Maximum mean branch length: " <> show (VS.maximum mu)
   hPutStrLn h $ "Minimum absolute covariance: " ++ show (L.minElement $ L.cmap abs sigma)
   hPutStrLn h $ "Maximum absolute covariance: " ++ show (L.maxElement $ L.cmap abs sigma)
   let variances = L.takeDiag sigma
   hPutStrLn h "The variances are: "
-  hPutStrLn h $ show variances
+  hPrint h variances
   let minVariance = L.minElement variances
   when (minVariance <= 0) $ error "prepare: Minimum variance is zero or negative."
   hPutStrLn h $ "Minimum variance: " ++ show minVariance
@@ -234,7 +234,7 @@ prepare h (PrepSpec an rt ts lhsp) = do
   lhd <- case lhsp of
     FullMultivariateNormal -> do
       hPutStrLn h "Use full covariance matrix."
-      pure $ FullS mu (L.toRows $ sigmaInv) logDetSigma
+      pure $ FullS mu (L.toRows sigmaInv) logDetSigma
     -- SparseMultivariateNormal rho -> do
     --   hPutStrLn "Use a sparse covariance matrix to speed up phylogenetic likelihood calculation."
     --   hPutStrLn "Table of \"Relative threshold, proportion of entries kept\"."
@@ -323,8 +323,8 @@ getLikelihoodFunction h an lhsp = do
   -- Assert that likelihood specification on command line, and stored likelihood
   -- data are in agreement.
   case (lhsp, lhd) of
-    (FullMultivariateNormal, Full _ _ _) -> hPutStrLn h "Using full multivariate normal distribution."
-    (SparseMultivariateNormal _, Sparse _ _ _) -> hPutStrLn h "Using sparse multivariate normal distribution."
+    (FullMultivariateNormal, Full {}) -> hPutStrLn h "Using full multivariate normal distribution."
+    (SparseMultivariateNormal _, Sparse {}) -> hPutStrLn h "Using sparse multivariate normal distribution."
     (UnivariateNormal, Univariate _ _) -> hPutStrLn h "Using univariate normal distributions."
     (l, r) -> do
       hPutStrLn h $ "Likelihood specification: " <> show l
@@ -366,9 +366,7 @@ getMcmcProps ::
       Settings
     )
 getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg = do
-  let prepName = case mPrepName of
-        Nothing -> an
-        Just pn -> pn
+  let prepName = fromMaybe an mPrepName
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree prepName
 
@@ -403,7 +401,7 @@ getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp 
   let eWith m = error $ "getMcmcProps: " <> m <> " Try without '--init-from-save'."
   (start', cc', burnIn') <-
     case ifs of
-      Nothing -> pure $ (startNaive, ccNaive, burnIn)
+      Nothing -> pure (startNaive, ccNaive, burnIn)
       Just anSave -> case malg of
         Just Mc3A -> eWith "Loading initial state not implemented for MC3 algorithm."
         Nothing -> eWith "Loading initial state not possible."
@@ -519,20 +517,20 @@ main = do
   cmd <- parseArgs
   case cmd of
     Prepare p -> do
-      let fn = (prepAnalysisName p <> ".prepare.log")
+      let fn = prepAnalysisName p <> ".prepare.log"
       withFile fn WriteMode $ \h -> prepare h p
     Run s a -> do
-      let fn = (analysisName s <> ".run.log")
+      let fn = analysisName s <> ".run.log"
       withFile fn WriteMode $ \h ->
         hSetBuffering h LineBuffering
           >> runMetropolisHastingsGreen h s a
     Continue s a -> do
-      let fn = (analysisName s <> ".continue.log")
+      let fn = analysisName s <> ".continue.log"
       withFile fn WriteMode $ \h ->
         hSetBuffering h LineBuffering
           >> continueMetropolisHastingsGreen h s a
     MarginalLikelihood s -> do
-      let fn = (analysisName s <> ".mlh.log")
+      let fn = analysisName s <> ".mlh.log"
       withFile fn WriteMode $ \h ->
         hSetBuffering h LineBuffering
           >> runMarginalLikelihood h s
