@@ -413,7 +413,7 @@ monitor ht md cb cs bs =
 burnIn :: BurnInSettings
 burnIn = BurnInWithCustomAutoTuning fast slow
   where
-    fast = 10 : 10 : [10, 20 .. 90]
+    fast = 10 : 10 : [10, 20 .. 130]
     slow = [100, 120 .. 400]
 
 burnInInformed :: BurnInSettings
