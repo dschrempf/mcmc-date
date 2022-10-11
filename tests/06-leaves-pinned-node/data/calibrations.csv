@@ -1,0 +1,3 @@
+Name,LeafA,LeafB,YoungAge,YoungProbabilityMass,OldAge,OldProbabilityMass
+CladeRoot,a,f,0.8,0.025,1.2,0.025
+NodePinned,a,b,0.333333,1e-6,0.333334,1e-6

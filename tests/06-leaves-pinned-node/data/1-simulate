@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+slynx -f -o data simulate -t time.tree -s LG -l 5000
+fasta-to-phylip data.fasta > data.phylip
