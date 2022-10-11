@@ -102,13 +102,12 @@ priorFunctionRelaxedMolecularClock ht md t' x =
     [ -- Mean rate. The mean of the mean rate ^^ is (1/height).
       exponential (realToFrac ht) mu,
       -- Variance of the relative rates.
-      exponential 1.0 va,
-      -- TODO: Use the gamma distribution in the future to avoid pathological
+      --
+      -- Use the gamma distribution in the future to avoid pathological
       -- situations with the exponential distribution where the variance of the
       -- rate becomes zero (or close to zero) and all rates become nearly the
       -- same.
-      --
-      -- gammaMeanOne 10 va,
+      gammaMeanOne 10 va,
       -- Relative rate tree.
       case md of
         UncorrelatedGamma -> uncorrelatedGamma WithoutStem 1.0 va r
