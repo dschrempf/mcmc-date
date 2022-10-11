@@ -271,7 +271,7 @@ proposals bs calibrationsAvailable x mHTarget =
     t = getLengthTree $ _rateTree x
     w = weightNBranches $ length t
     nm = PName "Rates and time tree"
-    proposalRatesTimeTreeContra = scaleRatesAndTreeContrarily t 0.1 nm (pWeight 8) Tune
+    proposalRatesTimeTreeContra = scaleRatesAndTreeContrarily t 0.1 nm w Tune
     maybeHamiltonianProposal = case mHTarget of
       Nothing -> []
       Just htarget -> [liftProposalWith jacobianRootBranch id $ nutsWith calibrationsAvailable x htarget]
