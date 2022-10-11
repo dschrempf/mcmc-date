@@ -15,6 +15,7 @@ module Mcmc.Tree.Proposal.Contrary
     slideRootContrarily,
     scaleSubTreesAtContrarily,
     scaleSubTreesContrarily,
+    scaleRatesAndTreeContrarily,
   )
 where
 
@@ -281,6 +282,7 @@ scaleSubTreeAtContrarilyPFunction nNodes nBranches pth sd t (HeightTree tTr, Len
       error "scaleSubTreeAtContrarilyPFunction: Sub tree of unconstrained tree is a leaf."
   | otherwise = do
       (hTTrNode', q) <- truncatedNormalSample hTTrNode sd t 0 hTTrParent g
+      -- Time tree.
       let -- Scaling factor of time tree nodes heights (xi, not x_i).
           xiT = let x = hTTrNode' / hTTrNode in assertWith (> 0) x
           tTr' = toTree $ tTrPos & currentTreeL %~ scaleUltrametricTreeF hTTrNode' xiT
@@ -414,3 +416,71 @@ scaleSubTreesContrarily tr hn s n wMin wMax t =
   ]
   where
     name lb = n <> PName (" node " ++ show lb)
+
+scaleRatesAndTreeContrarilyPFunction ::
+  Int ->
+  StandardDeviation Double ->
+  TuningParameter ->
+  PFunction (Double, Double, HeightTree Double)
+scaleRatesAndTreeContrarilyPFunction nNodes sd tp (la, mu, HeightTree tTr) g
+  | nNodes < 1 = error "scaleRatesAndTreeContrarilyPFunction: no internal nodes to scale"
+  | otherwise = do
+      (tTrMaxChildHeight', q) <- truncatedNormalSample tTrMaxChildHeight sd tp 0 tTrHeight g
+      -- Time tree.
+      let -- Scaling factor of time tree nodes heights excluding the root node (xi, not x_i).
+          xi = let x = tTrMaxChildHeight' / tTrMaxChildHeight in assertWith (> 0) x
+          tTr' = scaleUltrametricTreeF tTrHeight xi tTr
+      -- Birth rate of the time tree.
+      let la' = la / xi
+      -- Mean rate of the rate tree.
+      let mu' = mu / xi
+      -- New state.
+      let x' = (la', mu', HeightTree tTr')
+          -- jacobianTimeTree = Exp $ fromIntegral (nNodes - 1) * log xi
+          -- jacobianRates = Exp $ (-2) * log xi
+          jacobian = Exp $ fromIntegral (nNodes - 1 - 2) * log xi
+      return (Propose x' q jacobian, Nothing)
+  where
+    -- Time tree.
+    tTrHeight = branch tTr
+    tTrMaxChildHeight = maximum $ map branch $ forest tTr
+
+-- | Scale the birth rate, the mean rate, and the time tree contrarily such that
+-- prior roughly stays constant.
+--
+-- This proposal acts on two rates and an ultrametric tree, usually the time
+-- tree with branches denoting absolute or relative time. The first rate is the
+-- birth rate of the ultrametric tree. The second rate is the mean rate.
+--
+-- The root node height of the ultrametric tree is not changed.
+--
+-- When the internal node ages of the ultrametric tree are increased both rates
+-- are decreased.
+--
+-- A normal distribution truncated at the height of the root node of the
+-- ultrametric tree and the leaves is used to determine the new node heights of
+-- the ultrametric tree.
+--
+-- Call 'error' if:
+--
+-- - The ultrametric tree does not contain nodes to be scaled.
+--
+-- - A node height or branch length is zero.
+scaleRatesAndTreeContrarily ::
+  Tree e a ->
+  StandardDeviation Double ->
+  PName ->
+  PWeight ->
+  Tune ->
+  -- | Proposal (timeBirthRate, rateMean, timeTree).
+  Proposal (Double, Double, HeightTree Double)
+scaleRatesAndTreeContrarily tr sd =
+  createProposal
+    description
+    (scaleRatesAndTreeContrarilyPFunction nNodes sd)
+    PFast
+    (PDimension $ nNodes + 2)
+  where
+    description = PDescription $ "Scale rates and tree contrarily; sd: " <> show sd
+    -- -1: Do not scale the root node height.
+    nNodes = nInnerNodes tr - 1

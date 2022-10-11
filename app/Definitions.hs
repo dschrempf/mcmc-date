@@ -232,6 +232,9 @@ timeHeightRateTreeL = tupleLens timeHeight rateTree
 heightTimeRateTreesLens :: Lens' I (Double, HeightTree Double, LengthTree Double)
 heightTimeRateTreesLens = tripleLens timeHeight timeTree rateTree
 
+ratesTimeTreeL :: Lens' I (Double, Double, HeightTree Double)
+ratesTimeTreeL = tripleLens timeBirthRate rateMean timeTree
+
 -- Proposals only activated when calibrations are available and absolute times
 -- are estimated.
 proposalsChangingTimeHeight :: Tree e a -> [Proposal I]
@@ -255,7 +258,8 @@ proposals bs calibrationsAvailable x mHTarget =
     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
       timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
       rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
-      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
+      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune,
+      liftProposalWith jacobianRootBranch ratesTimeTreeL proposalRatesTimeTreeContra
     ]
       ++ maybeHamiltonianProposal
       ++ proposalsTimeTree bs t
@@ -266,6 +270,8 @@ proposals bs calibrationsAvailable x mHTarget =
   where
     t = getLengthTree $ _rateTree x
     w = weightNBranches $ length t
+    nm = PName "Rates and time tree"
+    proposalRatesTimeTreeContra = scaleRatesAndTreeContrarily t 0.1 nm (pWeight 8) Tune
     maybeHamiltonianProposal = case mHTarget of
       Nothing -> []
       Just htarget -> [liftProposalWith jacobianRootBranch id $ nutsWith calibrationsAvailable x htarget]
