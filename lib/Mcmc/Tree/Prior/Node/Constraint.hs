@@ -13,6 +13,7 @@
 -- Creation date: Mon Jul 27 10:49:11 2020.
 module Mcmc.Tree.Prior.Node.Constraint
   ( -- * Constraints
+    ProbabilityMass,
     Constraint,
     getConstraintName,
     getConstraintYoungNodeIndex,
