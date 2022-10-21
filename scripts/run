@@ -29,6 +29,7 @@ usage() {
     echo "f  Full covariance matix"
     echo "s  Sparse covariance matrix"
     echo "u  Univariate approach"
+    echo "n  No likelihood; use prior only"
     echo
     echo "Available commands:"
     echo "p  Prepare"
@@ -130,6 +131,8 @@ case "$likelihood_specification" in
     s) likelihood_specification_flags+=(--likelihood-spec "SparseMultivariateNormal 0.1")
        ;;
     u) likelihood_specification_flags+=(--likelihood-spec "UnivariateNormal")
+       ;;
+    n) likelihood_specification_flags+=(--likelihood-spec "NoLikelihood")
        ;;
     *) usage
        exit 1
@@ -280,7 +283,7 @@ then
 fi
 
 echo "Results directory: ${outdir}."
-mkdir -p $outdir; cd $outdir
+mkdir -p "$outdir"; cd "$outdir"
 
 if [[ "$command" == "p" ]]
 then

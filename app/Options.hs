@@ -35,6 +35,9 @@ data LikelihoodSpec
     --   determines the sparseness of the precision matrix.
     SparseMultivariateNormal Double
   | UnivariateNormal
+  | -- | Do not use the phylogenetic likelihood. This is useful when analyzing
+    --   the effect of the prior.
+    NoLikelihood
   deriving (Eq, Read, Show)
 
 likelihoodSpecP :: Parser LikelihoodSpec

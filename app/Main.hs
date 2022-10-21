@@ -75,6 +75,7 @@ data LikelihoodDataStore
   = FullS (L.Vector Double) [L.Vector Double] Double
   | SparseS (L.Vector Double) [((Int, Int), Double)] Double
   | UnivariateS (L.Vector Double) (L.Vector Double)
+  | NoLikelihoodS
 
 $(deriveJSON defaultOptions ''LikelihoodDataStore)
 
@@ -94,6 +95,7 @@ getData s = do
       let sigmaInvS = L.mkSparse sigmaInvSparseAssocList
       pure $ Sparse mu sigmaInvS logDetSigma
     Just (UnivariateS mu vs) -> pure $ Univariate mu vs
+    Just NoLikelihoodS -> pure NoData
 
 -- Get the posterior matrix of branch lengths. Merge the two branch lengths
 -- leading to the root.
@@ -276,6 +278,9 @@ prepare h (PrepSpec an rt ts lhsp) = do
       hPutStrLn h "Use univariate normal distributions to speed up phylogenetic likelihood calculation."
       let vs = L.takeDiag sigma
       pure $ UnivariateS mu vs
+    NoLikelihood -> do
+      hPutStrLn h "Do not use the phylogenetic likelihood. Only estimate the prior."
+      pure NoLikelihoodS
   hPutStrLn h $ "Save the posterior means and (co)variances to " <> getDataFn an <> "."
   encodeFile (getDataFn an) lhd
 

@@ -224,6 +224,8 @@ data LikelihoodData
       -- ^ Means.
       (L.Vector Double)
       -- ^ Variances.
+  | -- | No likelihood; use prior only.
+    NoData
   deriving (Show)
 
 -- Approximation of the phylogenetic likelihood using a multivariate normal
@@ -270,6 +272,7 @@ likelihoodFunction :: LikelihoodData -> LikelihoodFunction I
 likelihoodFunction (Full mu s d) = likelihoodFunctionFullMultivariateNormal mu s d
 likelihoodFunction (Sparse mu s d) = likelihoodFunctionSparseMultivariateNormal mu s d
 likelihoodFunction (Univariate mu vs) = likelihoodFunctionUnivariateNormal mu vs
+likelihoodFunction NoData = const 1.0
 
 -- Vector-matrix-vector product.
 --
