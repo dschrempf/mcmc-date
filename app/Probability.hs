@@ -103,10 +103,9 @@ priorFunctionRelaxedMolecularClock ht md t' x =
       exponential (realToFrac ht) mu,
       -- Variance of the relative rates.
       --
-      -- Use the gamma distribution in the future to avoid pathological
-      -- situations with the exponential distribution where the variance of the
-      -- rate becomes zero (or close to zero) and all rates become nearly the
-      -- same.
+      -- Use the gamma distribution to avoid pathological situations with the
+      -- exponential distribution where the variance of the rate becomes zero
+      -- (or close to zero) and all rates become nearly the same.
       gammaMeanOne 10 va,
       -- Relative rate tree.
       case md of
