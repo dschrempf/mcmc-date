@@ -49,6 +49,7 @@ monitorPriorRelaxedMolecularClock ht md = f >$< monitorDouble n
   where
     n = case md of
       UncorrelatedGamma -> "PriorUncorrelatedGammaRelaxedMolecularClock"
+      UncorrelatedLogNormal -> "PriorUncorrelatedLogNormalRelaxedMolecularClock"
       AutocorrelatedLogNormal -> "PriorAutocorrelatedLogNormalRelaxedMolecularClock"
     f x =
       let t = heightTreeToLengthTree (x ^. timeTree)
