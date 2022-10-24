@@ -234,6 +234,8 @@ case "$likelihood_specification" in
        ;;
     u) outdir="${outdir}-univariate"
        ;;
+    n) outdir="${outdir}-prior"
+       ;;
     *) usage
        exit 1
        ;;

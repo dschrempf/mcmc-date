@@ -331,6 +331,7 @@ getLikelihoodFunction h an lhsp = do
     (FullMultivariateNormal, Full {}) -> hPutStrLn h "Using full multivariate normal distribution."
     (SparseMultivariateNormal _, Sparse {}) -> hPutStrLn h "Using sparse multivariate normal distribution."
     (UnivariateNormal, Univariate _ _) -> hPutStrLn h "Using univariate normal distributions."
+    (NoLikelihood, NoData) -> hPutStrLn h "No likelihood; use prior only."
     (l, r) -> do
       hPutStrLn h $ "Likelihood specification: " <> show l
       hPutStrLn h $ "Likelihood data: " <> show r
