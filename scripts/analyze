@@ -4,6 +4,28 @@
 
 set -e
 
+usage() {
+  echo "Usage: $(basename "$0") [options]"
+  echo
+  echo "Options:"
+  echo " -h  Display help and exit"
+  echo " -s  Skip files with previous analysis"
+}
+
+skip=FALSE
+while getopts "sh" o; do
+  case "$o" in
+    s) skip=TRUE
+       ;;
+    h) usage
+       exit 0
+       ;;
+    *) usage
+       exit 1
+       ;;
+  esac
+done
+
 function analyze_tree_monitor() {
     echo "Prepare the Nexus file to be opened with Densitree."
     echo "Thin the monitor file."
@@ -34,8 +56,12 @@ do
       echo "Current directory: ${PWD}."
       for m in *{timetree,ratetree}.@(00.|)monitor
       do
+        if [[ "$skip" = "FALSE" ]] && [[ -e "${m}.thinned" ]]; then
+          echo "Skip analysis of ${m}."
+        else
           echo "Analyze monitor file ${m}."
           analyze_tree_monitor "$m"
+        fi
       done
       echo "Create tree file with node indices."
       for f in *.meantree
