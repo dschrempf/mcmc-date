@@ -101,7 +101,7 @@ initWith t =
       _timeHeight = 1.0,
       _timeTree = initialTimeTree,
       _rateMean = 1.0,
-      _rateDispersion = 1.1,
+      _rateDispersionParameter = 0.1,
       _rateVariance = 1.0,
       _rateTree = LengthTree $ setStem 0 $ first (const 1.0) t,
       _rateClassTree = rateClassTreeFromTree t
@@ -179,7 +179,7 @@ rateMeanVarianceTreeL :: Lens' I (Double, Double, LengthTree Double)
 rateMeanVarianceTreeL = tripleLens rateMean rateVariance rateTree
 
 dispersionRateTreesL :: Lens' I (Double, RateClassTree, LengthTree Double)
-dispersionRateTreesL = tripleLens rateDispersion rateClassTree rateTree
+dispersionRateTreesL = tripleLens rateDispersionParameter rateClassTree rateTree
 
 -- Proposals on the rate tree.
 proposalsRateTree :: Tree e a -> [Proposal I]
@@ -269,7 +269,7 @@ proposals bs calibrationsAvailable x mHTarget =
     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
       timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
       rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
-      rateDispersion @~ slideSymmetric 0.2 (PName "Rate dispersion") w Tune,
+      rateDispersionParameter @~ scaleUnbiased 10 (PName "Rate dispersion parameter") w Tune,
       rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune,
       liftProposalWith jacobianRootBranch ratesTimeTreeL proposalRatesTimeTreeContra
     ]
@@ -302,7 +302,7 @@ monParams =
     _timeDeathRate >$< monitorDouble "TimeDeathRate",
     _timeHeight >$< monitorDouble "TimeHeight",
     _rateMean >$< monitorDouble "RateMean",
-    _rateDispersion >$< monitorDouble "RateDispersion",
+    _rateDispersionParameter >$< monitorDouble "RateDispersionParameter",
     _rateVariance >$< monitorDouble "RateVariance"
   ]
 

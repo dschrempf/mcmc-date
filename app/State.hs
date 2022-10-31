@@ -81,8 +81,10 @@ data IG a = I
     _timeTree :: HeightTree a,
     -- | Mean of the absolute rates. Normalization factor of relative rates.
     _rateMean :: a,
-    -- | Rate dispersion. The two rates are (mean / dispersion) and (mean * dispersion).
-    _rateDispersion :: a,
+    -- | Rate dispersion parameter in [0, infty]. The dispersion is
+    -- (dispersionParameter + 1.0). The two rates are (mean /
+    -- dispersion) and (mean * dispersion).
+    _rateDispersionParameter :: a,
     -- | Hyper-parameter. The variance of the relative rates.
     _rateVariance :: a,
     -- | Relative rate tree. Branch labels denote relative rates with mean 1.0.
@@ -116,7 +118,7 @@ isValidState (I l m h t mu d v r _) =
       h > 0,
       isValidHeightTree t,
       mu > 0,
-      d > 1.0,
+      d > 0,
       v > 0,
       isValidLengthTree r
     ]

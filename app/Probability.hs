@@ -102,7 +102,7 @@ priorFunctionRelaxedMolecularClock ht md t' x =
     [ -- Mean rate. The mean of the mean rate ^^ is (1/height).
       exponential (realToFrac ht) mu,
       -- Rate dispersion.
-      exponential 1.0 (d - 1.0),
+      exponential 1.0 dp,
       -- Variance of the relative rates.
       --
       -- Use the gamma distribution to avoid pathological situations with the
@@ -117,7 +117,7 @@ priorFunctionRelaxedMolecularClock ht md t' x =
     ]
   where
     mu = x ^. rateMean
-    d = x ^. rateDispersion
+    dp = x ^. rateDispersionParameter
     va = x ^. rateVariance
     r = x ^. rateTree
 
@@ -202,7 +202,7 @@ likelihoodFunctionWrapper f mu dt x = f mu dt distances
     relativeRates = getBranches $ getLengthTree $ x ^. rateTree
     classes = getBranches $ getRateClassTree $ x ^. rateClassTree
     rMu = x ^. rateMean
-    d = x ^. rateDispersion
+    d = x ^. rateDispersionParameter + 1.0
     (rMu1, rMu2) = (rMu / d, rMu * d)
     computeRate False r = r * rMu1
     computeRate True r = r * rMu2
@@ -383,7 +383,7 @@ likelihoodFunctionG mu' sigmaInv' logDetSigma' x =
     relativeRates = getBranchesG $ getLengthTree $ x ^. rateTree
     classes = getBranchesG $ getRateClassTree $ x ^. rateClassTree
     rMu = x ^. rateMean
-    d = x ^. rateDispersion
+    d = x ^. rateDispersionParameter + 1.0
     (rMu1, rMu2) = (rMu / d, rMu * d)
     computeRate False r = r * rMu1
     computeRate True r = r * rMu2
@@ -413,7 +413,7 @@ rootBranch x = tH * (t1 * r1 + t2 * r2)
       RateClassTree (Node _ _ [l, r]) -> (branch l, branch r)
       _ -> error "rootBranch: Rate class tree is not bifurcating."
     rMu = x ^. rateMean
-    d = x ^. rateDispersion
+    d = x ^. rateDispersionParameter + 1.0
     (rMu1, rMu2) = (rMu / d, rMu * d)
     computeRate False r = r * rMu1
     computeRate True r = r * rMu2

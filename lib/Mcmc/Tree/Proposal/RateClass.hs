@@ -20,10 +20,12 @@ import Mcmc.Proposal
 import Mcmc.Tree
 
 switchClassAndRateAtPFunction :: Path -> PFunction (Double, RateClassTree, LengthTree Double)
-switchClassAndRateAtPFunction p (d, RateClassTree rcTr, LengthTree rTr) _ =
+switchClassAndRateAtPFunction p (dp, RateClassTree rcTr, LengthTree rTr) _ =
+  -- TODO: Check Jacobian.
   pure (Propose x' 1.0 1.0, Nothing)
   where
     (c, rcTr') = rcTr & (subTreeAtL p . branchL) %%~ (\x -> (x, not x))
+    d = dp + 1.0
     -- Switch from slow to fast class; relative rate has to become slower.
     f False x = x / d / d
     -- Switch from fast to slow class; relative rate has to become larger.
@@ -56,3 +58,7 @@ switchClassesAndRates tr hn n wMin wMax =
   ]
   where
     name lb = n <> PName (" node " ++ show lb)
+
+-- TODO.
+scaleDispersionAndRates :: a
+scaleDispersionAndRates = undefined
