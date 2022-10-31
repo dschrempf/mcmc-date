@@ -81,10 +81,13 @@ data IG a = I
     _timeTree :: HeightTree a,
     -- | Mean of the absolute rates. Normalization factor of relative rates.
     _rateMean :: a,
+    -- | Rate dispersion. The two rates are (mean / dispersion) and (mean * dispersion).
+    _rateDispersion :: a,
     -- | Hyper-parameter. The variance of the relative rates.
     _rateVariance :: a,
     -- | Relative rate tree. Branch labels denote relative rates with mean 1.0.
-    _rateTree :: LengthTree a
+    _rateTree :: LengthTree a,
+    _rateClassTree :: RateClassTree
   }
   deriving (Eq, Generic)
 
@@ -106,14 +109,15 @@ instance FromJSON a => FromJSON (IG a)
 
 -- | Check if a state is valid.
 isValidState :: I -> Bool
-isValidState (I l m h t mu va r) =
+isValidState (I l m h t mu d v r _) =
   and
     [ l > 0,
       m > 0,
       h > 0,
       isValidHeightTree t,
       mu > 0,
-      va > 0,
+      d > 1.0,
+      v > 0,
       isValidLengthTree r
     ]
 

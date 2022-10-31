@@ -101,6 +101,8 @@ priorFunctionRelaxedMolecularClock ht md t' x =
   product'
     [ -- Mean rate. The mean of the mean rate ^^ is (1/height).
       exponential (realToFrac ht) mu,
+      -- Rate dispersion.
+      exponential 1.0 (d - 1.0),
       -- Variance of the relative rates.
       --
       -- Use the gamma distribution to avoid pathological situations with the
@@ -115,6 +117,7 @@ priorFunctionRelaxedMolecularClock ht md t' x =
     ]
   where
     mu = x ^. rateMean
+    d = x ^. rateDispersion
     va = x ^. rateVariance
     r = x ^. rateTree
 
@@ -196,10 +199,16 @@ likelihoodFunctionWrapper ::
 likelihoodFunctionWrapper f mu dt x = f mu dt distances
   where
     times = getBranches (getLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
-    rates = getBranches (getLengthTree $ x ^. rateTree)
-    tH = x ^. timeHeight
+    relativeRates = getBranches $ getLengthTree $ x ^. rateTree
+    classes = getBranches $ getRateClassTree $ x ^. rateClassTree
     rMu = x ^. rateMean
-    distances = VS.map (* (tH * rMu)) $ sumFirstTwo $ VS.zipWith (*) times rates
+    d = x ^. rateDispersion
+    (rMu1, rMu2) = (rMu / d, rMu * d)
+    computeRate False r = r * rMu1
+    computeRate True r = r * rMu2
+    rates = VS.zipWith computeRate classes relativeRates
+    tH = x ^. timeHeight
+    distances = VS.map (* tH) $ sumFirstTwo $ VS.zipWith (*) times rates
 
 -- | Specification of the approximation of the likelihood function.
 data LikelihoodData
@@ -371,10 +380,16 @@ likelihoodFunctionG mu' sigmaInv' logDetSigma' x =
     logDetSigma = realToFrac logDetSigma'
     -- Actual computation.
     times = getBranchesG (getLengthTree $ heightTreeToLengthTree $ x ^. timeTree)
-    rates = getBranchesG (getLengthTree $ x ^. rateTree)
-    tH = x ^. timeHeight
+    relativeRates = getBranchesG $ getLengthTree $ x ^. rateTree
+    classes = getBranchesG $ getRateClassTree $ x ^. rateClassTree
     rMu = x ^. rateMean
-    distances = VB.map (* (tH * rMu)) $ sumFirstTwoG $ VB.zipWith (*) times rates
+    d = x ^. rateDispersion
+    (rMu1, rMu2) = (rMu / d, rMu * d)
+    computeRate False r = r * rMu1
+    computeRate True r = r * rMu2
+    rates = VB.zipWith computeRate classes relativeRates
+    tH = x ^. timeHeight
+    distances = VB.map (* tH) $ sumFirstTwoG $ VB.zipWith (*) times rates
 {-# SPECIALIZE likelihoodFunctionG ::
   VB.Vector Double ->
   MB.Matrix Double ->
@@ -386,16 +401,25 @@ likelihoodFunctionG mu' sigmaInv' logDetSigma' x =
 -- function retrieves the root branch measured in expected number of
 -- substitutions.
 rootBranch :: RealFloat a => IG a -> a
-rootBranch x = tH * rM * (t1 * r1 + t2 * r2)
+rootBranch x = tH * (t1 * r1 + t2 * r2)
   where
     (t1, t2) = case heightTreeToLengthTree $ x ^. timeTree of
       LengthTree (Node _ _ [l, r]) -> (branch l, branch r)
       _ -> error "rootBranch: Time tree is not bifurcating."
-    (r1, r2) = case x ^. rateTree of
+    (rr1, rr2) = case x ^. rateTree of
       LengthTree (Node _ _ [l, r]) -> (branch l, branch r)
       _ -> error "rootBranch: Rate tree is not bifurcating."
+    (rc1, rc2) = case x ^. rateClassTree of
+      RateClassTree (Node _ _ [l, r]) -> (branch l, branch r)
+      _ -> error "rootBranch: Rate class tree is not bifurcating."
+    rMu = x ^. rateMean
+    d = x ^. rateDispersion
+    (rMu1, rMu2) = (rMu / d, rMu * d)
+    computeRate False r = r * rMu1
+    computeRate True r = r * rMu2
+    r1 = computeRate rc1 rr1
+    r2 = computeRate rc2 rr2
     tH = x ^. timeHeight
-    rM = x ^. rateMean
 {-# SPECIALIZE rootBranch :: I -> Double #-}
 
 -- | This Jacobian is necessary to have unbiased proposals on the branches

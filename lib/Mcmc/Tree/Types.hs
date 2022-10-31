@@ -37,6 +37,10 @@ module Mcmc.Tree.Types
     isValidHeightTree,
     toHeightTreeUltrametric,
     heightTreeToLengthTree,
+
+    -- ** Rate class tree
+    RateClassTree (..),
+    rateClassTreeFromTree,
   )
 where
 
@@ -231,3 +235,19 @@ heightTreeToLengthTree t' = LengthTree $ go (branch t) t
           -- trigger when calculating the gradient.
           Node l lb $! map (go hNode) ts
 {-# SPECIALIZE heightTreeToLengthTree :: HeightTree Double -> LengthTree Double #-}
+
+-- | The rate at each branch is drawn from a class.
+newtype RateClassTree = RateClassTree {getRateClassTree :: Tree Bool Name}
+  deriving (Eq, Generic)
+
+instance ToJSON RateClassTree
+
+instance FromJSON RateClassTree
+
+-- | Create a rate class tree from a tree. Alternate classes.
+rateClassTreeFromTree :: Tree a Name -> RateClassTree
+rateClassTreeFromTree = RateClassTree . alternateLabels False
+  where
+    alternateLabels b (Node _ x xs) =
+      let bs = cycle [b, not b]
+       in Node (not b) x $ zipWith alternateLabels bs xs

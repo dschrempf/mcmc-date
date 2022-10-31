@@ -29,7 +29,7 @@ import ELynx.Tree
 -- | Get all branches of a rooted tree. Store the branches in a vector such that
 -- the two branches leading to the root are the first two entries of the vector.
 -- Ignore the root branch.
-getBranches :: Tree Double a -> VS.Vector Double
+getBranches :: VS.Storable e => Tree e a -> VS.Vector e
 getBranches (Node _ _ [l, r]) =
   {-# SCC getBranches #-}
   VS.fromList $ head ls : head rs : tail ls ++ tail rs
@@ -37,6 +37,7 @@ getBranches (Node _ _ [l, r]) =
     ls = branches l
     rs = branches r
 getBranches _ = error "getBranches: Root node is not bifurcating."
+{-# SPECIALIZE getBranches :: Tree Double a -> VS.Vector Double #-}
 
 -- | Sum the first two elements of a vector. Needed to merge the two branches
 -- leading to the root.

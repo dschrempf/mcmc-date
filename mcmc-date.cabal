@@ -72,6 +72,7 @@ library
     Mcmc.Tree.Prior.Node.Constraint
     Mcmc.Tree.Proposal.Brace
     Mcmc.Tree.Proposal.Contrary
+    Mcmc.Tree.Proposal.RateClass
     Mcmc.Tree.Proposal.Ultrametric
     Mcmc.Tree.Proposal.Unconstrained
     Mcmc.Tree.Types

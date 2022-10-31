@@ -171,6 +171,39 @@ uncorrelatedLogNormal hs m v = branchesWith hs (logNormal' m v) . getLengthTree
   PriorFunction (LengthTree Double)
   #-}
 
+-- logNormalTwoClasses :: RealFloat a => (Variance a, Variance a) -> (Bool, a) -> Log a
+-- logNormalTwoClasses (v1, v2) (cl, x)
+--   | cl = logNormal' 1.0 v2 x
+--   | otherwise = logNormal' 1.0 v1 x
+
+-- -- | Uncorrelated log normal model with two classes.
+-- --
+-- -- The rates are distributed according to a log normal distribution with given
+-- -- mean and variance.
+-- --
+-- -- See Computational Molecular Evolution (Yang, 2006), Section 7.4.
+-- --
+-- -- Call 'error' if the variance is zero or negative.
+-- uncorrelatedLogNormalTwoClasses ::
+--   RealFloat a =>
+--   HandleStem ->
+--   (Variance a, Variance a) ->
+--   RateClassTree ->
+--   PriorFunctionG (LengthTree a) a
+-- uncorrelatedLogNormalTwoClasses hs vs (RateClassTree rcTr) (LengthTree rTr) =
+--   branchesWith hs (logNormalTwoClasses vs) zTr
+--   where
+--     zTr =
+--       fromMaybe
+--         (error "uncorrelatedLogNormalTwoClasses: Topologies of rate class tree and rate tree are different.")
+--         (zipTrees rcTr rTr)
+-- {-# SPECIALIZE uncorrelatedLogNormalTwoClasses ::
+--   HandleStem ->
+--   (Double, Double) ->
+--   RateClassTree ->
+--   PriorFunction (LengthTree Double)
+--   #-}
+
 -- | White noise model.
 --
 -- The rates are distributed according to a white noise process with given

@@ -84,6 +84,7 @@ import Probability
 import State
 import Tools
 import qualified Data.Vector as VB
+import Mcmc.Tree.Proposal.RateClass (switchClassesAndRates)
 {- ORMOLU_ENABLE -}
 
 -- | Initial state.
@@ -100,8 +101,10 @@ initWith t =
       _timeHeight = 1.0,
       _timeTree = initialTimeTree,
       _rateMean = 1.0,
+      _rateDispersion = 1.1,
       _rateVariance = 1.0,
-      _rateTree = LengthTree $ setStem 0 $ first (const 1.0) t
+      _rateTree = LengthTree $ setStem 0 $ first (const 1.0) t,
+      _rateClassTree = rateClassTreeFromTree t
     }
   where
     -- Treat a pathological case when branch lengths (excluding the stem) are
@@ -175,6 +178,9 @@ rateVarianceRateTreeL = tupleLens rateVariance rateTree
 rateMeanVarianceTreeL :: Lens' I (Double, Double, LengthTree Double)
 rateMeanVarianceTreeL = tripleLens rateMean rateVariance rateTree
 
+dispersionRateTreesL :: Lens' I (Double, RateClassTree, LengthTree Double)
+dispersionRateTreesL = tripleLens rateDispersion rateClassTree rateTree
+
 -- Proposals on the rate tree.
 proposalsRateTree :: Tree e a -> [Proposal I]
 proposalsRateTree t =
@@ -183,6 +189,8 @@ proposalsRateTree t =
     : liftProposalWith jacobianRootBranch rateMeanVarianceTreeL pVarianceAutocorrelated
     : map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
     ++ map (liftProposal rateTree) psOthers
+    ++ map (liftProposalWith jacobianRootBranch dispersionRateTreesL) rcPsAtRoot
+    ++ map (liftProposalWith jacobianRootBranch dispersionRateTreesL) rcPsOthers
   where
     w = weightNBranches $ length t
     -- I am proud of the next three proposals :).
@@ -198,6 +206,9 @@ proposalsRateTree t =
     psAtRoot = ps childrenOfRoot nR
     nO = PName "[O] Rate tree"
     psOthers = ps otherNodes nO
+    rcPs hn n = switchClassesAndRates t hn n (pWeight 3) (pWeight 8)
+    rcPsAtRoot = rcPs childrenOfRoot (PName "[R] Rate class switch")
+    rcPsOthers = rcPs otherNodes (PName "[O] Rate class switch")
 
 -- Contrary proposals on the time and rate trees.
 proposalsTimeRateTreeContra :: Show a => [Brace Double] -> Tree e a -> [Proposal I]
@@ -258,6 +269,7 @@ proposals bs calibrationsAvailable x mHTarget =
     [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
       timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
       rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
+      rateDispersion @~ slideSymmetric 0.2 (PName "Rate dispersion") w Tune,
       rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune,
       liftProposalWith jacobianRootBranch ratesTimeTreeL proposalRatesTimeTreeContra
     ]
@@ -290,6 +302,7 @@ monParams =
     _timeDeathRate >$< monitorDouble "TimeDeathRate",
     _timeHeight >$< monitorDouble "TimeHeight",
     _rateMean >$< monitorDouble "RateMean",
+    _rateDispersion >$< monitorDouble "RateDispersion",
     _rateVariance >$< monitorDouble "RateVariance"
   ]
 
@@ -378,6 +391,17 @@ monFileTimeTree = monitorFile "timetree" [absoluteTimeTree >$< monitorLengthTree
 monFileRateTree :: MonitorFile I
 monFileRateTree = monitorFile "ratetree" [_rateTree >$< monitorLengthTree "RateTree"] 2
 
+prepareRateClassTree :: I -> Tree Length Name
+prepareRateClassTree s = first fromBool $ getRateClassTree t
+  where
+    t = _rateClassTree s
+    fromBool False = toLengthUnsafe 0
+    fromBool True = toLengthUnsafe 1
+
+-- The rate class tree with rate classes is written to a separate file.
+monFileRateClassTree :: MonitorFile I
+monFileRateClassTree = monitorFile "rateclasstree" [prepareRateClassTree >$< monitorTree "RateClassTree"] 2
+
 -- Monitor the individual parts of the prior function.
 monFilePrior ::
   -- Initial, constant, approximate absolute time tree height.
@@ -411,6 +435,7 @@ monitor ht md cb cs bs =
     [ monFileParams (VB.toList cb) (VB.toList cs) (VB.toList bs),
       monFileTimeTree,
       monFileRateTree,
+      monFileRateClassTree,
       monFilePrior ht md cb cs bs
     ]
     []

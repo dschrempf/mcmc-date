@@ -66,7 +66,7 @@ slideNodesAtContrarilyPFunction pth sd t (tTr, LengthTree rTr) g
       -- New state.
       let x' = (HeightTree tTr', LengthTree rTr')
           jacobian = Exp $ sum (map log xisR) + log xiStemR
-      return (Propose x' q jacobian, Nothing)
+      pure (Propose x' q jacobian, Nothing)
   where
     -- Time tree.
     (HeightBoundaryData tTrPos hNode hsChildren hMaxChild hParent) =
