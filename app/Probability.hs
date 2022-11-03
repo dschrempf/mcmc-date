@@ -102,7 +102,7 @@ priorFunctionRelaxedMolecularClock ht md t' x =
     [ -- Mean rate. The mean of the mean rate ^^ is (1/height).
       exponential (realToFrac ht) mu,
       -- Rate dispersion.
-      exponential 1.0 dp,
+      exponential 1 dp,
       -- Variance of the relative rates.
       --
       -- Use the gamma distribution to avoid pathological situations with the
@@ -111,9 +111,9 @@ priorFunctionRelaxedMolecularClock ht md t' x =
       gammaMeanOne 10 va,
       -- Relative rate tree.
       case md of
-        UncorrelatedGamma -> uncorrelatedGamma WithoutStem 1.0 va r
-        UncorrelatedLogNormal -> uncorrelatedLogNormal WithoutStem 1.0 va r
-        AutocorrelatedLogNormal -> autocorrelatedLogNormal WithoutStem 1.0 va t' r
+        UncorrelatedGamma -> uncorrelatedGamma WithoutStem 1 va r
+        UncorrelatedLogNormal -> uncorrelatedLogNormal WithoutStem 1 va r
+        AutocorrelatedLogNormal -> autocorrelatedLogNormal WithoutStem 1 va t' r
     ]
   where
     mu = x ^. rateMean
