@@ -22,8 +22,9 @@ usage() {
     echo "-s         Use stack instead of cabal-install"
     echo
     echo "Relaxed molecular clock model:"
-    echo "u  Uncorrelated gamma model"
-    echo "a  Autocorrelated log normal model"
+    echo "ug  Uncorrelated gamma model"
+    echo "ul  Uncorrelated log normal model"
+    echo "al  Autocorrelated log normal model"
     echo
     echo "Likelihood specification:"
     echo "f  Full covariance matix"
@@ -108,9 +109,11 @@ shift
 
 relaxed_molecular_clock_model_flags=()
 case "$relaxed_molecular_clock_model" in
-    u) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "UncorrelatedGamma")
+    ug) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "UncorrelatedGamma")
        ;;
-    a) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "AutocorrelatedLogNormal")
+    ul) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "UncorrelatedLogNormal")
+       ;;
+    al) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "AutocorrelatedLogNormal")
        ;;
     *) usage
        exit 1
@@ -218,10 +221,12 @@ then
 fi
 
 case "$relaxed_molecular_clock_model" in
-    u) outdir="${outdir}-uncorrelated"
-       ;;
-    a) outdir="${outdir}-autocorrelated"
-       ;;
+    ug) outdir="${outdir}-uncorrelated"
+        ;;
+    ul) outdir="${outdir}-uncorrelated"
+        ;;
+    al) outdir="${outdir}-autocorrelated"
+        ;;
     *) usage
        exit 1
        ;;
