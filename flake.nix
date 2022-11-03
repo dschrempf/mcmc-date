@@ -99,9 +99,7 @@
             # Misc.
             bashInteractive
 
-            # TODO: `cabal-fmt` fails to build when using a newer package set.
-            haskell.packages.ghc902.cabal-fmt # Build fails for newer hpkgs.
-
+            hpkgs.cabal-fmt
             hpkgs.cabal-install
             hpkgs.haskell-language-server
 
