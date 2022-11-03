@@ -84,7 +84,6 @@ import Probability
 import State
 import Tools
 import qualified Data.Vector as VB
-import Mcmc.Tree.Proposal.RateClass (switchClassesAndRates)
 {- ORMOLU_ENABLE -}
 
 -- | Initial state.
@@ -187,6 +186,7 @@ proposalsRateTree t =
   liftProposalWith jacobianRootBranch rateMeanRateTreeL pMeanContra
     : liftProposalWith jacobianRootBranch rateVarianceRateTreeL pVarianceUncorrelated
     : liftProposalWith jacobianRootBranch rateMeanVarianceTreeL pVarianceAutocorrelated
+    : liftProposalWith jacobianRootBranch dispersionRateTreesL pDispersionRates
     : map (liftProposalWith jacobianRootBranch rateTree) psAtRoot
     ++ map (liftProposal rateTree) psOthers
     ++ map (liftProposalWith jacobianRootBranch dispersionRateTreesL) rcPsAtRoot
@@ -199,6 +199,8 @@ proposalsRateTree t =
     nVR = PName "[R] Rate variance, Rate tree"
     pVarianceUncorrelated = scaleVarianceAndTree t 100 nVR w Tune
     pVarianceAutocorrelated = scaleVarianceAndTreeAutocorrelated t 100 nVR w Tune
+    nDR = PName "[R] Dispersion, Rate tree"
+    pDispersionRates = scaleDispersionAndRates t 100 nDR w Tune
     ps hn n =
       scaleBranches t hn 100 n (pWeight 3) Tune
         ++ scaleSubTrees t hn 100 n (pWeight 3) (pWeight 8) Tune
