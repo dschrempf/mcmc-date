@@ -31,7 +31,7 @@ switchClassAndRateAtPFunction p (dp, RateClassTree rcTr, LengthTree rTr) _ =
     -- Switch from fast to slow class; relative rate has to become larger.
     f True x = x * d * d
     rTr' = rTr & (subTreeAtL p . branchL) %~ f c
-    x' = (d, RateClassTree rcTr', LengthTree rTr')
+    x' = (dp, RateClassTree rcTr', LengthTree rTr')
 
 switchClassAndRateAt :: Path -> PName -> PWeight -> Proposal (Double, RateClassTree, LengthTree Double)
 switchClassAndRateAt p n w =
