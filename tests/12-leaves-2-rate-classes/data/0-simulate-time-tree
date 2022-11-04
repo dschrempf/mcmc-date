@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+tlynx -f -o time simulate -n 12 -t 1 -S 0 birthdeath -l 0.001 -m 0.0009 --mrca 1000
+
+echo "MANUAL STEPS NECESSARY!"
+echo "Create time.alpha.tree; rename leaves using letters a...!"
+echo "Create rate.alpha.tree; choose rates accordingly!"

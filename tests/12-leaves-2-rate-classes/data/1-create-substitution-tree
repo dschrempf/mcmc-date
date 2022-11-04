@@ -1,0 +1,20 @@
+#!/usr/bin/env nix-script-haskell
+
+#!haskellPackages elynx-tree bytestring
+
+{-# LANGUAGE OverloadedStrings #-}
+
+import ELynx.Tree
+import Data.Either
+import Data.Maybe
+import qualified Data.ByteString.Lazy as BL
+
+main :: IO ()
+main = do
+  t <- readOneNewick Standard "time.alpha.tree"
+  let lt = either error id $ toLengthTree t
+  r <- readOneNewick Standard "rate.alpha.tree"
+  let lr = either error id $ toLengthTree r
+  let s = fromJust $ zipTreesWith (*) const lt lr
+  BL.writeFile "substitution.alpha.tree" $ toNewick s
+  

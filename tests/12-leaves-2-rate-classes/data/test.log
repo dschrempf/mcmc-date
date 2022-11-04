@@ -1,0 +1,25 @@
+
+phylobayes version 4.1
+
+init seed : 148580
+
+data file : data.phylip
+number of taxa : 12
+number of sites: 5000
+
+fast computation / high memory use 
+
+fixed tree topology: substitution.alpha.tree
+
+branch lengths ~ iid gamma of mean mu and variance epsilon*mu^2
+mu ~ exponential of mean 0.1
+epsilon ~ exponential of mean 1
+
+site homogeneous model: free equilibrium frequencies (pi inferred from data)
+pi ~ uniform
+
+relative exchange rates:
+empirical (lg, Le and Gascuel 2008)
+
+uniform rates across sites
+
