@@ -264,6 +264,9 @@ proposalsChangingTimeHeight t =
     nRC = PName "[R] Trees"
     psSlideRoot = slideRootContrarily t 10 nRC w Tune
 
+rateDispersionRateMeanLens :: Lens' I (Double, Double)
+rateDispersionRateMeanLens = tupleLens rateDispersionParameter rateMean
+
 -- | The proposal cycle includes proposals for the other parameters.
 proposals :: [Brace Double] -> Bool -> I -> Maybe (HTarget IG) -> Cycle I
 proposals bs calibrationsAvailable x mHTarget =
@@ -275,6 +278,7 @@ proposals bs calibrationsAvailable x mHTarget =
       rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune,
       liftProposalWith jacobianRootBranch ratesTimeTreeL proposalRatesTimeTreeContra
     ]
+      ++ [rateDispersionRateMeanLens @~ p | p <- dmps]
       ++ maybeHamiltonianProposal
       ++ proposalsTimeTree bs t
       ++ proposalsRateTree t
@@ -284,8 +288,8 @@ proposals bs calibrationsAvailable x mHTarget =
   where
     t = getLengthTree $ _rateTree x
     w = weightNBranches $ length t
-    nm = PName "Rates and time tree"
-    proposalRatesTimeTreeContra = scaleRatesAndTreeContrarily t 0.1 nm w Tune
+    dmps = scaleDispersionAndRateMean 10 (PName "Rate dispersion and mean") w Tune
+    proposalRatesTimeTreeContra = scaleRatesAndTreeContrarily t 0.1 (PName "Rates and time tree") w Tune
     maybeHamiltonianProposal = case mHTarget of
       Nothing -> []
       Just htarget -> [liftProposalWith jacobianRootBranch id $ nutsWith calibrationsAvailable x htarget]
