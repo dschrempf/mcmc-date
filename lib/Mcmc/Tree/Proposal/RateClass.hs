@@ -12,6 +12,7 @@
 module Mcmc.Tree.Proposal.RateClass
   ( switchClassesAndRates,
     scaleDispersionAndRates,
+    scaleDispersionAndRateMean,
   )
 where
 
@@ -102,7 +103,7 @@ scaleDispersionAndRatesFunction (dp, RateClassTree rcTr, LengthTree (Node br lb 
   (dp', RateClassTree rcTr, LengthTree rTr')
   where
     dp' = dp * u
-    dNew = 1 + dp * u
+    dNew = 1 + dp'
     dOld = 1 + dp
     xi = dNew / dOld
     -- Slow branches need to be sped up.
@@ -119,6 +120,9 @@ scaleDispersionAndRatesPFunction ::
   TuningParameter ->
   PFunction (Double, RateClassTree, LengthTree Double)
 scaleDispersionAndRatesPFunction n k t =
+  -- NOTE: Xi needs to be recomputed within scaleDispersionAndRatesFunction and
+  -- scaleDispersionAndRatesJacobian because I use genericContinuous. But that
+  -- should be fast anyways.
   genericContinuous
     (gammaDistr (k / t) (t / k))
     scaleDispersionAndRatesFunction
@@ -146,3 +150,30 @@ scaleDispersionAndRates tr s =
     dsc = PDescription "Scale dispersion and rates"
     nBranches = length tr - 1
     dim = PDimension $ 1 + nBranches
+
+data DRSpec = LowRateConstant | HighRateConstant
+
+scaleDispersionAndRateMeanPFunction :: DRSpec -> Shape Double -> TuningParameter -> PFunction (Double, Double)
+scaleDispersionAndRateMeanPFunction sp k t = genericContinuous (gammaDistr (k / t) (t / k)) (f sp) (Just recip) (Just $ jac sp)
+  where
+    -- NOTE: Xi needs to be recomputed within f and jac because I use
+    -- genericContinuous. But that should be fast anyways.
+    f LowRateConstant (dp, rm) u = (dp * u, rm * getXi dp u)
+    f HighRateConstant (dp, rm) u = (dp * u, rm / getXi dp u)
+    jac LowRateConstant (dp, _) u = Exp $ log (getXi dp u) - log u
+    jac HighRateConstant (dp, _) u = Exp $ negate $ log (getXi dp u) + log u
+    getXi dp u =
+      let dp' = dp * u
+          dOld = 1 + dp
+          dNew = 1 + dp'
+       in dNew / dOld
+
+-- | Scale dispersion and rate mean, so that either the fast or slow rate stay
+-- constant.
+scaleDispersionAndRateMean :: Shape Double -> PName -> PWeight -> Tune -> [Proposal (Double, Double)]
+scaleDispersionAndRateMean k n w t = [p LowRateConstant, p HighRateConstant]
+  where
+    dsc LowRateConstant = PDescription "Scale dispersion and rate mean (low constant) "
+    dsc HighRateConstant = PDescription "Scale dispersion and rate mean (high constant) "
+    dim = PDimension 2
+    p x = createProposal (dsc x) (scaleDispersionAndRateMeanPFunction x k) PFast dim n w t
