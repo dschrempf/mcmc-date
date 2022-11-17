@@ -102,11 +102,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1667924855,
-        "narHash": "sha256-lpiTUOpH7Pp3ly5jjzoXjLT2kC0Nv+ZOFVG+bgIueCA=",
+        "lastModified": 1667980256,
+        "narHash": "sha256-a9T1/gH3DOonENmG05J1LETDAwT1EygeR0hHnkAf530=",
         "owner": "dschrempf",
         "repo": "elynx",
-        "rev": "6ed6009e11972a62fdda914b789a616241521e6f",
+        "rev": "37fd12c84d2ffbd21b55d28b546dda72ab474f5b",
         "type": "github"
       },
       "original": {
