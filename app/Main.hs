@@ -58,6 +58,7 @@ import Probability
 import State
 import Tools
 import qualified Statistics.Covariance as S
+import Mcmc.Tree.Prior.Node.CalibrationFromTree (loadCalibrationsFromTree)
 {- ORMOLU_ENABLE -}
 
 getMeanTreeFn :: String -> FilePath
@@ -304,10 +305,12 @@ getCalibrations ::
   Handle ->
   HandleProblematicCalibrations ->
   Tree e Name ->
-  Maybe FilePath ->
+  Maybe CalibrationSpec ->
   IO (VB.Vector (Calibration Double))
 getCalibrations _ _ _ Nothing = return VB.empty
-getCalibrations h frc t (Just f) = loadCalibrations h frc t f
+getCalibrations h frc t (Just s) = case s of
+  CalibrationsCsv fn -> loadCalibrations h frc t fn
+  CalibrationsTree fn -> loadCalibrationsFromTree h frc t fn
 
 getConstraints ::
   Handle ->

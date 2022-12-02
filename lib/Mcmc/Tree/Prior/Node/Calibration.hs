@@ -2,7 +2,7 @@
 
 -- |
 -- Module      :  Mcmc.Tree.Prior.Node.Calibration
--- Description :  Relative node order constraints and node calibrations
+-- Description :  Node age calibrations
 -- Copyright   :  2021 Dominik Schrempf
 -- License     :  GPL-3.0-or-later
 --
@@ -22,6 +22,7 @@ module Mcmc.Tree.Prior.Node.Calibration
     getCalibrationInterval,
     CalibrationData (..),
     HandleProblematicCalibrations (..),
+    checkAndConvertCalibrationData,
     loadCalibrations,
     getMeanRootHeight,
     calibrateSoftS,
@@ -253,6 +254,32 @@ data HandleProblematicCalibrations
   | ErrorOnProblematicCalibrations
   deriving (Eq, Read, Show)
 
+checkAndConvertCalibrationData ::
+  Handle ->
+  HandleProblematicCalibrations ->
+  Tree e Name ->
+  VB.Vector (CalibrationData Double) ->
+  IO (VB.Vector (Calibration Double))
+checkAndConvertCalibrationData h frc t cds = do
+  let calsAll = VB.map (calibrationDataToCalibration t) cds
+  -- Check for duplicates and conflicts.
+  let calsErrs = findDupsBy ((==) `on` calibrationNodePath) $ VB.toList calsAll
+  -- TODO: Actually check for conflicting calibrations.
+  if null calsErrs
+    then hPutStrLn h "No duplicate/conflicting/redundant calibrations have been detected."
+    else do
+      -- Calibrations could also be removed. But then, which one should be removed?
+      let render xs =
+            unlines $
+              "Redundant and/or conflicting calibration:" : map prettyPrintCalibration xs
+      mapM_ (hPutStr h . render) calsErrs
+      case frc of
+        WarnAboutProblematicCalibrations ->
+          hPutStr h "WARNING: Duplicate/conflicting/redundant calibrations have been detected."
+        ErrorOnProblematicCalibrations ->
+          error "loadCalibrations: Duplicate/conflicting/redundant calibrations have been detected."
+  return calsAll
+
 -- | Load and validate calibrations from file.
 --
 -- The calibration file is a comma separated values (CSV) file with rows of the
@@ -287,24 +314,7 @@ loadCalibrations h frc t f = do
   let mr = decode HasHeader d :: Either String (VB.Vector (CalibrationData Double))
       cds = either error id mr
   when (VB.null cds) $ error $ "loadCalibrations: No calibrations found in file: " <> f <> "."
-  let calsAll = VB.map (calibrationDataToCalibration t) cds
-  -- Check for duplicates and conflicts.
-  let calsErrs = findDupsBy ((==) `on` calibrationNodePath) $ VB.toList calsAll
-  -- TODO: Actually check for conflicting calibrations.
-  if null calsErrs
-    then hPutStrLn h "No duplicate/conflicting/redundant calibrations have been detected."
-    else do
-      -- Calibrations could also be removed. But then, which one should be removed?
-      let render xs =
-            unlines $
-              "Redundant and/or conflicting calibration:" : map prettyPrintCalibration xs
-      mapM_ (hPutStr h . render) calsErrs
-      case frc of
-        WarnAboutProblematicCalibrations ->
-          hPutStr h "WARNING: Duplicate/conflicting/redundant calibrations have been detected."
-        ErrorOnProblematicCalibrations ->
-          error "loadCalibrations: Duplicate/conflicting/redundant calibrations have been detected."
-  return calsAll
+  checkAndConvertCalibrationData h frc t cds
 
 -- | If the root node is calibrated, get the mean of the root node height.
 --

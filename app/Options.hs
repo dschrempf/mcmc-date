@@ -13,6 +13,7 @@ module Options
   ( Algorithm (..),
     Spec (..),
     LikelihoodSpec (..),
+    CalibrationSpec (..),
     PrepSpec (..),
     Mode (..),
     parseArgs,
@@ -43,13 +44,16 @@ data LikelihoodSpec
 likelihoodSpecP :: Parser LikelihoodSpec
 likelihoodSpecP = option auto (long "likelihood-spec" <> help "Likelihood specification (see below).")
 
+data CalibrationSpec = CalibrationsCsv FilePath | CalibrationsTree FilePath
+  deriving (Show, Eq, Read)
+
 data Spec = Spec
   { analysisName :: String,
     -- | Multiple analyses with different names can use the same preparation files.
     preparationName :: Maybe String,
     -- | If no calibrations are given, a normalized tree with height 1.0 is
     -- inferred.
-    calibrations :: Maybe FilePath,
+    calibrations :: Maybe CalibrationSpec,
     handleProblematicCalibrations :: HandleProblematicCalibrations,
     constraints :: Maybe FilePath,
     handleProblematicConstraints :: HandleProblematicConstraints,
@@ -84,12 +88,21 @@ preparationNameP =
         <> metavar "NAME"
     )
 
-calibrationsP :: Parser FilePath
+readCalibrationSpec :: String -> Either String CalibrationSpec
+readCalibrationSpec xs = case words xs of
+  ["csv", fn] -> Right $ CalibrationsCsv fn
+  ["tree", fn] -> Right $ CalibrationsTree fn
+  _ -> err
+  where
+    err = Left $ "readCalibrationSpec: expected \"csv filename\" or \"tree filename\"; got " <> xs
+
+calibrationsP :: Parser CalibrationSpec
 calibrationsP =
-  strOption
+  option
+    (eitherReader readCalibrationSpec)
     ( long "calibrations"
-        <> help "File name specifying calibrations"
-        <> metavar "FILE"
+        <> help "Specify calibrations (SPEC is either csv or tree)"
+        <> metavar "\"SPEC FILE\" (mind the quotes)"
     )
 
 handleProblematicCalibrationsP :: Parser HandleProblematicCalibrations

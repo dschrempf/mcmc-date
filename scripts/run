@@ -203,7 +203,7 @@ then
     else
         echo "Calibrations: ${calibrations}."
         outdir="${outdir}-calibrations"
-        c_flags+=(--calibrations "../$calibrations")
+        c_flags+=(--calibrations "csv ../$calibrations")
     fi
 fi
 
