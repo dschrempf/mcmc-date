@@ -97,7 +97,7 @@ aBoundedToCalibrationData ((a, b), bnd) = CalibrationData (aS <> "-" <> bS) aS b
     (l, lp, u, up) = case bnd of
       (Abl (LBounded l' _ _ lp')) -> (Just l', lp', Nothing, Nothing)
       (Abu (UBounded u' up')) -> (Nothing, Nothing, Just u', up')
-      (Abb (BBounded l' u' lp' up')) -> (Just l', Just u', lp', up')
+      (Abb (BBounded l' u' lp' up')) -> (Just l', lp', Just u', up')
 
 filterBoundedNodes :: Tree e Name -> [CalibrationS]
 filterBoundedNodes t@(Node _ nm ts) = case parseOnly pABounded nmS of

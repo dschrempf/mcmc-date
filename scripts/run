@@ -183,9 +183,11 @@ c_flags=()
 
 if [[ $braces_activated -eq 1 ]]
 then
-    if [[ -z $braces ]]
-    then
+    if [[ -z $braces ]]; then
         echo "Braces activated but brace file not available."
+        exit 1
+    elif [[ ! -f $braces ]]; then
+        echo "Braces activated but brace file ${braces} does not exist."
         exit 1
     else
         echo "Braces: ${braces}."
@@ -196,22 +198,30 @@ fi
 
 if [[ $calibrations_activated -eq 1 ]]
 then
-    if [[ -z $calibrations ]]
-    then
+    if [[ -z $calibrations ]]; then
         echo "Calibrations activated but calibration file not available."
+        exit 1
+    elif [[ ! -f $calibrations ]]; then
+        echo "Calibrations activated but calibration file ${calibrations} does not exist."
         exit 1
     else
         echo "Calibrations: ${calibrations}."
         outdir="${outdir}-calibrations"
-        c_flags+=(--calibrations "csv ../$calibrations")
+        if [[ ${calibrations} =~ .*csv ]]; then
+          c_flags+=(--calibrations "csv ../$calibrations")
+        else
+          c_flags+=(--calibrations "tree ../$calibrations")
+        fi
     fi
 fi
 
 if [[ $constraints_activated -eq 1 ]]
 then
-    if [[ -z $constraints ]]
-    then
+    if [[ -z $constraints ]]; then
         echo "Constraints activated but constraint file not available."
+        exit 1
+    elif [[ ! -f $constraints ]]; then
+        echo "Constraints activated but constraint file ${constraints} does not exist."
         exit 1
     else
         echo "Constraints: ${constraints}."
