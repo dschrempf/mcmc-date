@@ -51,78 +51,84 @@
     , nixpkgs
     , pava
     }:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        ghcVersion = "ghc924";
-        haskellOverlay = (
-          selfn: supern: {
-            haskellPackages = supern.haskell.packages.${ghcVersion}.override {
-              overrides = selfh: superh:
-                {
-                  circular = circular.packages.${system}.default;
-                  covariance = covariance.packages.${system}.default;
-                  dirichlet = dirichlet.packages.${system}.default;
-                  mcmc = mcmc.packages.${system}.default;
-                  pava = pava.packages.${system}.default;
-                } // elynx.packages.${system};
-            };
-          }
-        );
-        overlays = [ haskellOverlay ];
-        pkgs = import nixpkgs {
-          inherit system overlays;
+    let
+      theseHpkgNames = [
+        "mcmc-date"
+      ];
+      thisGhcVersion = "ghc943";
+      hOverlay = selfn: supern: {
+        haskell = supern.haskell // {
+          packageOverrides = selfh: superh:
+            supern.haskell.packageOverrides selfh superh //
+              {
+                mcmc-date = selfh.callCabal2nix "mcmc-date" ./. { };
+              };
         };
-        hpkgs = pkgs.haskellPackages;
-        dschrempf = import dschrempf-nur {
-          inherit pkgs;
+      };
+      perSystem = system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [
+              hOverlay
+              circular.overlays.default
+              covariance.overlays.default
+              dirichlet.overlays.default
+              mcmc.overlays.default
+              pava.overlays.default
+              elynx.overlays.default
+            ];
+          };
+          hpkgs = pkgs.haskell.packages.${thisGhcVersion};
+          hlib = pkgs.haskell.lib;
+          theseHpkgs = nixpkgs.lib.genAttrs theseHpkgNames (n: hpkgs.${n});
+          theseHpkgsDev = builtins.mapAttrs (_: x: hlib.doBenchmark x) theseHpkgs;
+          dschrempf = import dschrempf-nur {
+            inherit pkgs;
+            inherit system;
+          };
+        in
+        {
+          packages = theseHpkgs // { default = theseHpkgs.mcmc-date; };
+
+          devShells.default = hpkgs.shellFor {
+            shellHook =
+              let
+                scripts = ./scripts;
+              in
+              ''
+                export PATH="${scripts}:$PATH"
+              '';
+            packages = _: (builtins.attrValues theseHpkgsDev);
+            nativeBuildInputs = with pkgs; [
+              # See https://github.com/NixOS/nixpkgs/issues/59209.
+              bashInteractive
+
+              hpkgs.cabal-fmt
+              hpkgs.cabal-install
+              hpkgs.haskell-language-server
+
+              # Analysis.
+              dschrempf.beast2
+              dschrempf.figtree
+              dschrempf.iqtree2
+              dschrempf.phylobayes
+              dschrempf.tracer
+
+              # ELynx.
+              hpkgs.elynx
+              hpkgs.slynx
+              hpkgs.tlynx
+
+              # Profiling.
+              # TODO (broken dependency, 2022-12-13): hpkgs.eventlog2html
+            ];
+            buildInputs = with pkgs; [
+            ];
+            doBenchmark = true;
+            # withHoogle = true;
+          };
         };
-        mcmcDatePackage =
-          let
-            p = hpkgs.callCabal2nix "mcmc-date" ./. rec { };
-          in
-          pkgs.haskell.lib.doBenchmark p;
-      in
-      {
-        packages.default = mcmcDatePackage;
-
-        devShells.default = hpkgs.shellFor {
-          shellHook =
-            let
-              scripts = ./scripts;
-            in
-            ''
-              export PATH="${scripts}:$PATH"
-            '';
-          packages = _: [ mcmcDatePackage ];
-          nativeBuildInputs = with pkgs; [
-            # Misc.
-            bashInteractive
-
-            hpkgs.cabal-fmt
-            hpkgs.cabal-install
-            hpkgs.haskell-language-server
-
-            # Analysis.
-            dschrempf.beast2
-            dschrempf.figtree
-            dschrempf.iqtree2
-            dschrempf.phylobayes
-            dschrempf.tracer
-
-            # ELynx.
-            hpkgs.elynx
-            hpkgs.slynx
-            hpkgs.tlynx
-
-            # Profiling.
-            hpkgs.eventlog2html
-          ];
-          buildInputs = with pkgs; [
-          ];
-          doBenchmark = true;
-          # withHoogle = true;
-        };
-      }
-    );
+    in
+    { overlays.default = hOverlay; } // flake-utils.lib.eachDefaultSystem perSystem;
 }
