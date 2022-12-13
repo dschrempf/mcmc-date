@@ -2,10 +2,9 @@
   "nodes": {
     "circular": {
       "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
+        "flake-utils": "flake-utils_2",
         "nixpkgs": [
+          "mcmc",
           "nixpkgs"
         ]
       },
@@ -25,10 +24,9 @@
     },
     "covariance": {
       "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
+        "flake-utils": "flake-utils_3",
         "nixpkgs": [
+          "mcmc",
           "nixpkgs"
         ]
       },
@@ -48,10 +46,9 @@
     },
     "dirichlet": {
       "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
+        "flake-utils": "flake-utils_4",
         "nixpkgs": [
+          "mcmc",
           "nixpkgs"
         ]
       },
@@ -130,26 +127,89 @@
         "type": "github"
       }
     },
+    "flake-utils_2": {
+      "locked": {
+        "lastModified": 1667395993,
+        "narHash": "sha256-nuEHfE/LcWyuSWnS8t12N1wc105Qtau+/OdUAjtQ0rA=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "5aed5285a952e0b949eb3ba02c12fa4fcfef535f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_3": {
+      "locked": {
+        "lastModified": 1667395993,
+        "narHash": "sha256-nuEHfE/LcWyuSWnS8t12N1wc105Qtau+/OdUAjtQ0rA=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "5aed5285a952e0b949eb3ba02c12fa4fcfef535f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_4": {
+      "locked": {
+        "lastModified": 1667395993,
+        "narHash": "sha256-nuEHfE/LcWyuSWnS8t12N1wc105Qtau+/OdUAjtQ0rA=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "5aed5285a952e0b949eb3ba02c12fa4fcfef535f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_5": {
+      "locked": {
+        "lastModified": 1667395993,
+        "narHash": "sha256-nuEHfE/LcWyuSWnS8t12N1wc105Qtau+/OdUAjtQ0rA=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "5aed5285a952e0b949eb3ba02c12fa4fcfef535f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_6": {
+      "locked": {
+        "lastModified": 1667395993,
+        "narHash": "sha256-nuEHfE/LcWyuSWnS8t12N1wc105Qtau+/OdUAjtQ0rA=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "5aed5285a952e0b949eb3ba02c12fa4fcfef535f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
     "mcmc": {
       "inputs": {
-        "circular": [
-          "circular"
-        ],
-        "covariance": [
-          "covariance"
-        ],
-        "dirichlet": [
-          "dirichlet"
-        ],
-        "flake-utils": [
-          "flake-utils"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "pava": [
-          "pava"
-        ]
+        "circular": "circular",
+        "covariance": "covariance",
+        "dirichlet": "dirichlet",
+        "flake-utils": "flake-utils_5",
+        "nixpkgs": "nixpkgs",
+        "pava": "pava"
       },
       "locked": {
         "lastModified": 1670972778,
@@ -181,12 +241,27 @@
         "type": "github"
       }
     },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1670918062,
+        "narHash": "sha256-iOhkyBYUU9Jfkk0lvI4ahpjyrTsLXj9uyJWwmjKg+gg=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "84575b0bd882be979516f4fecfe4d7c8de8f6a92",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable-small",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "pava": {
       "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
+        "flake-utils": "flake-utils_6",
         "nixpkgs": [
+          "mcmc",
           "nixpkgs"
         ]
       },
@@ -206,15 +281,11 @@
     },
     "root": {
       "inputs": {
-        "circular": "circular",
-        "covariance": "covariance",
-        "dirichlet": "dirichlet",
         "dschrempf-nur": "dschrempf-nur",
         "elynx": "elynx",
         "flake-utils": "flake-utils",
         "mcmc": "mcmc",
-        "nixpkgs": "nixpkgs",
-        "pava": "pava"
+        "nixpkgs": "nixpkgs_2"
       }
     }
   },
