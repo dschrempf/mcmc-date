@@ -152,11 +152,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1670969212,
-        "narHash": "sha256-vTD0uQJcEFw6JmrO74o07+xXxCLAbBZnp/nk9pItjvo=",
+        "lastModified": 1670972778,
+        "narHash": "sha256-sEhCh4VfLlvVjUeEkkNvY9w624kniyOecmgx/4X2hcA=",
         "owner": "dschrempf",
         "repo": "mcmc",
-        "rev": "0f964c26f4bf807f77779abb62a3ecf60fa9427a",
+        "rev": "b204e8d25e8e5f13e217d4bc49e073d353f66577",
         "type": "github"
       },
       "original": {
