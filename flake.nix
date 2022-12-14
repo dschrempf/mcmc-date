@@ -92,7 +92,11 @@
               hpkgs.tlynx
 
               # Profiling.
-              # TODO (broken dependency, 2022-12-13): hpkgs.eventlog2html
+              #
+              # # TODO (low, 2022-12-13): hpkgs.eventlog2html has a broken
+              # # dependency. Reactivate when fixed.
+              #
+              # hpkgs.eventlog2html
             ];
             buildInputs = with pkgs; [
             ];
