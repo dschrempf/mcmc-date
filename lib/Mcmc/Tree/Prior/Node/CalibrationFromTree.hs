@@ -89,15 +89,20 @@ pABounded = (Abl <$> pLBounded) <|> (Abu <$> pUBounded) <|> (Abb <$> pBBounded)
 
 type CalibrationS = ((Name, Name), ABounded)
 
+-- Use a default probability mass if none is provided.
+defPM :: Maybe Double -> Maybe Double
+defPM Nothing = Just 0.01
+defPM x = x
+
 aBoundedToCalibrationData :: CalibrationS -> CalibrationData Double
 aBoundedToCalibrationData ((a, b), bnd) = CalibrationData (aS <> "-" <> bS) aS bS l lp u up
   where
     aS = BL.unpack $ fromName a
     bS = BL.unpack $ fromName b
     (l, lp, u, up) = case bnd of
-      (Abl (LBounded l' _ _ lp')) -> (Just l', lp', Nothing, Nothing)
-      (Abu (UBounded u' up')) -> (Nothing, Nothing, Just u', up')
-      (Abb (BBounded l' u' lp' up')) -> (Just l', lp', Just u', up')
+      (Abl (LBounded l' _ _ lp')) -> (Just l', defPM lp', Nothing, Nothing)
+      (Abu (UBounded u' up')) -> (Nothing, Nothing, Just u', defPM up')
+      (Abb (BBounded l' u' lp' up')) -> (Just l', defPM lp', Just u', defPM up')
 
 filterBoundedNodes :: Tree e Name -> [CalibrationS]
 filterBoundedNodes t@(Node _ nm ts) = case parseOnly pABounded nmS of
