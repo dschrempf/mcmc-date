@@ -376,6 +376,7 @@ getMcmcProps ::
     )
 getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg = do
   let prepName = fromMaybe an mPrepName
+  hPutStrLn h $ "Read mean tree using preparation name: " <> prepName <> "."
   -- Read the mean tree and the posterior means and covariances.
   meanTree <- getMeanTree prepName
 
@@ -383,13 +384,17 @@ getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp 
   -- various objects.
   --
   -- Calibrations.
+  hPutStrLn h $ "Get calibrations using specifications: " <> show cls <> "."
   cb <- getCalibrations h clsFlag meanTree cls
   let ht = fromMaybe 1.0 $ getMeanRootHeight cb
   -- Constraints.
+  hPutStrLn h $ "Get constraints using specifications: " <> show cns <> "."
   cs <- getConstraints h cnsFlag meanTree cns
   -- Braces.
+  hPutStrLn h $ "Get braces using specifications: " <> show brs <> "."
   bs <- getBraces h meanTree brs
   -- Likelihood function.
+  hPutStrLn h $ "Initialize likelihood function."
   lh' <- getLikelihoodFunction h prepName lhsp
   -- Generalized posterior function for Hamiltonian proposal.
   mHTarget <-
