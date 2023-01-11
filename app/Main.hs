@@ -510,7 +510,7 @@ runMarginalLikelihood h spec = do
       nPoints' = if prof then nPointsProf else nPoints
       burnIn' = if prof then burnInProf else burnIn
       repetitiveBurnIn' = if prof then repetitiveBurnInProf else repetitiveBurnIn
-      iterations' = if prof then iterationsProf else iterations
+      iterations' = if prof then iterationsProf else iterationsMarginalLh
       mlS =
         MLSettings
           (AnalysisName $ analysisName spec)

@@ -55,6 +55,7 @@ module Definitions
     burnInProf,
     iterations,
     iterationsProf,
+    iterationsMarginalLh,
     nPoints,
     nPointsProf,
     repetitiveBurnIn,
@@ -443,6 +444,10 @@ iterations = Iterations 8000
 iterationsProf :: Iterations
 iterationsProf = Iterations 50
 
+-- | Number of iterations per point when calculating the marginal likelihood.
+iterationsMarginalLh :: Iterations
+iterationsMarginalLh = Iterations 4000
+
 -- | Number of points of the stepping stone sampler.
 nPoints :: NPoints
 nPoints = NPoints 128
@@ -456,7 +461,7 @@ repetitiveBurnIn :: BurnInSettings
 repetitiveBurnIn = BurnInWithCustomAutoTuning fast slow
   where
     fast = [20, 40, 60, 80]
-    slow = replicate 9 100
+    slow = replicate 6 100
 
 -- | Repetitive burn in at each point on the path when profiling is enabled.
 repetitiveBurnInProf :: BurnInSettings
