@@ -40,12 +40,26 @@ general, the rough pipeline is:
 Here, we are going to use data from eukaryotes [cite/p:@Strassert2021].
 
 * Phylogenetic inference with Phylobayes
+- Use Phylobayes [cite/p:@Lartillot2013].
+- Decide on evolutionary model depending on the size of the data set and the
+  computational requirements. Recommended models from preferred but slow and
+  complex to fast and simple: GTR+CAT+G4, LG+CAT+G4, LG+EDM64+G4, LG+C60+G4,
+  LG+G4.
+
+- GTR model [cite:@Tavare1986].
+- CAT model [cite:@Lartillot2004].
+- Gamma rate variation model [cite:@Yang1993].
+- LG model [cite:@Le2008a].
+- EDM model [cite:@Schrempf2020a].
+- C60 model [cite:@Quang2008]
 
 * Preparation of node calibrations and node order constraints
-McmcDate can also brace nodes (Appendix [[id:202fc129-8d65-4966-a217-322231ff9c49]]).
+- Node order calibrations [cite:@Yang2005].
+- Relative node order constraints [cite:@Szollosi2022].
+- McmcDate can also brace nodes (Appendix [[id:202fc129-8d65-4966-a217-322231ff9c49]]).
 
 * Dating with McmcDate
-McmcDate is a Haskell program (Appendix [[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]).
+- McmcDate is a Haskell program (Appendix [[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]).
 
 \appendix
 
