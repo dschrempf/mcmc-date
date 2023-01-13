@@ -19,7 +19,7 @@ usage() {
     echo "-f FILE    Use a different analysis configuration file (relative path)"
     echo "-n SUFFIX  Use an analysis suffix"
     echo "-p         Activate profiling"
-    echo "-s         Use stack instead of cabal-install"
+    echo "-s         Use Haskell stack instead of cabal-install"
     echo
     echo "Relaxed molecular clock model:"
     echo "ug  Uncorrelated gamma model"
@@ -33,10 +33,10 @@ usage() {
     echo "n  No likelihood; use prior only"
     echo
     echo "Available commands:"
-    echo "p  Prepare"
-    echo "r  Run"
-    echo "c  Continue"
-    echo "m  Marginal likelihood"
+    echo "p  Prepare analysis"
+    echo "r  Run dating analysis"
+    echo "c  Continue dating analysis"
+    echo "m  Compute marginal likelihood"
     echo
     echo "A configuration file \"analysis.conf\" is required."
     echo "For reference, see the sample configuration file."
@@ -231,11 +231,11 @@ then
 fi
 
 case "$relaxed_molecular_clock_model" in
-    ug) outdir="${outdir}-uncorrelated"
+    ug) outdir="${outdir}-ugamma"
         ;;
-    ul) outdir="${outdir}-uncorrelated"
+    ul) outdir="${outdir}-ulognormal"
         ;;
-    al) outdir="${outdir}-autocorrelated"
+    al) outdir="${outdir}-alognormal"
         ;;
     *) usage
        exit 1
