@@ -11,7 +11,6 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 28.2 (Org mode 9.6)
-#+cite_export:
 
 #+latex_class: myArticle
 #+latex_class_options: [minted,svg]
@@ -46,9 +45,6 @@ age calibrations and node order constraints. In general, the rough pipeline is:
 
 * Dating with McmcDate
 
-* References
-#+print_bibliography:
-
 \appendix
 
 * Internals of McmcDate
@@ -57,3 +53,5 @@ age calibrations and node order constraints. In general, the rough pipeline is:
 - Explain code a bit (I guess mostly proposals).
 
 * Node braces
+
+#+print_bibliography:
