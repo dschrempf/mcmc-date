@@ -1,0 +1,59 @@
+#+options: ':t *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t
+#+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
+#+options: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
+#+options: tasks:t tex:t timestamp:t title:t toc:nil todo:t |:t
+#+title: Dating with constraints
+#+subtitle: A tutorial on McmcDate
+#+date: January 13, 2023
+#+author: Dominik Schrempf
+#+email: dominik.schrempf@gmail.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 28.2 (Org mode 9.6)
+#+cite_export:
+
+#+latex_class: myArticle
+#+latex_class_options: [minted,svg]
+#+latex_header:
+#+latex_header_extra:
+#+description:
+#+keywords:
+#+subtitle:
+#+latex_engraved_theme:
+#+latex_compiler: unused; see `org-latex-pdf-process'
+
+#+bibliography: ~/Evolutionary-Biology/Bibliography/bibliography.bib
+#+cite_export: biblatex
+
+In this tutorial, we are going to date a phylogeny with constraints. That is, we
+are going to estimate the ages of the ancestral nodes of a phylogeny with node
+age calibrations and node order constraints. In general, the rough pipeline is:
+1. Get a multi sequence alignment, and decide on a rooted tree. Here, we are
+   going to use data from eukaryotes [cite/p:@Strassert2021].
+2. Perform a Bayesian analysis using Phylobayes to estimate the distributions of
+   branch lengths measured in substitutions per unit time.
+3. Get auxiliary data such as node age calibrations, node order constraints or
+   node braces.
+4. Use the branch length distributions Perform a Bayesian analysis using
+   McmcDate to estimate.
+
+* Provision of sequence data and a rooted tree
+
+* Phylogenetic inference with Phylobayes
+
+* Preparation of node calibrations and node order constraints
+
+* Dating with McmcDate
+
+* References
+#+print_bibliography:
+
+\appendix
+
+* Internals of McmcDate
+- Based on [[https://hackage.haskell.org/package/mcmc][mcmc]].
+- Based on [[https://hackage.haskell.org/package/elynx-tree][elynx-tree]].
+- Explain code a bit (I guess mostly proposals).
+
+* Node braces
