@@ -48,7 +48,7 @@ topology is the only node with all branches pointing away to other nodes, and is
 the oldest node. Leaves are extant nodes with a single branch pointing towards
 them.
 
-For a given topology, /dating the topology/ (or sloppily: /dating the tree/)
+For a given topology, /dating a topology/ (or sloppily: /dating a tree/)
 corresponds to finding branch lengths measured in real time --- for example, in
 Million years --- which describe the data in the /best/ way. /Best/ can mean
 different things, and we will carefully analyze what /best/ means in our case.
