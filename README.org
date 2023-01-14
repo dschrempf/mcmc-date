@@ -1,23 +1,7 @@
-Estimate node ages of a phylogeny by approximating the phylogenetic likelihood
-with a multivariate normal distribution.
+The program [[https://github.com/dschrempf/mcmc-date][McmcDate]] can date a phylogenetic tree with constraints. That is, it
+can estimate the ages of the ancestral nodes of a phylogenetic tree with node
+age calibrations, node order constraints, and node braces. McmcDate is fast
+because it approximates the phylogenetic likelihood with a multivariate normal
+distribution.
 
-Modules containing definitions specific to the analysis:
-
-Modules:
-
-- [[file:app/Definitions.hs][Definitions]] :: Proposals and monitors, configuration.
-
-- [[file:app/Hamiltonian.hs][Hamiltonian]] :: Hamiltonian proposal.
-
-- [[file:app/Main.hs][Main]] :: Functions to prepare the data, run and continue the
-  Metropolis-Hasting-Green algorithm.
-
-- [[file:app/Options.hs][Options]] :: Handle command line options.
-
-- [[file:app/Probability.hs][Probability]] :: Prior and likelihood functions.
-
-- [[file:app/State.hs][State]] :: State space. If you try to understand what is going on, or if you
-  want to change analysis settings, your starting point should be =State=.
-
-- [[file:app/Tools.hs][Tools]] :: Miscellaneous tools.
-
+For documentation, please see the [[file:tutorial/tutorial.org][McmcDate tutorial]].

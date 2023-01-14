@@ -25,26 +25,69 @@
 #+bibliography: ~/Evolutionary-Biology/Bibliography/bibliography.bib
 #+cite_export: biblatex
 
-In this tutorial, we are going to date a phylogenetic tree with constraints.
-That is, we are going to estimate the ages of the ancestral nodes of a
-phylogenetic tree with node age calibrations and node order constraints. In
-general, the rough pipeline is:
-1. Prepare a multi sequence alignment, and decide on a rooted tree.
-2. Estimate the distributions of branch lengths measured in substitutions per
-   unit time.
-3. Prepare auxiliary data such as node age calibrations or node order
+#+latex: \begin{abstract}
+[[https://github.com/dschrempf/mcmc-date][McmcDate]] can date a phylogenetic tree with constraints. That is, it can estimate
+the ages of the ancestral nodes of a phylogenetic tree with node age
+calibrations, node order constraints, and node braces. McmcDate is fast because
+it approximates the phylogenetic likelihood with a multivariate normal
+distribution.
+
+In this tutorial, we are going to date a phylogenetic tree of eukaryotes. We are
+going to use node age calibrations from fossils, and node order constraints from
+two possible successions of plastid endosymbiosis events.
+#+latex: \end{abstract}
+
+* Definitions and explanations
+We use the term /(rooted) tree/ to denote a directed acyclic graph with node
+labels and branch lengths, and in which not more than one branch connects any
+two nodes. Usually, nodes correspond to (ancestral) species, and branch lengths
+to sequence distance or time. We use the term /(rooted) topology/ to denote a
+(rooted) tree without information about branch lengths. We put the word /rooted/
+into parentheses, because it is sometimes omited. The root of the tree or
+topology is the only node with all branches pointing away to other nodes, and is
+the oldest node. Leaves are extant nodes with a single branch pointing towards
+them.
+
+We want to find the tree with branch lengths measured in time --- for example,
+in Million years --- which describes the data in the /best/ way. /Best/ can mean
+different things, and we will carefully analyze what /best/ means in our case.
+
+Similarly, we use the term /unrooted tree/ to denote an undirected acyclic graph
+with node labels and branch lengths, and in which not more than one branch
+connects any two nodes. Finally, we use the term /unrooted topology/ to denote
+an unrooted tree without information about branch lengths. We need unrooted
+trees and topologies because we will use reversible substitution models [cite:
+for a review, see @Yang2006] to infer unrooted trees with branch lengths
+measured in expected number of substitutions per unit time. Reversible
+substitution models are unable to discriminate between the two directions in
+time.
+
+* Dating a tree
+In general, the rough pipeline when dating a tree is:
+1. Prepare a multi sequence alignment.
+2. Find an unrooted topology for subsequent analysis steps.
+3. For this unrooted topology, infer a distribution of unrooted trees with
+   branch lengths measured in expected number of substitutions per unit time.
+4. Find one or more rooted topologies which will be dated.
+4. Prepare auxiliary data such as node age calibrations or node order
    constraints.
-4. Date the phylogenetic tree using McmcDate.
+5. Use McmcDate to infer a distribution of rooted trees with branch lengths
+   measured in time.
 
 * Provision of sequence data and a rooted tree
-Here, we are going to use data from eukaryotes [cite/p:@Strassert2021].
+Here, we are going to use data from eukaryotes [cite:@Strassert2021].
 
 * Phylogenetic inference with Phylobayes
-- Use Phylobayes [cite/p:@Lartillot2013].
+- Use Phylobayes [cite:@Lartillot2013].
 - Decide on evolutionary model depending on the size of the data set and the
   computational requirements. Recommended models from preferred but slow and
   complex to fast and simple: GTR+CAT+G4, LG+CAT+G4, LG+EDM64+G4, LG+C60+G4,
   LG+G4.
+
+We specify an evolutionary model with exchangeabilities EX, and across-site
+compositional heterogeneity model ASCH as =EX+ASCH=. All discussed evolutionary
+models used for simulations as well as inferences implicitly use discrete gamma
+rate heterogeneity with four components.
 
 - GTR model [cite:@Tavare1986].
 - CAT model [cite:@Lartillot2004].
@@ -72,9 +115,29 @@ Here, we are going to use data from eukaryotes [cite/p:@Strassert2021].
 :PROPERTIES:
 :ID:       a38b78be-7ee6-4340-946a-2a5d06385b66
 :END:
+McmcDate is a Haskell program.
+
+Recommend cabal, but there is also stack (-s) option.
+
+The [[https://github.com/dschrempf/mcmc-date/blob/master/scripts/run][wrapper script]] used in this tutorial tries to make a good compromise between
+usability and customizability. It exposes some, but not all functionality of
+McmcDate. Most notably,
+
 - Based on [[https://hackage.haskell.org/package/mcmc][mcmc]].
 - Based on [[https://hackage.haskell.org/package/elynx-tree][elynx-tree]].
 - Explain code a bit (I guess mostly proposals).
+
+** Haskell modules
+Modules containing definitions specific to the analysis:
+- [[file:app/Definitions.hs][Definitions]] :: Proposals and monitors, configuration.
+- [[file:app/Hamiltonian.hs][Hamiltonian]] :: Hamiltonian proposal.
+- [[file:app/Main.hs][Main]] :: Functions to prepare the data, run and continue the
+  Metropolis-Hasting-Green algorithm.
+- [[file:app/Options.hs][Options]] :: Handle command line options.
+- [[file:app/Probability.hs][Probability]] :: Prior and likelihood functions.
+- [[file:app/State.hs][State]] :: State space. If you try to understand what is going on, or if you
+  want to change analysis settings, your starting point should be =State=.
+- [[file:app/Tools.hs][Tools]] :: Miscellaneous tools.
 
 * References :ignore:
 #+print_bibliography:
