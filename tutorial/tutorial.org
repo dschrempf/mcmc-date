@@ -1,6 +1,6 @@
 #+options: ':t *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t
 #+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
-#+options: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
+#+options: email:nil f:t inline:t num:nil p:nil pri:nil prop:nil stat:t tags:t
 #+options: tasks:t tex:t timestamp:t title:t toc:nil todo:t |:t
 #+title: Dating with constraints
 #+subtitle: A tutorial on McmcDate
@@ -48,8 +48,9 @@ topology is the only node with all branches pointing away to other nodes, and is
 the oldest node. Leaves are extant nodes with a single branch pointing towards
 them.
 
-We want to find the tree with branch lengths measured in time --- for example,
-in Million years --- which describes the data in the /best/ way. /Best/ can mean
+For a given topology, /dating the topology/ (or sloppily: /dating the tree/)
+corresponds to finding branch lengths measured in real time --- for example, in
+Million years --- which describe the data in the /best/ way. /Best/ can mean
 different things, and we will carefully analyze what /best/ means in our case.
 
 Similarly, we use the term /unrooted tree/ to denote an undirected acyclic graph
@@ -63,21 +64,21 @@ substitution models are unable to discriminate between the two directions in
 time.
 
 * Dating a tree
-In general, the rough pipeline when dating a tree is:
-1. Prepare a multi sequence alignment.
-2. Find an unrooted topology for subsequent analysis steps.
-3. For this unrooted topology, infer a distribution of unrooted trees with
-   branch lengths measured in expected number of substitutions per unit time.
-4. Find one or more rooted topologies which will be dated.
-4. Prepare auxiliary data such as node age calibrations or node order
-   constraints.
-5. Use McmcDate to infer a distribution of rooted trees with branch lengths
-   measured in time.
+The pipeline for dating a topology is:
+1. Prepare a multi sequence alignment and an unrooted topology.
+2. For this alignment and unrooted topology, infer a distribution of unrooted
+   trees with branch lengths measured in expected number of substitutions per
+   unit time.
+3. Find a rooted topology to date. Prepare auxiliary data such as node age
+   calibrations or node order constraints.
+4. Date the topology with McmcDate. In particular, infer a distribution of
+   rooted trees with branch lengths measured in real time.
+The following sections describe the steps of the pipeline in detail.
 
-* Provision of sequence data and a rooted tree
+* Step 1: Provision of alignment and unrooted topology
 Here, we are going to use data from eukaryotes [cite:@Strassert2021].
 
-* Phylogenetic inference with Phylobayes
+* Step 2: Phylogenetic inference
 - Use Phylobayes [cite:@Lartillot2013].
 - Decide on evolutionary model depending on the size of the data set and the
   computational requirements. Recommended models from preferred but slow and
@@ -96,13 +97,15 @@ rate heterogeneity with four components.
 - EDM model [cite:@Schrempf2020a].
 - C60 model [cite:@Quang2008]
 
-* Preparation of node calibrations and node order constraints
+* Step 3: Preparation of rooted topology and auxiliary data
 - Node order calibrations [cite:@Yang2005].
 - Relative node order constraints [cite:@Szollosi2022].
-- McmcDate can also brace nodes (Appendix [[id:202fc129-8d65-4966-a217-322231ff9c49]]).
+- McmcDate can also brace nodes (Appendix
+  [[id:202fc129-8d65-4966-a217-322231ff9c49]]).
 
-* Dating with McmcDate
-- McmcDate is a Haskell program (Appendix [[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]).
+* Step 4: Dating with McmcDate
+- McmcDate is a Haskell program (Appendix
+  [[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]).
 
 \appendix
 
