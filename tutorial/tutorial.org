@@ -37,6 +37,10 @@ going to use node age calibrations from fossils, and node order constraints from
 two possible successions of plastid endosymbiosis events.
 #+latex: \end{abstract}
 
+#+begin_center
+*This tutorial is a work in progress.*
+#+end_center
+
 * Definitions and explanations
 We use the term /(rooted) tree/ to denote a directed acyclic graph with node
 labels and branch lengths, and in which not more than one branch connects any
