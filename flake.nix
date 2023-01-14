@@ -29,7 +29,7 @@
       theseHpkgNames = [
         "mcmc-date"
       ];
-      thisGhcVersion = "ghc943";
+      thisGhcVersion = "ghc92";
       hOverlay = selfn: supern: {
         haskell = supern.haskell // {
           packageOverrides = selfh: superh:
