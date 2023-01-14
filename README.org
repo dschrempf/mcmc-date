@@ -1,7 +1,7 @@
-The program [[https://github.com/dschrempf/mcmc-date][McmcDate]] can date a phylogenetic tree with constraints. That is, it
-can estimate the ages of the ancestral nodes of a phylogenetic tree with node
-age calibrations, node order constraints, and node braces. McmcDate is fast
-because it approximates the phylogenetic likelihood with a multivariate normal
+[[https://github.com/dschrempf/mcmc-date][McmcDate]] can date a phylogenetic tree with constraints. That is, it can estimate
+the ages of the ancestral nodes of a phylogenetic tree with node age
+calibrations, node order constraints, and node braces. McmcDate is fast because
+it approximates the phylogenetic likelihood with a multivariate normal
 distribution.
 
-For documentation, please see the [[file:tutorial/tutorial.org][McmcDate tutorial]].
+For documentation, please see the [[file:tutorial/tutorial.pdf][McmcDate tutorial]].
