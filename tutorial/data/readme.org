@@ -1,0 +1,5 @@
+#+bibliography: ~/Evolutionary-Biology/Bibliography/bibliography.bib
+
+This data is from [cite:@Strassert2021].
+
+#+print_bibliography:

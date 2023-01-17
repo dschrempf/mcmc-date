@@ -52,9 +52,9 @@ topology is the only node with all branches pointing away to other nodes, and is
 the oldest node. Leaves are extant nodes with a single branch pointing towards
 them.
 
-For a given topology, /dating a topology/ (or sloppily: /dating a tree/)
-corresponds to finding branch lengths measured in real time --- for example, in
-Million years --- which describe the data in the /best/ way. /Best/ can mean
+For a given topology, /dating the tree/[fn:1] corresponds to finding branch
+lengths for this topology which are measured in real time (for example, in
+Million years), and which describe the data in the /best/ way. /Best/ can mean
 different things, and we will carefully analyze what /best/ means in our case.
 
 Similarly, we use the term /unrooted tree/ to denote an undirected acyclic graph
@@ -80,7 +80,17 @@ The pipeline for dating a topology is:
 The following sections describe the steps of the pipeline in detail.
 
 * Step 1: Provision of alignment and unrooted topology
-Here, we are going to use data from eukaryotes [cite:@Strassert2021].
+We are going to date a topology of eukaryotes [cite:@Strassert2021]. The full
+published data set contains three alignments:
+1. The alignment with the highest number of taxa comprises 733 eukaryotes with
+   62723 amino acids.
+2. The authors used the first alignment to filter taxa in an informed way (for
+   example, keep slow evolving taxa). The reduced data set comprises 136
+   operational taxonomic units with 73460 amino acids.
+3. A small data set with 63 operational taxonomic units and 73460 amino acids
+   for tree inference with Bayesian models.
+Here, we focus on the second alignment with 136 taxa. The website of [[https://www.nature.com/articles/s41467-021-22044-z#Sec15][nature
+communications]] provides the data. I cleaned the taxon names,
 
 * Step 2: Phylogenetic inference
 - Use Phylobayes [cite:@Lartillot2013].
@@ -148,3 +158,7 @@ Modules containing definitions specific to the analysis:
 
 * References :ignore:
 #+print_bibliography:
+
+* Footnotes
+
+[fn:1] We should probably say /dating the topology/ but this phrase is not used.
