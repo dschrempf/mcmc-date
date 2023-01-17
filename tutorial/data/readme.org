@@ -1,4 +1,5 @@
 #+bibliography: ~/Evolutionary-Biology/Bibliography/bibliography.bib
+#+cite_export: basic
 
 This data is from [cite:@Strassert2021].
 
