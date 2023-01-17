@@ -1,6 +1,13 @@
 #+bibliography: ~/Evolutionary-Biology/Bibliography/bibliography.bib
 #+cite_export: basic
 
-This data is from [cite:@Strassert2021].
+The data in this folder
+- was published by [cite/text:@Strassert2021];
+- can be downloaded from the website of [[https://www.nature.com/articles/s41467-021-22044-z#Sec15][nature communications]]; and
+- is available under the [[https://creativecommons.org/licenses/by/4.0/][Attribution 4.0 International (CC BY 4.0)]] license.
 
+I changed the taxon names so that they are easier to handle, and I converted the
+file format from FASTA to Phylip.
+
+* References
 #+print_bibliography:
