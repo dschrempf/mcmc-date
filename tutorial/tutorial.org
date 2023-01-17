@@ -79,7 +79,7 @@ The pipeline for dating a topology is:
    rooted trees with branch lengths measured in real time.
 The following sections describe the steps of the pipeline in detail.
 
-* Step 1: Provision of alignment and unrooted topology
+* Step 1: Alignment and unrooted topology
 We are going to date a topology of eukaryotes [cite:@Strassert2021]. The full
 published data set contains three alignments:
 1. The alignment with the highest number of taxa comprises 733 eukaryotes with
@@ -93,13 +93,34 @@ published data set contains three alignments:
 Here, we focus on the second alignment with 136 taxa. We use shorter taxon names
 and I have converted the file from FASTA format to Phylip format which is
 required by Phylobayes [cite:@Lartillot2013]. I provide the alignment
-[[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data/strassert-320genes-136taxa.phy][=strassert-320genes-136taxa.phy=]] in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data subfolder]] of this tutorial.
+=strassert-136taxa.phy= in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data subfolder]] of this tutorial:
 
-Further, we need a topology to date. [cite/text:@Strassert2021] discuss one
-unrooted topology with two possible root positions. (1) The root separates
-amorphea from diaphoretickes and excavates (see Figure 3 in
-[cite/text:@Strassert2021]), and (2) the root separates amorphea and excavates
-from diaphoretickes. Here, we choose option (1) which is the more plausible one.
+#+name: step1-alignment
+#+begin_src sh :exports results :results verbatim code replace output
+ls data/*.phy
+#+end_src
+
+#+results: step1-alignment
+#+begin_src sh
+data/strassert-136taxa.phy
+#+end_src
+
+\noindent For the phylogenetic inference in the next step, we also need an
+unrooted topology. I have unrooted the tree in Figure 3 in
+[cite/text:@Strassert2021]. Similar to the alignment, I provide the unrooted
+topology in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data subfolder]] of this tutorial:
+
+#+name: step1-unrooted-topology
+#+begin_src sh :exports results :results verbatim code replace output
+ls data/*unrooted*
+#+end_src
+
+#+results: step1-unrooted-topology
+#+begin_src sh
+data/strassert-136taxa.unrooted.tre
+#+end_src
+
+\noindent Please also see the [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data/README.md][README in the data subfolder]].
 
 * Step 2: Phylogenetic inference
 - Use Phylobayes [cite:@Lartillot2013].
@@ -120,7 +141,14 @@ rate heterogeneity with four components.
 - EDM model [cite:@Schrempf2020a].
 - C60 model [cite:@Quang2008]
 
-* Step 3: Preparation of rooted topology and auxiliary data
+* Step 3: Rooted topology and auxiliary data
+[cite/text:@Strassert2021] discuss one unrooted topology with two possible root
+positions. (1) The root separates amorphea from diaphoretickes and excavates
+[cite: Figure 3 in @Strassert2021], and (2) the root separates amorphea and
+excavates from diaphoretickes. Here, we choose option (1) which is the more
+plausible one.
+
+
 - Node order calibrations [cite:@Yang2005].
 - Relative node order constraints [cite:@Szollosi2022].
 - McmcDate can also brace nodes (Appendix

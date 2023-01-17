@@ -44,3 +44,4 @@ cabal.project.local~
 **/auto/
 **/result
 /.rsync-project
+_minted*
