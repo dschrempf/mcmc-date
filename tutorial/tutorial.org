@@ -120,7 +120,7 @@ ls data/*unrooted*
 data/strassert-136taxa.unrooted.tre
 #+end_src
 
-\noindent Please also see the [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data/README.md][README in the data subfolder]].
+\noindent Please also see the [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data][README in the data subfolder]].
 
 * Step 2: Phylogenetic inference
 - Use Phylobayes [cite:@Lartillot2013].

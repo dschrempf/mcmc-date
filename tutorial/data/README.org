@@ -1,8 +1,9 @@
 #+bibliography: ~/Evolutionary-Biology/Bibliography/bibliography.bib
 #+cite_export: basic
 
+The following files have been taken or derived from [cite/text:@Strassert2021]:
 #+name: data
-#+begin_src sh :exports none :results verbatim code replace output
+#+begin_src sh :exports results :results verbatim code replace output
 ls -v strassert*
 #+end_src
 
@@ -14,11 +15,9 @@ strassert-136taxa-calibrations.rooted.tre
 #+end_src
 
 The alignment =strassert-136taxa.phy= in this folder
-- was published by [cite/text:@Strassert2021];
 - can be downloaded from the website of [[https://www.nature.com/articles/s41467-021-22044-z#Sec15][nature communications]] (Supplementary
   Data 2); and
 - is available under the [[https://creativecommons.org/licenses/by/4.0/][Attribution 4.0 International (CC BY 4.0)]] license.
-
 I have changed the taxon names to be shorter and easier to handle, and I have
 converted the file from FASTA to Phylip format.
 

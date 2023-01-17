@@ -1,6 +1,11 @@
+The following files have been taken or derived from Strassert, Jürgen F. H. and Irisarri, Iker and Williams, Tom A. and Burki, Fabien (2021):
+
+    strassert-136taxa.phy
+    strassert-136taxa.unrooted.tre
+    strassert-136taxa-calibrations.rooted.tre
+
 The alignment `strassert-136taxa.phy` in this folder
 
--   was published by Strassert, Jürgen F. H. and Irisarri, Iker and Williams, Tom A. and Burki, Fabien (2021);
 -   can be downloaded from the website of [nature communications](https://www.nature.com/articles/s41467-021-22044-z#Sec15) (Supplementary
     Data 2); and
 -   is available under the [Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) license.
