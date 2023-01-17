@@ -84,13 +84,17 @@ We are going to date a topology of eukaryotes [cite:@Strassert2021]. The full
 published data set contains three alignments:
 1. The alignment with the highest number of taxa comprises 733 eukaryotes with
    62723 amino acids.
-2. The authors used the first alignment to filter taxa in an informed way (for
-   example, keep slow evolving taxa). The reduced data set comprises 136
-   operational taxonomic units with 73460 amino acids.
+2. The authors used the first alignment to infer a tree with IQ-TREE
+   [cite:@Minh2020a] so they can filter taxa in an informed way (for example,
+   keep slow evolving taxa). The reduced data set comprises 136 operational
+   taxonomic units with 73460 amino acids.
 3. A small data set with 63 operational taxonomic units and 73460 amino acids
    for tree inference with Bayesian models.
-Here, we focus on the second alignment with 136 taxa. The website of [[https://www.nature.com/articles/s41467-021-22044-z#Sec15][nature
-communications]] provides the data. I cleaned the taxon names,
+Here, we focus on the second alignment with 136 taxa. I have cleaned the taxon
+names so they are shorter and I have converted the file from FASTA format to
+Phylip format which is required by Phylobayes [cite:@Lartillot2013]. I provide
+the alignment [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data/strassert-320genes-136taxa.phy][=strassert-320genes-136taxa.phy=]] in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data subfolder]] of this
+tutorial.
 
 * Step 2: Phylogenetic inference
 - Use Phylobayes [cite:@Lartillot2013].
@@ -145,16 +149,22 @@ McmcDate. Most notably,
 - Explain code a bit (I guess mostly proposals).
 
 ** Haskell modules
-Modules containing definitions specific to the analysis:
-- [[file:app/Definitions.hs][Definitions]] :: Proposals and monitors, configuration.
-- [[file:app/Hamiltonian.hs][Hamiltonian]] :: Hamiltonian proposal.
-- [[file:app/Main.hs][Main]] :: Functions to prepare the data, run and continue the
+Modules containing definitions specific to the analysis are in the [[https://github.com/dschrempf/mcmc-date/tree/master/app][=app=
+subfolder]] of the McmcDate repository.
+
+*** More important modules
+- Definitions :: Proposals and monitors, configuration.
+- State :: State space. If you try to understand what is going on, or if you
+  want to change analysis settings, this should be your starting point.
+
+*** Other modules
+- Hamiltonian :: Hamiltonian proposal.
+- Main :: Functions to prepare the data, run and continue the
   Metropolis-Hasting-Green algorithm.
-- [[file:app/Options.hs][Options]] :: Handle command line options.
-- [[file:app/Probability.hs][Probability]] :: Prior and likelihood functions.
-- [[file:app/State.hs][State]] :: State space. If you try to understand what is going on, or if you
-  want to change analysis settings, your starting point should be =State=.
-- [[file:app/Tools.hs][Tools]] :: Miscellaneous tools.
+- Monitor :: Prior specific monitoring functions.
+- Options :: Handle command line options.
+- Probability :: Prior and likelihood functions.
+- Tools :: Miscellaneous tools.
 
 * References :ignore:
 #+print_bibliography:
