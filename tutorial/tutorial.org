@@ -90,11 +90,16 @@ published data set contains three alignments:
    taxonomic units with 73460 amino acids.
 3. A small data set with 63 operational taxonomic units and 73460 amino acids
    for tree inference with Bayesian models.
-Here, we focus on the second alignment with 136 taxa. I have cleaned the taxon
-names so they are shorter and I have converted the file from FASTA format to
-Phylip format which is required by Phylobayes [cite:@Lartillot2013]. I provide
-the alignment [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data/strassert-320genes-136taxa.phy][=strassert-320genes-136taxa.phy=]] in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data subfolder]] of this
-tutorial.
+Here, we focus on the second alignment with 136 taxa. We use shorter taxon names
+and I have converted the file from FASTA format to Phylip format which is
+required by Phylobayes [cite:@Lartillot2013]. I provide the alignment
+[[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data/strassert-320genes-136taxa.phy][=strassert-320genes-136taxa.phy=]] in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data subfolder]] of this tutorial.
+
+Further, we need a topology to date. [cite/text:@Strassert2021] discuss one
+unrooted topology with two possible root positions. (1) The root separates
+amorphea from diaphoretickes and excavates (see Figure 3 in
+[cite/text:@Strassert2021]), and (2) the root separates amorphea and excavates
+from diaphoretickes. Here, we choose option (1) which is the more plausible one.
 
 * Step 2: Phylogenetic inference
 - Use Phylobayes [cite:@Lartillot2013].
