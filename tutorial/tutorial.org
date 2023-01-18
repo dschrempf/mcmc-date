@@ -68,7 +68,43 @@ substitution models are unable to discriminate between the two directions in
 time.
 
 * Dating a tree
-The pipeline for dating a topology is:
+Dating a tree is difficult because we want to estimate branch lengths measured
+in real time. However, an alignment only contains information about distances
+measured in expected number of substitutions. In particular, it does not contain
+information about the evolutionary rates nor about the actual elapsed real time.
+That is, for a given branch, we have
+\begin{align}
+\begin{split}
+  d \text{ in }&\text{[expected number of substitutions]} = \\
+    &r \text{ in [expected number of substitutions per year]} \cdot
+    t \text{ in [years]},
+\end{split}
+\end{align}
+where \(d\) is the branch length measured in expected number of substitutions,
+\(r\) is the evolutionary rate on this branch, and \(t\) is the branch length
+measured in real time. The situation is severe! If we multiply \(t\) with a
+positive number \(c\) and divide \(r\) by the same positive number \(c\), the
+distance \(d\) stays constant. Since the likelihood only depends on the distance
+\(d\) we can not discriminate between parameters
+\begin{align}
+  t' &= t \cdot c, \\
+  r' &= r / c,
+\end{align}
+for /any/ \(c \in (0, \infty)\)!
+
+This means we need auxiliary data which constrains the ages of at least some
+internal nodes. We call constraints on the ages of internal nodes /node age
+calibrations/. Without node age calibrations, all dated trees are equally
+likely! Since most dating methods use Bayesian statistics, and impose a prior on
+all of their parameters, the posterior probabilities of different trees are
+different. However, the differences in the posterior probabilities are deceiving
+because they are only caused by differences in the prior, and not by any of the
+information we have obtained from the data. Without node age calibrations we can
+still date the tree using branch lengths measured in /relative time/. In
+particular, we achieve this by fixing the tree height to be 1.0.
+
+* Pipeline
+The pipeline for dating a tree is:
 1. Prepare a multi sequence alignment and an unrooted topology.
 2. For this alignment and unrooted topology, infer a distribution of unrooted
    trees with branch lengths measured in expected number of substitutions per
@@ -123,6 +159,19 @@ data/strassert-136taxa.unrooted.tre
 \noindent Please also see the [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data][README in the data subfolder]].
 
 * Step 2: Phylogenetic inference
+:PROPERTIES:
+:ID:       784b898f-11f6-433e-bb8a-9584f377c8ce
+:END:
+
+McmcDate is fast because it uses a clever way to approximate the phylogenetic
+likelihood similar to McmcTree [cite:@Yang2005]. McmcTree approximates the
+surface of the phylogenetic likelihood using Taylor expansion
+[cite:@DosReis2011]. That is, in a prior analysis we compute the maximum
+likelihood together with the gradient and the Hessian matrix which we use in a
+subsequent analysis to date the tree.
+
+Here, we use a Bayesian method to estimate the posterior distribution. In particular,
+
 - Use Phylobayes [cite:@Lartillot2013].
 - Decide on evolutionary model depending on the size of the data set and the
   computational requirements. Recommended models from preferred but slow and
