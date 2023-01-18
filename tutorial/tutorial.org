@@ -53,11 +53,11 @@ the oldest node. Leaves are extant nodes with a single branch pointing towards
 them.
 
 For a given topology, /dating the tree/[fn:1] corresponds to finding branch
-lengths for this topology which are measured in absolute time (for example, in
-Million years), and which describe the data in the /best/ way. /Best/ can mean
-different things, and we will carefully analyze what /best/ means in our case.
-Sometimes, all we can do is date a tree with relative time units (Section
-[[id:b1d8692b-db95-42f9-a11d-e492e6debf26]]).
+lengths for this topology which are measured in absolute time units (for
+example, in Million years), and which describe the data in the /best/ way.
+/Best/ can mean different things, and we will carefully analyze what /best/
+means in our case. Sometimes, all we can do is date a tree with relative time
+units (Section [[id:b1d8692b-db95-42f9-a11d-e492e6debf26]]).
 
 Similarly, we use the term /unrooted tree/ to denote an undirected acyclic graph
 with node labels and branch lengths, and in which not more than one branch
@@ -70,10 +70,10 @@ unable to discriminate between the two directions in time.
 
 * Dating a tree
 Dating a tree is difficult because we want to estimate branch lengths measured
-in real time. However, an alignment only contains information about distances
-measured in expected number of substitutions. In particular, it does not contain
-information about the evolutionary rates nor about the actual elapsed real time.
-That is, for a given branch,
+in absolute time units. However, an alignment only contains information about
+distances measured in expected number of substitutions. In particular, it does
+not contain information about the evolutionary rates nor about the actual
+elapsed absolute time units. That is, for a given branch,
 \begin{align}
 \begin{split}
   d \text{ in }&\text{[expected number of substitutions]} = \\
@@ -83,11 +83,11 @@ That is, for a given branch,
 \end{align}
 where \(d\) is the branch length measured in expected number of substitutions,
 \(r\) is the evolutionary rate on this branch, and \(t\) is the branch length
-measured in real time. The situation is severe because \(r\) and \(t\) are
-confounded! If we multiply \(t\) with a positive number \(c\) and divide \(r\)
-by the same positive number \(c\), the distance \(d\) stays constant. Since the
-likelihood only depends on the distance \(d\) we can not discriminate between
-parameters
+measured in absolute time units. The situation is severe because \(r\) and \(t\)
+are confounded! If we multiply \(t\) with a positive number \(c\) and divide
+\(r\) by the same positive number \(c\), the distance \(d\) stays constant.
+Since the likelihood only depends on the distance \(d\) we can not discriminate
+between parameters
 \begin{align}
   t' &= t \cdot c, \\
   r' &= r / c,
@@ -98,7 +98,7 @@ for /any/ \(c \in (0, \infty)\)!
 :PROPERTIES:
 :ID:       b1d8692b-db95-42f9-a11d-e492e6debf26
 :END:
-This means we need auxiliary data to constrains the ages of at least some
+This means we need auxiliary data to constrain the ages of at least some
 internal nodes. We call constraints on the ages of internal nodes /node age
 calibrations/. Without node age calibrations, all dated trees are equally
 likely! Since most phylogenetic dating methods are Bayesian, and impose prior
@@ -108,20 +108,31 @@ age calibrations, the differences in the values of the posterior function are
 exclusively caused by the chosen prior functions, and not by the information we
 have obtained from the data.
 
-Without node age calibrations we can still date the tree using branch lengths
-measured in /relative time/. In particular, we achieve this by fixing the tree
-height to be 1.0.
+Even more, in order to limit the maximum ages of the nodes, we require at least
+one node age calibration with a maximum boundary. The closer in terms of
+absolute time units the calibrated node with a maximum boundary is to the root,
+the better. Ideally, we have a maximum age boundary for the root itself, but
+sometimes the root age boundaries are unknown.
+
+I can not repeat this often enough: *Without proper node age calibrations*, and
+in particular, *without at least one maximum age boundary*, *dating a tree in
+absolute time units is impossible*. Without a single maximum node age boundary,
+we can still date the tree using branch lengths measured in /relative time
+units/. In particular, we achieve this by fixing the tree height to be 1.0.
+McmcDate automatically falls back to dating in relative time when no maximum
+node age boundary is found. If other programs date trees in absolute time units
+without a maximum age boundary, do not trust the results!
 
 * Pipeline
 The pipeline for dating a tree is:
 1. Prepare a multi sequence alignment and an unrooted topology.
 2. For this alignment and unrooted topology, infer a distribution of unrooted
-   trees with branch lengths measured in expected number of substitutions per
-   unit time.
+   trees with branch lengths measured in expected number of substitutions.
 3. Find a rooted topology to date. Prepare auxiliary data such as node age
    calibrations or node order constraints.
 4. Date the topology with McmcDate. In particular, infer a distribution of
-   rooted trees with branch lengths measured in real time.
+   rooted trees with branch lengths measured in absolute time units. If the node
+   age calibrations are insufficient, we can still use relative time units.
 The following sections describe the steps of the pipeline in detail.
 
 * Step 1: Alignment and unrooted topology
