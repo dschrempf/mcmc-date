@@ -1,7 +1,7 @@
 #+options: ':t *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t
 #+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
-#+options: email:nil f:t inline:t num:nil p:nil pri:nil prop:nil stat:t tags:t
-#+options: tasks:t tex:t timestamp:t title:t toc:nil todo:t |:t
+#+options: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
+#+options: tasks:t tex:t timestamp:t title:t toc:t todo:t |:t
 #+title: Dating with constraints
 #+subtitle: A tutorial on McmcDate
 #+date: January 13, 2023
@@ -47,15 +47,17 @@ labels and branch lengths, and in which not more than one branch connects any
 two nodes. Usually, nodes correspond to (ancestral) species, and branch lengths
 to sequence distance or time. We use the term /(rooted) topology/ to denote a
 (rooted) tree without information about branch lengths. We put the word /rooted/
-into parentheses, because it is sometimes omited. The root of the tree or
+into parentheses, because it is sometimes omitted. The root of the tree or
 topology is the only node with all branches pointing away to other nodes, and is
 the oldest node. Leaves are extant nodes with a single branch pointing towards
 them.
 
 For a given topology, /dating the tree/[fn:1] corresponds to finding branch
-lengths for this topology which are measured in real time (for example, in
+lengths for this topology which are measured in absolute time (for example, in
 Million years), and which describe the data in the /best/ way. /Best/ can mean
 different things, and we will carefully analyze what /best/ means in our case.
+Sometimes, all we can do is date a tree with relative time units (Section
+[[id:b1d8692b-db95-42f9-a11d-e492e6debf26]]).
 
 Similarly, we use the term /unrooted tree/ to denote an undirected acyclic graph
 with node labels and branch lengths, and in which not more than one branch
@@ -63,16 +65,15 @@ connects any two nodes. Finally, we use the term /unrooted topology/ to denote
 an unrooted tree without information about branch lengths. We need unrooted
 trees and topologies because we will use reversible substitution models [cite:
 for a review, see @Yang2006] to infer unrooted trees with branch lengths
-measured in expected number of substitutions per unit time. Reversible
-substitution models are unable to discriminate between the two directions in
-time.
+measured in expected number of substitutions. Reversible substitution models are
+unable to discriminate between the two directions in time.
 
 * Dating a tree
 Dating a tree is difficult because we want to estimate branch lengths measured
 in real time. However, an alignment only contains information about distances
 measured in expected number of substitutions. In particular, it does not contain
 information about the evolutionary rates nor about the actual elapsed real time.
-That is, for a given branch, we have
+That is, for a given branch,
 \begin{align}
 \begin{split}
   d \text{ in }&\text{[expected number of substitutions]} = \\
@@ -82,26 +83,34 @@ That is, for a given branch, we have
 \end{align}
 where \(d\) is the branch length measured in expected number of substitutions,
 \(r\) is the evolutionary rate on this branch, and \(t\) is the branch length
-measured in real time. The situation is severe! If we multiply \(t\) with a
-positive number \(c\) and divide \(r\) by the same positive number \(c\), the
-distance \(d\) stays constant. Since the likelihood only depends on the distance
-\(d\) we can not discriminate between parameters
+measured in real time. The situation is severe because \(r\) and \(t\) are
+confounded! If we multiply \(t\) with a positive number \(c\) and divide \(r\)
+by the same positive number \(c\), the distance \(d\) stays constant. Since the
+likelihood only depends on the distance \(d\) we can not discriminate between
+parameters
 \begin{align}
   t' &= t \cdot c, \\
   r' &= r / c,
 \end{align}
 for /any/ \(c \in (0, \infty)\)!
 
-This means we need auxiliary data which constrains the ages of at least some
+** Node age calibrations
+:PROPERTIES:
+:ID:       b1d8692b-db95-42f9-a11d-e492e6debf26
+:END:
+This means we need auxiliary data to constrains the ages of at least some
 internal nodes. We call constraints on the ages of internal nodes /node age
 calibrations/. Without node age calibrations, all dated trees are equally
-likely! Since most dating methods use Bayesian statistics, and impose a prior on
-all of their parameters, the posterior probabilities of different trees are
-different. However, the differences in the posterior probabilities are deceiving
-because they are only caused by differences in the prior, and not by any of the
-information we have obtained from the data. Without node age calibrations we can
-still date the tree using branch lengths measured in /relative time/. In
-particular, we achieve this by fixing the tree height to be 1.0.
+likely! Since most phylogenetic dating methods are Bayesian, and impose prior
+functions on all of their parameters, the values of the posterior function of
+different trees still differ in a deceiving way. However, in the absence of node
+age calibrations, the differences in the values of the posterior function are
+exclusively caused by the chosen prior functions, and not by the information we
+have obtained from the data.
+
+Without node age calibrations we can still date the tree using branch lengths
+measured in /relative time/. In particular, we achieve this by fixing the tree
+height to be 1.0.
 
 * Pipeline
 The pipeline for dating a tree is:
