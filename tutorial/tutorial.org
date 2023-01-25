@@ -57,7 +57,7 @@ lengths for this topology which are measured in absolute time units (for
 example, in Million years), and which describe the data in the /best/ way.
 /Best/ can mean different things, and we will carefully analyze what /best/
 means in our case. Sometimes, all we can do is date a tree with relative time
-units (Section [[id:b1d8692b-db95-42f9-a11d-e492e6debf26]]).
+units (Section\nbsp{}[[id:b1d8692b-db95-42f9-a11d-e492e6debf26]]).
 
 Similarly, we use the term /unrooted tree/ to denote an undirected acyclic graph
 with node labels and branch lengths, and in which not more than one branch
@@ -113,6 +113,8 @@ one node age calibration with a maximum boundary. The closer in terms of
 absolute time units the calibrated node with a maximum boundary is to the root,
 the better. Ideally, we have a maximum age boundary for the root itself, but
 sometimes the root age boundaries are unknown.
+Section\nbsp{}[[id:54c61d87-6dbf-48e2-a43e-e788acb0b18f]] provides details on how to
+add node age calibrations to your dating analysis with McmcDate.
 
 I can not repeat this often enough: *Without proper node age calibrations*, and
 in particular, *without at least one maximum age boundary*, *dating a tree in
@@ -122,6 +124,45 @@ units/. In particular, we achieve this by fixing the tree height to be 1.0.
 McmcDate automatically falls back to dating in relative time when no maximum
 node age boundary is found. If other programs date trees in absolute time units
 without a maximum age boundary, do not trust the results!
+
+** Node order constraints
+Next to calibrating the absolute ages of nodes, we can also constrain the
+relative order of nodes on a tree. For example, due to external analyses, we may
+have detailed knowledge about a horizontal gene transfer. That is, we do know
+the exact donor and the recipient branches. In this case, a direct horizontal
+gene transfer can only happen, if these branches coexist for a period of time
+(Figure\nbsp{}[[fig-transfers]]). If the branches do not coexist for a period of
+time but the recipient branch is younger than the donor branch, the horizontal
+gene transfer can still happen indirectly through multiple events. An indirect
+gene transfer requires an intermediate lineage carrying the gene. The
+intermediate lineage has either gone extinct [cite:@Szollosi2013a], has not been
+sampled, or has lost the gene. Gene transfers are impossible if the recipient
+branch is younger than the donor branch.
+
+Let the ages of the old and young nodes of the donor and recipient branches be
+\(DO\), \(DY\), \(RO\), and \(RY\), respectively. Then, a direct horizontal gene
+transfer provides us with two node order constraints,
+\begin{align}
+  DY < RO, \text{ and } DO > RY,
+\end{align}
+where \(<\) means /younger than/ and \(>\) means /older than/. If we allow
+indirect gene transfers, we only get one node order constraint,
+\begin{align}
+  DO > RY.
+\end{align}
+The last constraint is enough to prohibit impossible gene transfers as depicted
+in Figure\nbsp{}[[fig-transfers]].
+
+Sometimes, we do not know the exact donor branch but only that the donor branch
+must be on a subtree. However, we usually do know the recipient branch which is
+the stem of the subtree comprising the species which contain the horizontally
+transferred gene. In this case, the older node of the stem of the donor subtree
+has to be older than the younger node of the recipient branch.
+
+#+caption: Direct, indirect and impossible horizontal gene transfers. A direct horizontal gene transfer happens between branches coexisting in time. An indirect horizontal gene transfer involves multiple events and an intermediate lineage. If the recipient branch is older than the donor branch, a horizontal gene transfer is impossible.
+#+attr_latex: :width 1.0\textwidth :placement [tb]
+#+name: fig-transfers
+[[file:figures/transfers.svg]]
 
 * Pipeline
 The pipeline for dating a tree is:
@@ -211,6 +252,9 @@ rate heterogeneity with four components.
 - C60 model [cite:@Quang2008]
 
 * Step 3: Rooted topology and auxiliary data
+:PROPERTIES:
+:ID:       54c61d87-6dbf-48e2-a43e-e788acb0b18f
+:END:
 [cite/text:@Strassert2021] discuss one unrooted topology with two possible root
 positions. (1) The root separates amorphea from diaphoretickes and excavates
 [cite: Figure 3 in @Strassert2021], and (2) the root separates amorphea and
