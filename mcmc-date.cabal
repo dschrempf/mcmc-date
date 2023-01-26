@@ -25,20 +25,8 @@ source-repository head
   type:     git
   location: https://github.com/dschrempf/mcmc-date
 
-flag ignore-asserts
-  description: Assertions are enabled by default since they are so cheap
-  default:     False
-  manual:      True
-
 common lib
   ghc-options:      -Wall -Wunused-packages
-
-  if flag(ignore-asserts)
-    ghc-options: -fignore-asserts
-
-  else
-    ghc-options: -fno-ignore-asserts
-
   default-language: Haskell2010
 
 common test
