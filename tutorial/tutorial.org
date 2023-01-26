@@ -25,17 +25,20 @@
 #+bibliography: ~/Evolutionary-Biology/Bibliography/bibliography.bib
 #+cite_export: biblatex
 
+#+latex: \newcommand*{\mcmcdate}{\mbox{McmcDate}}
+
 #+latex: \begin{abstract}
-[[https://github.com/dschrempf/mcmc-date][McmcDate]] can date a phylogenetic tree with constraints. That is, it can estimate
-the ages of the ancestral nodes of a phylogenetic tree with node age
-calibrations, node order constraints, and node braces. McmcDate is fast because
-it approximates the phylogenetic likelihood with a multivariate normal
+[[https://github.com/dschrempf/mcmc-date][\mcmcdate{}]] can date a phylogenetic tree with constraints. That is, it can
+estimate the ages of the ancestral nodes of a phylogenetic tree with node age
+calibrations, node order constraints, and node braces. \mcmcdate{} is fast
+because it approximates the phylogenetic likelihood with a multivariate normal
 distribution.
 
-In this tutorial, we date a phylogenetic tree of eukaryotes. We use data from
-[cite:@Strassert2021] who provide the alignment and node age calibrations from
-fossils. Moreover, we use node order constraints from two possible successions
-of plastid endosymbiosis events.
+Here, I review the process of dating phylogenetic trees and provide an example
+dating analysis of a tree of eukaryotes. I use data from [cite:@Strassert2021]
+who provide the alignment and node age calibrations from fossils. Moreover, I
+use node order constraints from two possible successions of plastid
+endosymbiosis events.
 #+latex: \end{abstract}
 
 #+begin_center
@@ -98,7 +101,7 @@ the ages of at least some internal nodes. There are three forms of constraints
 from auxiliary data which are explained in the next sections: (a) node age
 calibrations, (b) node order constraints, and (c) node braces.
 Appendix\nbsp{}[[id:202fc129-8d65-4966-a217-322231ff9c49]] details the
-specifications about how auxiliary data is used with McmcDate.
+specifications about how auxiliary data is used with \mcmcdate{}.
 
 ** Node age calibrations
 :PROPERTIES:
@@ -119,14 +122,14 @@ absolute time units the calibrated node with a maximum boundary is to the root,
 the better. Ideally, we have a maximum age boundary for the root itself, but
 sometimes the root age boundaries are unknown.
 Section\nbsp{}[[id:54c61d87-6dbf-48e2-a43e-e788acb0b18f]] provides details on how to
-add node age calibrations to your dating analysis with McmcDate.
+add node age calibrations to your dating analysis with \mcmcdate{}.
 
 I can not repeat this often enough: *Without proper node age calibrations*, and
 in particular, *without at least one maximum age boundary*, *dating a tree in
 absolute time units is impossible*. Without a single maximum node age boundary,
 we can still date the tree using branch lengths measured in /relative time
 units/. In particular, we achieve this by fixing the tree height to be 1.0.
-McmcDate automatically falls back to dating in relative time when no maximum
+\mcmcdate{} automatically falls back to dating in relative time when no maximum
 node age boundary is found. If other programs date trees in absolute time units
 without a maximum age boundary, do not trust the results!
 
@@ -177,13 +180,13 @@ on both subtrees in that the corresponding speciation nodes should have similar
 ages. In this tutorial we will not brace nodes.
 
 * Pipeline
-The pipeline for dating a tree with McmcDate is:
+The pipeline for dating a tree with \mcmcdate{} is:
 1. Prepare a multi sequence alignment and an unrooted topology.
 2. For this alignment and unrooted topology, infer a distribution of unrooted
    trees with branch lengths measured in expected number of substitutions.
 3. Find a rooted topology to date. Prepare auxiliary data such as node age
    calibrations or node order constraints.
-4. Date the topology with McmcDate. In particular, infer a distribution of
+4. Date the topology with \mcmcdate{}. In particular, infer a distribution of
    rooted trees with branch lengths measured in absolute time units. If the node
    age calibrations are insufficient, we can still use relative time units.
 The following sections describe the steps of the pipeline in detail.
@@ -237,7 +240,7 @@ data/strassert-136taxa.unrooted.tre
 :ID:       784b898f-11f6-433e-bb8a-9584f377c8ce
 :END:
 
-McmcDate is fast because it uses a clever way to approximate the phylogenetic
+\mcmcdate{} is fast because it uses a clever way to approximate the phylogenetic
 likelihood similar to McmcTree [cite:@Yang2005]. McmcTree approximates the
 surface of the phylogenetic likelihood using Taylor expansion
 [cite:@DosReis2011]. That is, in a prior analysis we compute the maximum
@@ -277,11 +280,11 @@ plausible one.
 
 - Node order calibrations [cite:@Yang2005].
 - Relative node order constraints [cite:@Szollosi2022].
-- McmcDate can also brace nodes (Appendix
+- \mcmcdate{} can also brace nodes (Appendix
   [[id:202fc129-8d65-4966-a217-322231ff9c49]]).
 
-** Step 4: Dating with McmcDate
-- McmcDate is a Haskell program (Appendix
+** Step 4: Dating with \mcmcdate{}
+- \mcmcdate{} is a Haskell program (Appendix
   [[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]).
 
 \appendix
@@ -301,13 +304,13 @@ In this tutorial, we use 33 fossil calibrations compiled by
 :PROPERTIES:
 :ID:       a38b78be-7ee6-4340-946a-2a5d06385b66
 :END:
-McmcDate is a Haskell program.
+\mcmcdate{} is a Haskell program.
 
 Recommend cabal, but there is also stack (-s) option.
 
 The [[https://github.com/dschrempf/mcmc-date/blob/master/scripts/run][wrapper script]] used in this tutorial tries to make a good compromise between
 usability and customizability. It exposes some, but not all functionality of
-McmcDate. Most notably,
+\mcmcdate{}. Most notably,
 
 - Based on [[https://hackage.haskell.org/package/mcmc][mcmc]].
 - Based on [[https://hackage.haskell.org/package/elynx-tree][elynx-tree]].
@@ -315,7 +318,7 @@ McmcDate. Most notably,
 
 ** Haskell modules
 Modules containing definitions specific to the analysis are in the [[https://github.com/dschrempf/mcmc-date/tree/master/app][=app=
-subfolder]] of the McmcDate repository.
+subfolder]] of the \mcmcdate{} repository.
 
 *** More important modules
 - Definitions :: Proposals and monitors, configuration.
