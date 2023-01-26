@@ -374,6 +374,58 @@ The header line is required. Redundant constraints such as constraints affecting
 nodes that are vertically related are reported and removed.
 
 ** Node braces
+Node braces are provided using files in JSON format. Similar to node age
+calibrations and node order constraints, the braced nodes are specified using
+pairs leaves. However, the softness (or hardness) of braces is defined in a
+different way. The reason is that more than two nodes can be braced, and so,
+there is no canonical way to describe the softness using probability mass.
+Rather, for a specific node brace, the differences between the node ages and the
+average age of all nodes in the particular node brace are normally distributed
+with the provided standard deviation.
+
+The following example defined two node braces constraining two and three nodes,
+respectively:
+#+begin_src json
+[
+  {
+    "braceDataName": "Brace1",
+    "braceDataNodes": [
+      [
+        "NodeXLeafA",
+        "NodeXLeafB"
+      ],
+      [
+        "NodeYLeafA",
+        "NodeYLeafB"
+      ]
+    ],
+    "braceDataStandardDeviation": 0.0001
+  },
+  {
+    "braceDataName": "Brace2",
+    "braceDataNodes": [
+      [
+        "NodeALeafA",
+        "NodeALeafB"
+      ],
+      [
+        "NodeBLeafA",
+        "NodeBLeafB"
+      ],
+      [
+        "NodeCLeafA",
+        "NodeCLeafB"
+      ]
+    ],
+    "braceDataStandardDeviation": 0.0001
+  }
+]
+#+end_src
+In this case, the braced nodes of the first node brace are uniquely defined as
+the most recent common ancestors of =NodeXLeafA= and =NodeXLeafB=, as well as
+=NodeYLeafA= and =NodeYLeafB=. The steepness of the brace prior function is
+defined using the standard deviation. The node brace defined in this file are
+strong.
 
 * Internals
 :PROPERTIES:
