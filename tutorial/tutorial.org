@@ -34,11 +34,11 @@ calibrations, node order constraints, and node braces. \mcmcdate{} is fast
 because it approximates the phylogenetic likelihood with a multivariate normal
 distribution.
 
-Here, I review the process of dating phylogenetic trees and provide an example
-dating analysis of a tree of eukaryotes. I use data from [cite:@Strassert2021]
-who provide the alignment and node age calibrations from fossils. Moreover, I
-use node order constraints from two possible successions of plastid
-endosymbiosis events.
+Here, I briefly review the process of dating phylogenetic trees and provide an
+example dating analysis of a tree of eukaryotes. I use data from
+[cite:@Strassert2021] who provide the alignment and node age calibrations from
+fossils. Moreover, I use node order constraints from two possible successions of
+plastid endosymbiosis events.
 #+latex: \end{abstract}
 
 #+begin_center
@@ -180,7 +180,17 @@ on both subtrees in that the corresponding speciation nodes should have similar
 ages. In this tutorial we will not brace nodes.
 
 * Pipeline
-The pipeline for dating a tree with \mcmcdate{} is:
+\mcmcdate{} is fast because it uses a clever way to approximate the phylogenetic
+likelihood similar to McmcTree [cite:@Yang2005]. McmcTree approximates the
+surface of the phylogenetic likelihood using Taylor expansion
+[cite:@DosReis2011]. That is, in a prior analysis we compute the maximum
+likelihood together with the gradient and the Hessian matrix which we use in a
+subsequent analysis to date the tree.
+
+Here, we use a similar technique, albeit with a Bayesian method to estimate the
+posterior distribution of branch lengths measured in expected number
+substitutions. In particular, the pipeline for dating a tree with \mcmcdate{}
+is:
 1. Prepare a multi sequence alignment and an unrooted topology.
 2. For this alignment and unrooted topology, infer a distribution of unrooted
    trees with branch lengths measured in expected number of substitutions.
@@ -189,7 +199,10 @@ The pipeline for dating a tree with \mcmcdate{} is:
 4. Date the topology with \mcmcdate{}. In particular, infer a distribution of
    rooted trees with branch lengths measured in absolute time units. If the node
    age calibrations are insufficient, we can still use relative time units.
-The following sections describe the steps of the pipeline in detail.
+Steps 3 and 4 are fast, especially when compared to Step 2. Hence, we can
+conveniently amend parameters used in the actual dating analysis, or compute
+dated trees for different roots. The following section shows an example analysis
+and describes the steps of the pipeline in detail.
 
 * Example analysis
 ** Step 1: Alignment and unrooted topology
@@ -240,12 +253,6 @@ data/strassert-136taxa.unrooted.tre
 :ID:       784b898f-11f6-433e-bb8a-9584f377c8ce
 :END:
 
-\mcmcdate{} is fast because it uses a clever way to approximate the phylogenetic
-likelihood similar to McmcTree [cite:@Yang2005]. McmcTree approximates the
-surface of the phylogenetic likelihood using Taylor expansion
-[cite:@DosReis2011]. That is, in a prior analysis we compute the maximum
-likelihood together with the gradient and the Hessian matrix which we use in a
-subsequent analysis to date the tree.
 
 Here, we use a Bayesian method to estimate the posterior distribution. In particular,
 
@@ -278,23 +285,31 @@ excavates from diaphoretickes. Here, we choose option (1) which is the more
 plausible one.
 
 
+In this tutorial, we use 33 fossil calibrations compiled by Strassert et al.
+
 - Node order calibrations [cite:@Yang2005].
 - Relative node order constraints [cite:@Szollosi2022].
 - \mcmcdate{} can also brace nodes (Appendix
   [[id:202fc129-8d65-4966-a217-322231ff9c49]]).
 
+
+Hello.
+  
 ** Step 4: Dating with \mcmcdate{}
-- \mcmcdate{} is a Haskell program (Appendix
-  [[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]).
+- \mcmcdate{} is a Haskell program; Appendix
+  [[id:a38b78be-7ee6-4340-946a-2a5d06385b66]] provides details about the internals
+  of \mcmcdate{}.
 
 \appendix
+
+Hello.
 
 * Auxiliary data specifications
 :PROPERTIES:
 :ID:       202fc129-8d65-4966-a217-322231ff9c49
 :END:
-
-In this tutorial, we use 33 fossil calibrations compiled by
+The specifications match version 1.0.0.0, and may change between different
+versions of \mcmcdate{}.
 
 ** Node age calibrations
 ** Node order constraints
