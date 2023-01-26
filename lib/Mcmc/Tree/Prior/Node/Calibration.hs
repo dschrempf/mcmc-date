@@ -254,6 +254,8 @@ data HandleProblematicCalibrations
   | ErrorOnProblematicCalibrations
   deriving (Eq, Read, Show)
 
+-- | Convert calibration data to actual 'Calibration's. Perform some basic
+-- checks.
 checkAndConvertCalibrationData ::
   Handle ->
   HandleProblematicCalibrations ->

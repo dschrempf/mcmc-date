@@ -115,6 +115,7 @@ filterBoundedNodes t@(Node _ nm ts) = case parseOnly pABounded nmS of
     getR (Node _ x []) = x
     getR (Node _ _ xs) = getR $ last xs
 
+-- | Load calibrations from a tree (MCMCTree format).
 loadCalibrationsFromTree ::
   Handle ->
   HandleProblematicCalibrations ->
