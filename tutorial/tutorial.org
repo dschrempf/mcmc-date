@@ -308,10 +308,48 @@ Hello.
 :PROPERTIES:
 :ID:       202fc129-8d65-4966-a217-322231ff9c49
 :END:
-The specifications match version 1.0.0.0, and may change between different
-versions of \mcmcdate{}.
+The specifications match \mcmcdate{} version 1.0.0.0 and may change between
+different versions of \mcmcdate{}.
 
 ** Node age calibrations
+Node age calibrations can be provided in two ways:
+- with a comma separated values (CSV) file, or
+- with a Newick tree file (MCMCTree specification; see the documentation of
+  MCMCTree; only L, U, and B are supported).
+If the file ends with =csv=, assume the calibrations are provided in CSV format.
+Otherwise, assume the calibrations are provided on a Newick tree . The CSV file
+has rows of the following format:
+#+begin_src text :exports code
+CalibName,LeafA,LeafB,LowerBoundary,LowerBoundaryProbMass,UpperBoundary,UpperBoundaryProbMass
+#+end_src
+In this case, the calibrated node is uniquely defined as the most recent common
+ancestor of =LeafA= and =LeafB=. The age of the node is calibrated between the
+lower and upper boundary. The probability mass describes the softness (or
+hardness) of a boundary. In other words, the probability mass describes the
+steepness of the decline of the prior function outside the calibration interval.
+In general, the larger the probability mass the softer the boundary. We specify
+the probability mass with respect to a normalized time interval of size \(1.0\).
+That is, probability masses have to be strictly positive and less than \(1.0\),
+which is the total probability mass in the unit interval.
+
+I usually use values between \(0.0001\) (hard) and \(0.03\) (soft). If unsure,
+use probability masses of \(0.025\), which corresponds to \(2.5\) percent
+probability at each boundary or constraint. A probability mass close to \(1.0\)
+will correspond to a prior function too soft to have any effect. Note that this
+way of specifying boundary softness using relative values independent of the
+actual node ages differs from MCMCTree which uses absolute values
+[cite:@Yang2005]. When using a Newick tree to specify node age calibrations, and
+no probability masses are provided, a default value of \(0.01\) is used. This
+measure is in place to support the same input files as MCMCTree does.
+
+To specify one-sided node age calibrations, omit the other boundary and the
+corresponding probability mass. For example, the following line defines a node
+age calibration with a lower boundary at \(1e6\) time units (years in this case)
+with probability mass \(0.025\):
+#+begin_src text :exports code
+Primates,Human,Chimpanzees,1e6,0.025,,
+#+end_src
+
 ** Node order constraints
 ** Node braces
 
