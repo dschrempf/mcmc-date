@@ -3,7 +3,7 @@
 #+options: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
 #+options: tasks:t tex:t timestamp:t title:t toc:t todo:t |:t
 #+title: Dating with constraints
-#+subtitle: A tutorial on McmcDate
+#+subtitle: A detailed tutorial on McmcDate
 #+date: January 13, 2023
 #+author: Dominik Schrempf
 #+email: dominik.schrempf@gmail.com
@@ -32,16 +32,17 @@ calibrations, node order constraints, and node braces. McmcDate is fast because
 it approximates the phylogenetic likelihood with a multivariate normal
 distribution.
 
-In this tutorial, we are going to date a phylogenetic tree of eukaryotes. We are
-going to use node age calibrations from fossils, and node order constraints from
-two possible successions of plastid endosymbiosis events.
+In this tutorial, we date a phylogenetic tree of eukaryotes. We use data from
+[cite:@Strassert2021] who provide the alignment and node age calibrations from
+fossils. Moreover, we use node order constraints from two possible successions
+of plastid endosymbiosis events.
 #+latex: \end{abstract}
 
 #+begin_center
 *This tutorial is a work in progress.*
 #+end_center
 
-* Definitions and explanations
+* Definitions
 We use the term /(rooted) tree/ to denote a directed acyclic graph with node
 labels and branch lengths, and in which not more than one branch connects any
 two nodes. Usually, nodes correspond to (ancestral) species, and branch lengths
@@ -92,21 +93,25 @@ between parameters
   t' &= t \cdot c, \\
   r' &= r / c,
 \end{align}
-for /any/ \(c \in (0, \infty)\)!
+for /any/ \(c \in (0, \infty)\)! This means we need auxiliary data to constrain
+the ages of at least some internal nodes. There are three forms of constraints
+from auxiliary data which are explained in the next sections: (a) node age
+calibrations, (b) node order constraints, and (c) node braces.
+Appendix\nbsp{}[[id:202fc129-8d65-4966-a217-322231ff9c49]] details the
+specifications about how auxiliary data is used with McmcDate.
 
 ** Node age calibrations
 :PROPERTIES:
 :ID:       b1d8692b-db95-42f9-a11d-e492e6debf26
 :END:
-This means we need auxiliary data to constrain the ages of at least some
-internal nodes. We call constraints on the ages of internal nodes /node age
-calibrations/. Without node age calibrations, all dated trees are equally
-likely! Since most phylogenetic dating methods are Bayesian, and impose prior
-functions on all of their parameters, the values of the posterior function of
-different trees still differ in a deceiving way. However, in the absence of node
-age calibrations, the differences in the values of the posterior function are
-exclusively caused by the chosen prior functions, and not by the information we
-have obtained from the data.
+We call constraints on the ages of internal nodes /node age calibrations/.
+Without node age calibrations, all dated trees are equally likely! Since most
+phylogenetic dating methods are Bayesian, and impose prior functions on all of
+their parameters, the values of the posterior function of different trees still
+differ in a deceiving way. However, in the absence of node age calibrations, the
+differences in the values of the posterior function are exclusively caused by
+the chosen prior functions, and not by the information we have obtained from the
+data.
 
 Even more, in order to limit the maximum ages of the nodes, we require at least
 one node age calibration with a maximum boundary. The closer in terms of
@@ -164,8 +169,15 @@ has to be older than the younger node of the recipient branch.
 #+name: fig-transfers
 [[file:figures/transfers.svg]]
 
+** Node braces
+Finally, sometimes we know that two or more nodes have the same age. For
+example, when analyzing gene trees, an early gene duplication event may separate
+the gene tree into two subtrees. Subsequent speciation events may be observable
+on both subtrees in that the corresponding speciation nodes should have similar
+ages. In this tutorial we will not brace nodes.
+
 * Pipeline
-The pipeline for dating a tree is:
+The pipeline for dating a tree with McmcDate is:
 1. Prepare a multi sequence alignment and an unrooted topology.
 2. For this alignment and unrooted topology, infer a distribution of unrooted
    trees with branch lengths measured in expected number of substitutions.
@@ -176,7 +188,8 @@ The pipeline for dating a tree is:
    age calibrations are insufficient, we can still use relative time units.
 The following sections describe the steps of the pipeline in detail.
 
-* Step 1: Alignment and unrooted topology
+* Example analysis
+** Step 1: Alignment and unrooted topology
 We are going to date a topology of eukaryotes [cite:@Strassert2021]. The full
 published data set contains three alignments:
 1. The alignment with the highest number of taxa comprises 733 eukaryotes with
@@ -219,7 +232,7 @@ data/strassert-136taxa.unrooted.tre
 
 \noindent Please also see the [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data][README in the data subfolder]].
 
-* Step 2: Phylogenetic inference
+** Step 2: Phylogenetic inference
 :PROPERTIES:
 :ID:       784b898f-11f6-433e-bb8a-9584f377c8ce
 :END:
@@ -251,7 +264,7 @@ rate heterogeneity with four components.
 - EDM model [cite:@Schrempf2020a].
 - C60 model [cite:@Quang2008]
 
-* Step 3: Rooted topology and auxiliary data
+** Step 3: Rooted topology and auxiliary data
 :PROPERTIES:
 :ID:       54c61d87-6dbf-48e2-a43e-e788acb0b18f
 :END:
@@ -267,18 +280,24 @@ plausible one.
 - McmcDate can also brace nodes (Appendix
   [[id:202fc129-8d65-4966-a217-322231ff9c49]]).
 
-* Step 4: Dating with McmcDate
+** Step 4: Dating with McmcDate
 - McmcDate is a Haskell program (Appendix
   [[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]).
 
 \appendix
 
-* Node braces
+* Auxiliary data specifications
 :PROPERTIES:
 :ID:       202fc129-8d65-4966-a217-322231ff9c49
 :END:
 
-* Internals of McmcDate
+In this tutorial, we use 33 fossil calibrations compiled by
+
+** Node age calibrations
+** Node order constraints
+** Node braces
+
+* Internals
 :PROPERTIES:
 :ID:       a38b78be-7ee6-4340-946a-2a5d06385b66
 :END:
