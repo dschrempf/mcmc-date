@@ -502,6 +502,102 @@ change parameters or functions in the code. In the following, I briefly explain
 both points.
 
 ** Direct invocation of \mcmcdate{}
+Use the build tool of your choice (see above) to directly run \mcmcdate{}. For
+example, using =cabal-install=:
+#+name: direct-invocation
+#+begin_src sh :exports both :results output :wrap "src text"
+cabal run mcmc-date-run -- -h
+#+end_src
+
+#+results: direct-invocation
+#+begin_src text
+Up to date
+mcmc-date; version 1.0.0.0
+
+Usage: mcmc-date-run COMMAND
+
+  Date a phylogenetic tree using calibrations and constraints
+
+Available options:
+  -h,--help                Show this help text
+
+Available commands:
+  prepare                  Prepare data
+  run                      Run MCMC sampler
+  continue                 Continue MCMC sampler
+  marginal-likelihood      Calculate marginal likelihood
+#+end_src
+
+\noindent The help shows that \mcmcdate{} exposes four sub-commands. For
+example, to get help about how to run a new analysis:
+#+name: run-analysis
+#+begin_src sh :exports both :results output :wrap "src text"
+cabal run mcmc-date-run -- run -h
+#+end_src
+
+#+results: run-analysis
+#+begin_src text
+Up to date
+Usage: mcmc-date-run run --analysis-name NAME [--preparation-name NAME]
+                         [--calibrations "SPEC FILE" (mind the quotes)]
+                         [--ignore-problematic-calibrations]
+                         [--constraints FILE] [--ignore-problematic-constraints]
+                         [--braces FILE] [--init-from-save ANALYSIS_NAME]
+                         [--profile] [--hamiltonian] --likelihood-spec ARG
+                         --relaxed-molecular-clock ARG [--mc3]
+
+  Run MCMC sampler
+
+Available options:
+  --analysis-name NAME     Analysis name
+  --preparation-name NAME  Preparation name
+  --calibrations "SPEC FILE" (mind the quotes)
+                           Specify calibrations (SPEC is either csv or tree)
+  --ignore-problematic-calibrations
+                           Ignore and use problematic calibrations
+  --constraints FILE       File name specifying constraints
+  --ignore-problematic-constraints
+                           Ignore and drop problematic constraints
+  --braces FILE            File name specifying braces
+  --init-from-save ANALYSIS_NAME
+                           Reuse state and proposal tuning parameters from a
+                           previous run; if successful, also reduce burn in
+  --profile                Activate profiling
+  --hamiltonian            Activate Hamiltonian proposal
+  --likelihood-spec ARG    Likelihood specification (see below).
+  --relaxed-molecular-clock ARG
+                           Relaxed molecular clock model (see below).
+  --mc3                    Use MC3 instead of MHG algorithm
+  -h,--help                Show this help text
+#+end_src
+
+\noindent Hence, an example command line is:
+#+name: example-run
+#+begin_src sh :exports code
+cabal run -- mcmc-date-run run \
+  --analysis-name example \
+  --calibrations "csv calibrations.csv" \
+  --constraints "constraints.csv" \
+  --relaxed-molecular-clock "UncorrelatedLogNormal" \
+  --likelihood-spec "SparseMultivariateNormal 0.1"
+#+end_src
+
+\noindent Get help about how to continue an analysis with:
+#+name: continue-analysis
+#+begin_src sh :exports code :results output :wrap "src text"
+cabal run mcmc-date-run -- continue -h
+#+end_src
+
+\noindent Consequently, continue the above example analysis with:
+#+name: example-continue
+#+begin_src sh :exports code
+cabal run -- mcmc-date-run continue \
+  --analysis-name example \
+  --calibrations "csv calibrations.csv" \
+  --constraints "constraints.csv" \
+  --relaxed-molecular-clock "UncorrelatedLogNormal" \
+  --likelihood-spec "SparseMultivariateNormal 0.1"
+#+end_src
 
 ** Understanding the Haskell code
 - Based on [[https://hackage.haskell.org/package/mcmc][mcmc]].
