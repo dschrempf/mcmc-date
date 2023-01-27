@@ -569,6 +569,14 @@ Available options:
                            Relaxed molecular clock model (see below).
   --mc3                    Use MC3 instead of MHG algorithm
   -h,--help                Show this help text
+
+Relaxed molecular clock model:
+  - UncorrelatedGamma
+  - AutocorrelatedLogNormal
+Likelihood specification:
+  - FullMultivariateNormal
+  - SparseMultivariateNormal PENALTY (usually 0.1)
+  - UnivariateNormal
 #+end_src
 
 \noindent Hence, an example command line is:
