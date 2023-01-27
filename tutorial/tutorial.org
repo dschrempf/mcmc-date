@@ -222,12 +222,12 @@ required by Phylobayes [cite:@Lartillot2013]. I provide the alignment
 =strassert-136taxa.phy= in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data subfolder]] of this tutorial:
 
 #+name: step1-alignment
-#+begin_src sh :exports results :results verbatim code replace output
+#+begin_src sh :exports results :results output :wrap "src text"
 ls data/*.phy
 #+end_src
 
 #+results: step1-alignment
-#+begin_src sh
+#+begin_src text
 data/strassert-136taxa.phy
 #+end_src
 
@@ -237,12 +237,12 @@ unrooted topology. I have unrooted the tree in Figure 3 in
 topology in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data subfolder]] of this tutorial:
 
 #+name: step1-unrooted-topology
-#+begin_src sh :exports results :results verbatim code replace output
+#+begin_src sh :exports results :results output :wrap "src text"
 ls data/*unrooted*
 #+end_src
 
 #+results: step1-unrooted-topology
-#+begin_src sh
+#+begin_src text
 data/strassert-136taxa.unrooted.tre
 #+end_src
 
@@ -431,19 +431,83 @@ strong.
 :PROPERTIES:
 :ID:       a38b78be-7ee6-4340-946a-2a5d06385b66
 :END:
-\mcmcdate{} is a Haskell program.
+\mcmcdate{} is written in Haskell. The Haskell programming language is
+versatile, interesting, and leads to more maintainable code with fewer bugs when
+compared to other programming languages. Nevertheless, the tooling support is
+sometimes sub-optimal. Before running \mcmcdate{} you need to compile the
+Haskell code. In most cases, the [[https://github.com/dschrempf/mcmc-date/blob/master/scripts/run][wrapper script called =run=]], which is used in
+this tutorial, does this for you in a reproducible way, and so there is no need
+for manual action. Sometimes, however, manual action may be required.
 
-Recommend cabal, but there is also stack (-s) option.
+First, there are two build tools commonly used with Haskell: =cabal-install=,
+and =Stack= with binaries =cabal=, and =stack=, respectively. I recommend using
+=cabal-install=, and the wrapper script uses =cabal-install= by default. If you
+want to use =Stack=, use the option =-s= like so: =run -s ...=. See also the
+output of =run -h=. Second, in rare occasions you may want to clean your local
+builds. You can do this by running =cabal clean= or =stack clean=, or more
+strictly, by deleting the =dist-newstyle= or =.stack-work= directories for
+=cabal-install= and =Stack=, respectively.
 
-The [[https://github.com/dschrempf/mcmc-date/blob/master/scripts/run][wrapper script]] used in this tutorial tries to make a good compromise between
-usability and customizability. It exposes some, but not all functionality of
-\mcmcdate{}. Most notably,
+** Wrapper script
+The wrapper script =run= tries to make a good compromise between usability and
+customizability. It exposes some, but not all functionality of \mcmcdate{}:
+#+name: wrapper-script
+#+begin_src sh :exports both results :results output :wrap "src text"
+run -h
+#+end_src
 
+#+results: wrapper-script
+#+begin_src text
+Usage: run [OPTIONS] RELAXED_MOLECULAR_CLOCK_MODEL LIKELIHOOD_SPECIFICATION COMMANDS
+
+Prior options:
+-b Activate braces
+-c Activate calibrations
+-k Activate constraints
+
+Algorithm related options:
+-i NAME  Initialize state and cycle from previous analysis with NAME
+-H       Activate Hamiltonian proposal (slow, but great convergence)
+-m       Use Mc3 algorithm insteahd of Mhg
+
+Other options:
+-f FILE    Use a different analysis configuration file (relative path)
+-n SUFFIX  Use an analysis suffix
+-p         Activate profiling
+-s         Use Haskell stack instead of cabal-install
+
+Relaxed molecular clock model:
+ug  Uncorrelated gamma model
+ul  Uncorrelated log normal model
+al  Autocorrelated log normal model
+
+Likelihood specification:
+f  Full covariance matix
+s  Sparse covariance matrix
+u  Univariate approach
+n  No likelihood; use prior only
+
+Available commands:
+p  Prepare analysis
+r  Run dating analysis
+c  Continue dating analysis
+m  Compute marginal likelihood
+
+A configuration file "analysis.conf" is required.
+For reference, see the sample configuration file.
+#+end_src
+If you need to adjust specific parameters or settings, you can (a) call the
+\mcmcdate{} executable directly, and, if this is not enough, or (b) directly
+change parameters or functions in the code. In the following, I briefly explain
+both points.
+
+** Direct invocation of \mcmcdate{}
+
+** Understanding the Haskell code
 - Based on [[https://hackage.haskell.org/package/mcmc][mcmc]].
 - Based on [[https://hackage.haskell.org/package/elynx-tree][elynx-tree]].
 - Explain code a bit (I guess mostly proposals).
 
-** Haskell modules
 Modules containing definitions specific to the analysis are in the [[https://github.com/dschrempf/mcmc-date/tree/master/app][=app=
 subfolder]] of the \mcmcdate{} repository.
 
