@@ -242,31 +242,33 @@ modeP =
   hsubparser
     ( command
         "prepare"
-        (info prepareP (progDesc "Prepare data" <> footerDoc f))
+        (info prepareP (progDesc' "Prepare data"))
         <> command
           "run"
-          (info runP (progDesc "Run MCMC sampler"))
+          (info runP (progDesc' "Run MCMC sampler"))
         <> command
           "continue"
-          (info continueP (progDesc "Continue MCMC sampler"))
+          (info continueP (progDesc' "Continue MCMC sampler"))
         <> command
           "marginal-likelihood"
-          (info marginalLikelihoodP (progDesc "Calculate marginal likelihood"))
+          (info marginalLikelihoodP (progDesc' "Calculate marginal likelihood"))
     )
   where
     f =
-      Just $
-        vsep $
-          map
-            string
-            [ "Relaxed molecular clock model:",
-              "  - UncorrelatedGamma",
-              "  - AutocorrelatedLogNormal",
-              "Likelihood specification:",
-              "  - FullMultivariateNormal",
-              "  - SparseMultivariateNormal PENALTY",
-              "  - UnivariateNormal"
-            ]
+      footerDoc $
+        Just $
+          vsep $
+            map
+              string
+              [ "Relaxed molecular clock model:",
+                "  - UncorrelatedGamma",
+                "  - AutocorrelatedLogNormal",
+                "Likelihood specification:",
+                "  - FullMultivariateNormal",
+                "  - SparseMultivariateNormal PENALTY (usually 0.1)",
+                "  - UnivariateNormal"
+              ]
+    progDesc' x = progDesc x <> f
 
 parseArgs :: IO Mode
 parseArgs =
