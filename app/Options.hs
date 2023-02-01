@@ -262,6 +262,7 @@ modeP =
               string
               [ "Relaxed molecular clock model:",
                 "  - UncorrelatedGamma",
+                "  - UncorrelatedLogNormal",
                 "  - AutocorrelatedLogNormal",
                 "Likelihood specification:",
                 "  - FullMultivariateNormal",
