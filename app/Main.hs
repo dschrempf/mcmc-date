@@ -455,9 +455,8 @@ getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp 
 runMetropolisHastingsGreen :: Handle -> Spec -> Algorithm -> IO ()
 runMetropolisHastingsGreen h spec alg = do
   (i, p, l, c, m, s) <- getMcmcProps h spec (Just alg)
-  let mS = mSeed spec
 
-  g <- case mS of
+  g <- case mSeed spec of
     Nothing -> initStdGen
     Just se -> pure $ mkStdGen se
 
@@ -501,10 +500,10 @@ continueMetropolisHastingsGreen h spec alg = do
 runMarginalLikelihood :: Handle -> Spec -> IO ()
 runMarginalLikelihood h spec = do
   (i, p, l, c, m, _) <- getMcmcProps h spec Nothing
-  -- Create a seed value for the random number generator. Actually, the
-  -- 'create' function is deterministic, but useful during development. For
-  -- real analyses, use 'createSystemRandom'.
-  let g = mkStdGen 0
+
+  g <- case mSeed spec of
+    Nothing -> initStdGen
+    Just se -> pure $ mkStdGen se
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
   let prof = profile spec
