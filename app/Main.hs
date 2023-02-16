@@ -457,8 +457,12 @@ runMetropolisHastingsGreen h spec alg = do
   (i, p, l, c, m, s) <- getMcmcProps h spec (Just alg)
 
   g <- case mSeed spec of
-    Nothing -> initStdGen
-    Just se -> pure $ mkStdGen se
+    Nothing -> do
+      hPutStrLn h "Seed: Random."
+      initStdGen
+    Just se -> do
+      hPutStrLn h $ "Seed: Fixed, " <> show se <> "."
+      pure $ mkStdGen se
 
   case alg of
     MhgA -> do
@@ -485,7 +489,9 @@ runMetropolisHastingsGreen h spec alg = do
 continueMetropolisHastingsGreen :: Handle -> Spec -> Algorithm -> IO ()
 continueMetropolisHastingsGreen h spec alg = do
   (_, p, l, c, m, _) <- getMcmcProps h spec Nothing
+
   when (isJust $ mSeed spec) $ hPutStrLn h "Warning: Ignoring fixed seed; instead reinitialize generator using last state."
+
   let an = AnalysisName $ analysisName spec
   s <- settingsLoad an
   let is = if profile spec then iterationsProf else iterations
@@ -502,8 +508,12 @@ runMarginalLikelihood h spec = do
   (i, p, l, c, m, _) <- getMcmcProps h spec Nothing
 
   g <- case mSeed spec of
-    Nothing -> initStdGen
-    Just se -> pure $ mkStdGen se
+    Nothing -> do
+      hPutStrLn h "Seed: Random."
+      initStdGen
+    Just se -> do
+      hPutStrLn h $ "Seed: Fixed, " <> show se <> "."
+      pure $ mkStdGen se
 
   -- Construct a Metropolis-Hastings-Green Markov chain.
   let prof = profile spec
