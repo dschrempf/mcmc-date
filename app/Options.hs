@@ -68,7 +68,9 @@ data Spec = Spec
     -- | Likelihood specification.
     likelihoodSpec :: LikelihoodSpec,
     -- | Relaxed molecular clock.
-    relaxedMolecularClock :: RelaxedMolecularClockModel
+    relaxedMolecularClock :: RelaxedMolecularClockModel,
+    -- | Seed.
+    mSeed :: Maybe Int
   }
   deriving (Eq, Show, Read)
 
@@ -158,6 +160,11 @@ relaxedMolecularClockP =
   option auto $
     long "relaxed-molecular-clock" <> help "Relaxed molecular clock model (see below)."
 
+mSeedP :: Parser Int
+mSeedP =
+  option auto $
+    long "seed" <> help "Set the seed (default: unset, random)." <> metavar "NUMBER"
+
 specP :: Parser Spec
 specP =
   Spec
@@ -173,6 +180,7 @@ specP =
     <*> hamiltonianP
     <*> likelihoodSpecP
     <*> relaxedMolecularClockP
+    <*> optional mSeedP
 
 data PrepSpec = PrepSpec
   { prepAnalysisName :: String,

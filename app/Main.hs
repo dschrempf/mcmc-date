@@ -374,7 +374,7 @@ getMcmcProps ::
       Monitor I,
       Settings
     )
-getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm) malg = do
+getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp rmcm _) malg = do
   let prepName = fromMaybe an mPrepName
   hPutStrLn h $ "Read mean tree using preparation name: " <> prepName <> "."
   -- Read the mean tree and the posterior means and covariances.
@@ -455,11 +455,11 @@ getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp 
 runMetropolisHastingsGreen :: Handle -> Spec -> Algorithm -> IO ()
 runMetropolisHastingsGreen h spec alg = do
   (i, p, l, c, m, s) <- getMcmcProps h spec (Just alg)
+  let mS = mSeed spec
 
-  -- Create a seed value for the random number generator. Actually, the
-  -- 'create' function is deterministic, but useful during development. For
-  -- real analyses, use 'createSystemRandom'.
-  let g = mkStdGen 0
+  g <- case mS of
+    Nothing -> initStdGen
+    Just se -> pure $ mkStdGen se
 
   case alg of
     MhgA -> do
@@ -486,6 +486,7 @@ runMetropolisHastingsGreen h spec alg = do
 continueMetropolisHastingsGreen :: Handle -> Spec -> Algorithm -> IO ()
 continueMetropolisHastingsGreen h spec alg = do
   (_, p, l, c, m, _) <- getMcmcProps h spec Nothing
+  when (isJust $ mSeed spec) $ hPutStrLn h "Warning: Ignoring fixed seed; instead reinitialize generator using last state."
   let an = AnalysisName $ analysisName spec
   s <- settingsLoad an
   let is = if profile spec then iterationsProf else iterations
