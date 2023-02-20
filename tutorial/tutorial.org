@@ -1,7 +1,7 @@
 #+options: ':t *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t
 #+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
 #+options: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
-#+options: tasks:t tex:t timestamp:t title:t toc:t todo:t |:t
+#+options: tasks:t tex:t timestamp:t title:t toc:nil todo:t |:t
 #+title: Dating with constraints
 #+subtitle: A detailed tutorial on McmcDate
 #+date: January 13, 2023
@@ -29,14 +29,14 @@
 
 #+latex: \begin{abstract}
 [[https://github.com/dschrempf/mcmc-date][\mcmcdate{}]] can date a phylogenetic tree with constraints. That is, it can
-estimate the ages of the ancestral nodes of a phylogenetic tree with node age
+estimate the ages of ancestral nodes of phylogenetic trees with node age
 calibrations, node order constraints, and node braces. \mcmcdate{} is fast
 because it approximates the phylogenetic likelihood with a multivariate normal
 distribution.
 
 Here, I briefly review the process of dating phylogenetic trees and provide an
 example dating analysis of a tree of eukaryotes. I use data from
-[cite:@Strassert2021] who provide the alignment and node age calibrations from
+[cite/t:@Strassert2021] who provide the alignment and node age calibrations from
 fossils. Moreover, I use node order constraints from two possible successions of
 plastid endosymbiosis events.
 #+latex: \end{abstract}
@@ -45,16 +45,18 @@ plastid endosymbiosis events.
 *This tutorial is a work in progress.*
 #+end_center
 
+\tableofcontents
+
 * Definitions
 We use the term /(rooted) tree/ to denote a directed acyclic graph with node
-labels and branch lengths, and in which not more than one branch connects any
-two nodes. Usually, nodes correspond to (ancestral) species, and branch lengths
-to sequence distance or time. We use the term /(rooted) topology/ to denote a
+labels and branch lengths in which not more than one branch connects any two
+nodes. Usually, nodes correspond to (ancestral) species, and branch lengths to
+sequence distance or time. We use the term /(rooted) topology/ to denote a
 (rooted) tree without information about branch lengths. We put the word /rooted/
 into parentheses, because it is sometimes omitted. The root of the tree or
-topology is the only node with all branches pointing away to other nodes, and is
-the oldest node. Leaves are extant nodes with a single branch pointing towards
-them.
+topology is the only node with all branches pointing away to other nodes. The
+root is the oldest node. Leaves are extant nodes with a single branch pointing
+towards them.
 
 For a given topology, /dating the tree/[fn:1] corresponds to finding branch
 lengths for this topology which are measured in absolute time units (for
@@ -64,7 +66,7 @@ means in our case. Sometimes, all we can do is date a tree with relative time
 units (Section\nbsp{}[[id:b1d8692b-db95-42f9-a11d-e492e6debf26]]).
 
 Similarly, we use the term /unrooted tree/ to denote an undirected acyclic graph
-with node labels and branch lengths, and in which not more than one branch
+with node labels and branch lengths in which not more than one branch
 connects any two nodes. Finally, we use the term /unrooted topology/ to denote
 an unrooted tree without information about branch lengths. We need unrooted
 trees and topologies because we will use reversible substitution models [cite:
@@ -77,28 +79,28 @@ Dating a tree is difficult because we want to estimate branch lengths measured
 in absolute time units. However, an alignment only contains information about
 distances measured in expected number of substitutions. In particular, it does
 not contain information about the evolutionary rates nor about the actual
-elapsed absolute time units. That is, for a given branch,
+elapsed absolute time units. For a given branch,
 \begin{align}
 \begin{split}
-  d \text{ in }&\text{[expected number of substitutions]} = \\
-    &r \text{ in [expected number of substitutions per year]} \cdot
-    t \text{ in [years]},
+  d \; & \text{[expected number of substitutions]} = \\
+    &r \; \text{[expected number of substitutions per year]} \cdot
+    t \; \text{[years]},
 \end{split}
 \end{align}
 where \(d\) is the branch length measured in expected number of substitutions,
 \(r\) is the evolutionary rate on this branch, and \(t\) is the branch length
 measured in absolute time units. The situation is severe because \(r\) and \(t\)
-are confounded! If we multiply \(t\) with a positive number \(c\) and divide
+are confounded. If we multiply \(t\) with a positive number \(c\) and divide
 \(r\) by the same positive number \(c\), the distance \(d\) stays constant.
 Since the likelihood only depends on the distance \(d\) we can not discriminate
-between parameters
+between parameter tuples \((t, r)\) and \((t', r')\), where
 \begin{align}
   t' &= t \cdot c, \\
   r' &= r / c,
 \end{align}
 for /any/ \(c \in (0, \infty)\)! This means we need auxiliary data to constrain
-the ages of at least some internal nodes. There are three forms of constraints
-from auxiliary data which are explained in the next sections: (a) node age
+the ages of at least some nodes. There are three forms of constraints from
+auxiliary data which are explained in the next sections: (a) node age
 calibrations, (b) node order constraints, and (c) node braces.
 Appendix\nbsp{}[[id:202fc129-8d65-4966-a217-322231ff9c49]] details the
 specifications about how auxiliary data is used with \mcmcdate{}.
@@ -145,11 +147,11 @@ gene transfer can still happen indirectly through multiple events. An indirect
 gene transfer requires an intermediate lineage carrying the gene. The
 intermediate lineage has either gone extinct [cite:@Szollosi2013a], has not been
 sampled, or has lost the gene. Gene transfers are impossible if the recipient
-branch is younger than the donor branch.
+branch is older than the donor branch.
 
-Let the ages of the old and young nodes of the donor and recipient branches be
-\(DO\), \(DY\), \(RO\), and \(RY\), respectively. Then, a direct horizontal gene
-transfer provides us with two node order constraints,
+For example, let the ages of the old and young nodes of the donor and recipient
+branches be \(DO\), \(DY\), \(RO\), and \(RY\), respectively. Then, a direct
+horizontal gene transfer provides us with two node order constraints,
 \begin{align}
   DY < RO, \text{ and } DO > RY,
 \end{align}
@@ -162,10 +164,11 @@ The last constraint is enough to prohibit impossible gene transfers as depicted
 in Figure\nbsp{}[[fig-transfers]].
 
 Sometimes, we do not know the exact donor branch but only that the donor branch
-must be on a subtree. However, we usually do know the recipient branch which is
-the stem of the subtree comprising the species which contain the horizontally
-transferred gene. In this case, the older node of the stem of the donor subtree
-has to be older than the younger node of the recipient branch.
+must be part of a known subtree. However, we usually do know the recipient
+branch which is the stem of the subtree comprising the species which contain the
+horizontally transferred gene. In this case, the ancestral node of the stem of
+the donor subtree has to be older than the descending node of the recipient
+branch.
 
 #+caption: Direct, indirect and impossible horizontal gene transfers. A direct horizontal gene transfer happens between branches coexisting in time. An indirect horizontal gene transfer involves multiple events and an intermediate lineage. If the recipient branch is older than the donor branch, a horizontal gene transfer is impossible.
 #+attr_latex: :width 1.0\textwidth :placement [tb]
@@ -173,18 +176,22 @@ has to be older than the younger node of the recipient branch.
 [[file:figures/transfers.svg]]
 
 ** Node braces
-Finally, sometimes we know that two or more nodes have the same age. For
-example, when analyzing gene trees, an early gene duplication event may separate
-the gene tree into two subtrees. Subsequent speciation events may be observable
-on both subtrees in that the corresponding speciation nodes should have similar
-ages. In this tutorial we will not brace nodes.
+:PROPERTIES:
+:ID:       d2814da0-2d21-41e5-9ded-bfaa47840d32
+:END:
+Finally, sometimes we know that two or more nodes have the same age or similar
+ages. For example, when analyzing gene trees, an early gene duplication event
+may separate the gene tree into two subtrees. Subsequent speciation events may
+be observable on both subtrees, and the corresponding speciation nodes should
+have similar ages. In this tutorial we will not brace nodes but see Appendix
+[[id:73cefaee-838c-451e-9dbc-a80b4b7123f4]] for the specifications.
 
 * Pipeline
 \mcmcdate{} is fast because it uses a clever way to approximate the phylogenetic
-likelihood similar to McmcTree [cite:@Yang2005]. McmcTree approximates the
+likelihood similar to MCMCTree [cite:@Yang2005]. MCMCTree approximates the
 surface of the phylogenetic likelihood using Taylor expansion
-[cite:@DosReis2011]. That is, in a prior analysis we compute the maximum
-likelihood together with the gradient and the Hessian matrix which we use in a
+[cite:@DosReis2011]. That is, a prior analysis computes the maximum likelihood
+together with the gradient and the Hessian matrix which MCMCTree uses in a
 subsequent analysis to date the tree.
 
 Here, we use a similar technique, albeit with a Bayesian method to estimate the
@@ -233,7 +240,7 @@ data/strassert-136taxa.phy
 
 \noindent For the phylogenetic inference in the next step, we also need an
 unrooted topology. I have unrooted the tree in Figure 3 in
-[cite/text:@Strassert2021]. Similar to the alignment, I provide the unrooted
+[cite/t:@Strassert2021]. Similar to the alignment, I provide the unrooted
 topology in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data subfolder]] of this tutorial:
 
 #+name: step1-unrooted-topology
@@ -278,7 +285,7 @@ rate heterogeneity with four components.
 :PROPERTIES:
 :ID:       54c61d87-6dbf-48e2-a43e-e788acb0b18f
 :END:
-[cite/text:@Strassert2021] discuss one unrooted topology with two possible root
+[cite/t:@Strassert2021] discuss one unrooted topology with two possible root
 positions. (1) The root separates amorphea from diaphoretickes and excavates
 [cite: Figure 3 in @Strassert2021], and (2) the root separates amorphea and
 excavates from diaphoretickes. Here, we choose option (1) which is the more
@@ -302,8 +309,6 @@ Hello.
 
 \appendix
 
-Hello.
-
 * Auxiliary data specifications
 :PROPERTIES:
 :ID:       202fc129-8d65-4966-a217-322231ff9c49
@@ -313,11 +318,11 @@ different versions of \mcmcdate{}.
 
 ** Node age calibrations
 Node age calibrations can be provided in two ways:
-- with comma separated values (CSV) files, or
+- with comma separated value (CSV) files, or
 - with Newick tree files (MCMCTree specification; see the documentation of
   MCMCTree; only L, U, and B are supported).
 If the filename ends with =csv=, assume the calibrations are provided in CSV
-format. Otherwise, assume the calibrations are provided on a Newick tree . The
+format. Otherwise, assume the calibrations are provided on a Newick tree. The
 CSV file has a header (see below), and one or more rows of the following format:
 #+begin_src text :exports code
 Name,LeafA,LeafB,YoungAge,YoungProbabilityMass,OldAge,OldProbabilityMass
@@ -328,10 +333,10 @@ lower (young) and upper (old) boundary. The probability mass describes the
 softness (or hardness) of a boundary. In other words, the probability mass
 describes the steepness of the decline of the prior function outside the
 calibration interval. In general, the larger the probability mass the softer the
-boundary. We specify the probability mass with respect to a normalized time
+boundary. We specify probability masses with respect to a normalized time
 interval of size \(1.0\). That is, probability masses have to be strictly
-positive and less than \(1.0\), which is the total probability mass in the unit
-interval.
+positive and strictly less than \(1.0\), which is the total probability mass in
+the unit interval.
 
 I usually use values between \(0.0001\) (hard) and \(0.03\) (soft). If unsure,
 use probability masses of \(0.025\), which corresponds to \(2.5\) percent
@@ -340,8 +345,8 @@ will correspond to a prior function too soft to have any effect. Note that this
 way of specifying boundary softness using relative values independent of the
 actual node ages differs from MCMCTree which uses absolute values
 [cite:@Yang2005]. When using a Newick tree to specify node age calibrations, and
-no probability masses are provided, a default value of \(0.01\) is used. This
-measure is in place to support the same input files as MCMCTree does.
+when no probability masses are provided, a default value of \(0.01\) is used.
+This measure is in place to support the same input files as MCMCTree.
 
 To specify one-sided node age calibrations, omit the other boundary and the
 corresponding probability mass. For example, the following file defines a node
@@ -351,17 +356,16 @@ with probability mass \(0.025\):
 Name,LeafA,LeafB,YoungAge,YoungProbabilityMass,OldAge,OldProbabilityMass
 Primates,Human,Chimpanzees,1e6,0.025,,
 #+end_src
-The header line is required.
 
 ** Node order constraints
-Node order constraints are provided using a comma separated values (CSV) file
+Node order constraints are provided using a comma separated value (CSV) file
 with a header (see below) and one ore more rows of the following format:
 #+begin_src text :exports code
 Name,YoungerLeafA,YoungerLeafB,OlderLeafA,OlderLeafB,ProbabilityMass
 #+end_src
 The younger and older nodes are uniquely defined as the most recent common
-ancestors of =YoungLeafA= and =YoungLeafB=, as well as =OldLeafA= and
-=OldLeafB=, respectively. As described in the previous section about node age
+ancestors of =YoungerLeafA= and =YoungerLeafB=, as well as =OlderLeafA= and
+=OlderLeafB=, respectively. As described in the previous section about node age
 calibrations, the probability mass describes the softness (or hardness) of the
 constraint. For example, the following file defines a constraint where the
 ancestor of leaves =A= and =B= is younger than the ancestor of leaves =C= and
@@ -370,20 +374,23 @@ ancestor of leaves =A= and =B= is younger than the ancestor of leaves =C= and
 Name,YoungerLeafA,YoungerLeafB,OlderLeafA,OlderLeafB,ProbabilityMass
 ExampleConstraint,A,B,C,D,0.025
 #+end_src
-The header line is required. Redundant constraints such as constraints affecting
-nodes that are vertically related are reported and removed.
+\mcmcdate{} reports and removes redundant constraints such as constraints
+affecting nodes that are vertically related.
 
 ** Node braces
-Node braces are provided using files in JSON format. Similar to node age
-calibrations and node order constraints, the braced nodes are specified using
-pairs leaves. However, the softness (or hardness) of braces is defined in a
-different way. The reason is that more than two nodes can be braced, and so,
-there is no canonical way to describe the softness using probability mass.
-Rather, for a specific node brace, the differences between the node ages and the
-average age of all nodes in the particular node brace are normally distributed
-with the provided standard deviation.
+:PROPERTIES:
+:ID:       73cefaee-838c-451e-9dbc-a80b4b7123f4
+:END:
+Node braces are provided using files in JavaScript object notation (JSON)
+format. Similar to node age calibrations and node order constraints, the braced
+nodes are specified using pairs of leaves. However, the softness (or hardness)
+of braces is defined in a different way. The reason is that more than two nodes
+can be braced, and so, there is no canonical way to describe the softness using
+probability mass. Rather, for a specific node brace, the differences between the
+node ages and the average age of all nodes in the particular node brace are
+normally distributed with the provided standard deviation.
 
-The following example defined two node braces constraining two and three nodes,
+The following example defines two node braces constraining two and three nodes,
 respectively:
 #+begin_src json
 [
@@ -424,14 +431,13 @@ respectively:
 In this case, the braced nodes of the first node brace are uniquely defined as
 the most recent common ancestors of =NodeXLeafA= and =NodeXLeafB=, as well as
 =NodeYLeafA= and =NodeYLeafB=. The steepness of the brace prior function is
-defined using the standard deviation. The node brace defined in this file are
-strong.
+defined using the standard deviation. This file defines hard node braces.
 
 * Internals
 :PROPERTIES:
 :ID:       a38b78be-7ee6-4340-946a-2a5d06385b66
 :END:
-\mcmcdate{} is written in Haskell. The Haskell programming language is
+I have written \mcmcdate{} in Haskell. The Haskell programming language is
 versatile, interesting, and leads to more maintainable code with fewer bugs when
 compared to other programming languages. Nevertheless, the tooling support is
 sometimes sub-optimal. Before running \mcmcdate{} you need to compile the
@@ -439,13 +445,14 @@ Haskell code. In most cases, the [[https://github.com/dschrempf/mcmc-date/blob/m
 this tutorial, does this for you in a reproducible way, and so there is no need
 for manual action. Sometimes, however, manual action may be required.
 
-First, there are two build tools commonly used with Haskell: =cabal-install=,
-and =Stack= with binaries =cabal=, and =stack=, respectively. I recommend using
-=cabal-install=, and the wrapper script uses =cabal-install= by default. If you
-want to use =Stack=, use the option =-s= like so: =run -s ...=. See also the
-output of =run -h=. Second, in rare occasions you may want to clean your local
-builds. You can do this by running =cabal clean= or =stack clean=, or more
-strictly, by deleting the =dist-newstyle= or =.stack-work= directories for
+In this case, you need a rough understanding of the tools involved. There are
+two build tools commonly used with Haskell: =cabal-install=, and =Stack= with
+binaries =cabal=, and =stack=, respectively. I recommend using =cabal-install=,
+and the wrapper script uses =cabal-install= by default. If you want to use
+=Stack=, use the option =-s= like so: =run -s ...=. See also the output of =run
+-h=. In rare occasions you may want to clean your local build cache. You can do
+this by running =cabal clean= or =stack clean=; or more strictly, by deleting
+the =dist-newstyle= or =.stack-work= directories in you working directories for
 =cabal-install= and =Stack=, respectively.
 
 ** Wrapper script
@@ -497,13 +504,13 @@ A configuration file "analysis.conf" is required.
 For reference, see the sample configuration file.
 #+end_src
 If you need to adjust specific parameters or settings, you can (a) call the
-\mcmcdate{} executable directly, and, if this is not enough, or (b) directly
-change parameters or functions in the code. In the following, I briefly explain
-both points.
+\mcmcdate{} executable directly, and, if this is not enough, (b) directly change
+parameters or functions in the code. In the following, I briefly explain both
+options.
 
 ** Direct invocation of \mcmcdate{}
 Use the build tool of your choice (see above) to directly run \mcmcdate{}. For
-example, using =cabal-install=:
+example, with =cabal-install=:
 #+name: direct-invocation
 #+begin_src sh :exports both :results output :wrap "src text"
 cabal run mcmc-date-run -- -h
@@ -544,7 +551,7 @@ Usage: mcmc-date-run run --analysis-name NAME [--preparation-name NAME]
                          [--constraints FILE] [--ignore-problematic-constraints]
                          [--braces FILE] [--init-from-save ANALYSIS_NAME]
                          [--profile] [--hamiltonian] --likelihood-spec ARG
-                         --relaxed-molecular-clock ARG [--mc3]
+                         --relaxed-molecular-clock ARG [--seed NUMBER] [--mc3]
 
   Run MCMC sampler
 
@@ -567,6 +574,7 @@ Available options:
   --likelihood-spec ARG    Likelihood specification (see below).
   --relaxed-molecular-clock ARG
                            Relaxed molecular clock model (see below).
+  --seed NUMBER            Set the seed (default: unset, random).
   --mc3                    Use MC3 instead of MHG algorithm
   -h,--help                Show this help text
 
@@ -608,26 +616,86 @@ cabal run -- mcmc-date-run continue \
   --likelihood-spec "SparseMultivariateNormal 0.1"
 #+end_src
 
+The commands are verbose. In my experience, detailed specification of the
+parameters and settings on the command line involves more investment in the
+beginning, but reduces the number of bogus analyses in the end.
+
 ** Understanding the Haskell code
-- Based on [[https://hackage.haskell.org/package/mcmc][mcmc]].
-- Based on [[https://hackage.haskell.org/package/elynx-tree][elynx-tree]].
-- Explain code a bit (I guess mostly proposals).
+:PROPERTIES:
+:ID:       0d0620bf-1fc4-484c-b7b4-d6ffffe0b357
+:END:
+At the core of \mcmcdate{} are two libraries I have authored: [[https://hackage.haskell.org/package/mcmc][mcmc]], a general
+purpose Markov chain Monte Carlo (MCMC) sampler with advanced algorithms; and
+[[https://hackage.haskell.org/package/elynx-tree][elynx-tree]], a library for handling trees.
 
-Modules containing definitions specific to the analysis are in the [[https://github.com/dschrempf/mcmc-date/tree/master/app][=app=
-subfolder]] of the \mcmcdate{} repository.
+Additionally, I have separated \mcmcdate{} into two parts. Part (a) is the
+executable =mcmc-date-run= with modules specifying the state space, the prior
+and likelihood functions, the proposals, and MCMC-specific settings such as the
+number of burn-in and normal iterations. These modules are in the subfolder
+[[https://github.com/dschrempf/mcmc-date/tree/master/app][=app=]] of the \mcmcdate{} repository. Part (b) is a library containing prior
+functions and proposals specific to phylogenetic trees. I will not provide
+details for the library part here, but feel free to contact me for specific
+questions if you want. In general, you can access detailed help by rendering and
+opening the documentation directly contained in the source files:
 
-*** More important modules
-- Definitions :: Proposals and monitors, configuration.
-- State :: State space. If you try to understand what is going on, or if you
-  want to change analysis settings, this should be your starting point.
+#+name: McmcHaddock
+#+begin_src sh :exports both :results output :wrap "src text"
+cabal haddock mcmc-date
+#+end_src
 
-*** Other modules
+#+results: McmcHaddock
+#+begin_src text
+Build profile: -w ghc-9.2.4 -O1
+In order, the following will be built (use -v for more details):
+ - mcmc-date-1.0.0.0 (lib) (ephemeral targets)
+Preprocessing library for mcmc-date-1.0.0.0..
+Running Haddock on library for mcmc-date-1.0.0.0..
+ 100% (  4 /  4) in 'Mcmc.Tree.Import'
+ 100% ( 16 / 16) in 'Mcmc.Tree.Types'
+ 100% (  2 /  2) in 'Mcmc.Tree.Prior.Branch'
+ 100% ( 10 / 10) in 'Mcmc.Tree.Prior.Branch.RelaxedClock'
+ 100% (  6 /  6) in 'Mcmc.Tree.Prior.BirthDeath'
+ 100% (  3 /  3) in 'Mcmc.Tree.Monitor'
+ 100% ( 11 / 11) in 'Mcmc.Tree.Lens'
+ 100% ( 18 / 18) in 'Mcmc.Tree.Prior.Node.Constraint'
+ 100% ( 20 / 20) in 'Mcmc.Tree.Prior.Node.Calibration'
+ 100% (  2 /  2) in 'Mcmc.Tree.Prior.Node.CalibrationFromTree'
+ 100% ( 12 / 12) in 'Mcmc.Tree.Prior.Node.Brace'
+ 100% (  2 /  2) in 'Mcmc.Tree.Prior.Node.Combined'
+ 100% ( 12 / 12) in 'Mcmc.Tree.Proposal.Unconstrained'
+ 100% (  7 /  7) in 'Mcmc.Tree.Proposal.Ultrametric'
+ 100% (  7 /  7) in 'Mcmc.Tree.Proposal.Contrary'
+ 100% (  3 /  3) in 'Mcmc.Tree.Proposal.Brace'
+ 100% ( 22 / 22) in 'Mcmc.Tree'
+Documentation created:
+/home/dominik/Shared/haskell/mcmc-date/dist-newstyle/build/x86_64-linux/ghc-9.2.4/...
+#+end_src
+In my case, the documentation in HTML format is then available at
+: ${SUBTITUTE_ABOVE_PATH}/mcmc-date-1.0.0.0/doc/html/mcmc-date/index.html
+\nodindent which, I am sure, you can remember easily. Did I already say that
+Haskell tooling has room for improvements?
+
+\noindent Now, back to the application part (a), which will most likely be more
+important for you. In particular, you may want to have a look at the modules
+- [[https://github.com/dschrempf/mcmc-date/blob/master/app/Definitions.hs][Definitions]] :: Contains proposals and monitors, as well as MCMC-specific
+  settings. If you want to change the number of burn-in iterations, or the
+  number of total iterations, have a look and change this file.
+- [[https://github.com/dschrempf/mcmc-date/blob/master/app/State.hs][State]] :: Defines the state space. If you really want to understand what is
+  going on, this should be your starting point. The documentation is detailed,
+  and explains the separation of the time tree and rate tree objects, as well as
+  the birth and death prior.
+
+\noindent The other more important modules are:
+- Main :: Contains functions to prepare the data, as well as to run and continue
+  the analysis. This module also contains helper functions to calculate the
+  marginal likelihood.
+- Probability :: Defines the prior and likelihood functions. This module is
+  important, if you want to tweak the prior.
+
+\noindent The less important modules are:
 - Hamiltonian :: Hamiltonian proposal.
-- Main :: Functions to prepare the data, run and continue the
-  Metropolis-Hasting-Green algorithm.
 - Monitor :: Prior specific monitoring functions.
 - Options :: Handle command line options.
-- Probability :: Prior and likelihood functions.
 - Tools :: Miscellaneous tools.
 
 * References :ignore:
