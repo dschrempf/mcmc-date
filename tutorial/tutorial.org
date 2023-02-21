@@ -338,23 +338,34 @@ interval of size \(1.0\). That is, probability masses have to be strictly
 positive and strictly less than \(1.0\), which is the total probability mass in
 the unit interval.
 
-I usually use values between \(0.0001\) (hard) and \(0.03\) (soft). If unsure,
-use probability masses of \(0.025\), which corresponds to \(2.5\) percent
+A case study: Assume the root has an age of \(4.5\;\text{Gya}\). Then, the
+complete time interval from present (\(0\;\text{Gya}\)) to the position of the
+root has a probability mass of \(1.0\). In this case, a probability mass value
+of \num{1e-4} roughly corresponds to a time interval of \(4.5\;\text{Gy} \cdot
+\num{1e-4} = 0.45\;\text{My}\). However, we attach halves of normal
+distributions to the uniform node age calibration intervals, and so the prior
+function at this specific boundary will decline to small values (a bit) faster
+than within \(0.45\;\text{My}\). Of note, if the root is younger, e.g., at
+\(2.5\;\text{Gya}\), then a value of \num{1e-4} is stricter in terms of absolute
+time units, and roughly corresponds to an interval of \(0.25\;\text{My}\).
+
+I usually use values between \num{1e-4} (hard) and \num{3e-2} (soft). If unsure,
+use probability masses of \num{2.5e-2}, which corresponds to \(2.5\) percent
 probability at each boundary or constraint. A probability mass close to \(1.0\)
 will correspond to a prior function too soft to have any effect. Note that this
 way of specifying boundary softness using relative values independent of the
 actual node ages differs from MCMCTree which uses absolute values
 [cite:@Yang2005]. When using a Newick tree to specify node age calibrations, and
-when no probability masses are provided, a default value of \(0.01\) is used.
+when no probability masses are provided, a default value of \num{1e-2} is used.
 This measure is in place to support the same input files as MCMCTree.
 
 To specify one-sided node age calibrations, omit the other boundary and the
 corresponding probability mass. For example, the following file defines a node
-age calibration with a lower boundary at \(1e6\) time units (years in this case)
-with probability mass \(0.025\):
+age calibration with a lower boundary at \num{1e6} time units (years in this
+case) with probability mass \num{2.5e-2}:
 #+begin_src text :exports code
 Name,LeafA,LeafB,YoungAge,YoungProbabilityMass,OldAge,OldProbabilityMass
-Primates,Human,Chimpanzees,1e6,0.025,,
+Primates,Human,Chimpanzees,1e6,2.5e-2,,
 #+end_src
 
 ** Node order constraints
@@ -672,7 +683,7 @@ Documentation created:
 #+end_src
 In my case, the documentation in HTML format is then available at
 : ${SUBTITUTE_ABOVE_PATH}/mcmc-date-1.0.0.0/doc/html/mcmc-date/index.html
-\nodindent which, I am sure, you can remember easily. Did I already say that
+\noindent which, I am sure, you can remember easily. Did I already say that
 Haskell tooling has room for improvements?
 
 \noindent Now, back to the application part (a), which will most likely be more
