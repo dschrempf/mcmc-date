@@ -4,7 +4,7 @@
 #+options: tasks:t tex:t timestamp:t title:t toc:nil todo:t |:t
 #+title: Dating with constraints
 #+subtitle: A detailed tutorial on McmcDate
-#+date: January 13, 2023
+#+date: February 28, 2023
 #+author: Dominik Schrempf
 #+email: dominik.schrempf@gmail.com
 #+language: en
@@ -40,10 +40,6 @@ example dating analysis of a tree of eukaryotes. I use data from
 fossils. Moreover, I use node order constraints from two possible successions of
 plastid endosymbiosis events.
 #+latex: \end{abstract}
-
-#+begin_center
-*This tutorial is a work in progress.*
-#+end_center
 
 \tableofcontents
 
@@ -346,6 +342,9 @@ constraint file in CSV format
 (Appendix\nbsp{}[[id:724cf63d-f058-408a-b01c-e4b97ee6036a]]) in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data directory]].
 
 ** Step 4: Dating with \mcmcdate{}
+:PROPERTIES:
+:ID:       7653e2e7-e030-4b75-bf15-aaa018ffef60
+:END:
 \mcmcdate{} is a Haskell program
 (Appendix\nbsp{}[[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]). Here, we will use a
 [[https://github.com/dschrempf/mcmc-date/blob/master/scripts/run][wrapper script]] with a simple user interface, which also takes care of compiling
@@ -422,6 +421,18 @@ can date the tree using different auxiliary data files, rooted trees, or other
 internal settings (Appendix\nbsp{}[[id:0d0620bf-1fc4-484c-b7b4-d6ffffe0b357]]).
 
 ** Optional: Marginal likelihood calculation
+After setting up an analysis like in
+Section\nbsp{}[[id:7653e2e7-e030-4b75-bf15-aaa018ffef60]], calculation of the
+marginal likelihood is as easy as:
+#+name: step4-mcmcdate-marginal-likelihood
+#+begin_src sh :exports code :eval never
+cd data
+./step4-mcmcdate -f strassert.conf -c -k ul s m
+#+end_src
+
+\noindent The above command uses stepping stone sampling along 128 points to
+calculate the marginal likelihood. \mcmcdate{} is fast, but even so, the above
+command takes around 4 days on the computers I have used.
 
 \appendix
 
