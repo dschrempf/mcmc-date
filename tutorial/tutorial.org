@@ -109,14 +109,14 @@ specifications about how auxiliary data is used with \mcmcdate{}.
 :PROPERTIES:
 :ID:       b1d8692b-db95-42f9-a11d-e492e6debf26
 :END:
-We call constraints on the ages of internal nodes /node age calibrations/.
-Without node age calibrations, all dated trees are equally likely! Since most
-phylogenetic dating methods are Bayesian, and impose prior functions on all of
-their parameters, the values of the posterior function of different trees still
-differ in a deceiving way. However, in the absence of node age calibrations, the
-differences in the values of the posterior function are exclusively caused by
-the chosen prior functions, and not by the information we have obtained from the
-data.
+We call constraints on the ages of internal nodes /node age calibrations/
+[cite:@Yang2005]. Without node age calibrations, all dated trees are equally
+likely! Since most phylogenetic dating methods are Bayesian, and impose prior
+functions on all of their parameters, the values of the posterior function of
+different trees still differ in a deceiving way. However, in the absence of node
+age calibrations, the differences in the values of the posterior function are
+exclusively caused by the chosen prior functions, and not by the information we
+have obtained from the data.
 
 Even more, in order to limit the maximum ages of the nodes, we require at least
 one node age calibration with a maximum boundary. The closer in terms of
@@ -137,17 +137,17 @@ without a maximum age boundary, do not trust the results!
 
 ** Node order constraints
 Next to calibrating the absolute ages of nodes, we can also constrain the
-relative order of nodes on a tree. For example, due to external analyses, we may
-have detailed knowledge about a horizontal gene transfer. That is, we do know
-the exact donor and the recipient branches. In this case, a direct horizontal
-gene transfer can only happen, if these branches coexist for a period of time
-(Figure\nbsp{}[[fig-transfers]]). If the branches do not coexist for a period of
-time but the recipient branch is younger than the donor branch, the horizontal
-gene transfer can still happen indirectly through multiple events. An indirect
-gene transfer requires an intermediate lineage carrying the gene. The
-intermediate lineage has either gone extinct [cite:@Szollosi2013a], has not been
-sampled, or has lost the gene. Gene transfers are impossible if the recipient
-branch is older than the donor branch.
+relative order of nodes on a tree [cite:@Szollosi2022]. For example, due to
+external analyses, we may have detailed knowledge about a horizontal gene
+transfer. That is, we do know the exact donor and the recipient branches. In
+this case, a direct horizontal gene transfer can only happen, if these branches
+coexist for a period of time (Figure\nbsp{}[[fig-transfers]]). If the branches do
+not coexist for a period of time but the recipient branch is younger than the
+donor branch, the horizontal gene transfer can still happen indirectly through
+multiple events. An indirect gene transfer requires an intermediate lineage
+carrying the gene. The intermediate lineage has either gone extinct
+[cite:@Szollosi2013a], has not been sampled, or has lost the gene. Gene
+transfers are impossible if the recipient branch is older than the donor branch.
 
 For example, let the ages of the old and young nodes of the donor and recipient
 branches be \(DO\), \(DY\), \(RO\), and \(RY\), respectively. Then, a direct
@@ -322,9 +322,6 @@ echo "..."
 ...
 #+end_src
 
-
-
-
 ** Step 3: Rooted topology and auxiliary data
 :PROPERTIES:
 :ID:       54c61d87-6dbf-48e2-a43e-e788acb0b18f
@@ -335,17 +332,8 @@ positions. (1) The root separates amorphea from diaphoretickes and excavates
 excavates from diaphoretickes. Here, we choose option (1) which is the more
 plausible one.
 
-
 In this tutorial, we use 33 fossil calibrations compiled by Strassert et al.
 
-- Node order calibrations [cite:@Yang2005].
-- Relative node order constraints [cite:@Szollosi2022].
-- \mcmcdate{} can also brace nodes (Appendix
-  [[id:202fc129-8d65-4966-a217-322231ff9c49]]).
-
-
-Hello.
-  
 ** Step 4: Dating with \mcmcdate{}
 - \mcmcdate{} is a Haskell program; Appendix
   [[id:a38b78be-7ee6-4340-946a-2a5d06385b66]] provides details about the internals
