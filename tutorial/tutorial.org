@@ -136,6 +136,9 @@ node age boundary is found. If other programs date trees in absolute time units
 without a maximum age boundary, do not trust the results!
 
 ** Node order constraints
+:PROPERTIES:
+:ID:       59c21f15-25f3-4e0f-be18-0e94e83a2ac8
+:END:
 Next to calibrating the absolute ages of nodes, we can also constrain the
 relative order of nodes on a tree [cite:@Szollosi2022]. For example, due to
 external analyses, we may have detailed knowledge about a horizontal gene
@@ -183,8 +186,8 @@ Finally, sometimes we know that two or more nodes have the same age or similar
 ages. For example, when analyzing gene trees, an early gene duplication event
 may separate the gene tree into two subtrees. Subsequent speciation events may
 be observable on both subtrees, and the corresponding speciation nodes should
-have similar ages. In this tutorial we will not brace nodes but see Appendix
-[[id:73cefaee-838c-451e-9dbc-a80b4b7123f4]] for the specifications.
+have similar ages. In this tutorial we will not brace nodes but see
+Appendix\nbsp{}[[id:73cefaee-838c-451e-9dbc-a80b4b7123f4]] for the specifications.
 
 * Pipeline
 \mcmcdate{} is fast because it uses a clever way to approximate the phylogenetic
@@ -290,12 +293,12 @@ but more complex to fast but simpler: =GTR+CAT+G4=, =LG+CAT+G4= [cite:LG:
 @Quang2008], and =LG+G4=. Phylobayes usually takes a long time to run, and I
 recommend using a dedicated environment such as a scientific cluster. Here, we
 will use the =LG+G4= model and the following [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data/1-phylobayes.sh][script]]:
-#+name: Step1-Phylobayes
+#+name: step2-phylobayes
 #+begin_src sh :exports both :wrap "src sh" :results output
-cat data/1-phylobayes.sh
+cat data/step2-phylobayes
 #+end_src
 
-#+results: Step1-Phylobayes
+#+results: step2-phylobayes
 #+begin_src sh
 #!/usr/bin/env sh
 export afn=strassert-136taxa.phy
@@ -308,13 +311,13 @@ pb -d $afn -T $tfn -ncat 1 -$md -dgam 4 -x 10 10000 "${afn}_${tfn}_${md}+g4"
 Phylobayes (or any other Bayesian phylogenetic software package) samples a
 posterior distribution of trees, which is the input to \mcmcdate{}. I provide
 the corresponding tree list file for this analysis in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data directory]]:
-#+name: Treelist
+#+name: step2-treelist
 #+begin_src sh :exports both :results output :wrap "src text"
 head -n 3 data/strassert-136taxa-lg+g4.treelist | sed -E "s/(.{80}).*$/\1.../"
 echo "..."
 #+end_src
 
-#+results: Treelist
+#+results: step2-treelist
 #+begin_src text
 (((((((((((((((((Al_Alexand:0.0416858,Al_Neocera:0.0751388):0.125206,(Al_Crypthe...
 (((((((((((((((((Al_Alexand:0.0660346,Al_Neocera:0.0987786):0.0313159,(Al_Crypth...
@@ -332,13 +335,20 @@ positions. (1) The root separates amorphea from diaphoretickes and excavates
 excavates from diaphoretickes. Here, we choose option (1) because this tree also
 appears in the main text. In general, \mcmcdate{} is fast enough to allow
 analysis and comparison of more root positions. Further, we use auxiliary data
-from 33 fossil calibrations compiled by [cite/t:@Strassert2021]. I provide the
-rooted tree and the calibration file in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data directory]].
+from 33 fossil calibrations compiled by [cite/t:@Strassert2021]. Finally, the
+discussed order of endosymbiosis events enforce a set of node order constraints.
+Here, we use the hypothesis of [cite/t:@Stiller2014], and direct transfers as
+discussed in Section\nbsp{}[[id:59c21f15-25f3-4e0f-be18-0e94e83a2ac8]].
+
+I provide the rooted tree, the node age calibration file in Newick tree format
+(Appendix\nbsp{}[[id:28e89719-7885-45c7-ad93-eecd85c4d849]]), and the node order
+constraint file in CSV format
+(Appendix\nbsp{}[[id:724cf63d-f058-408a-b01c-e4b97ee6036a]]) in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data directory]].
 
 ** Step 4: Dating with \mcmcdate{}
-- \mcmcdate{} is a Haskell program; Appendix
-  [[id:a38b78be-7ee6-4340-946a-2a5d06385b66]] provides details about the internals
-  of \mcmcdate{}.
+\mcmcdate{} is a Haskell program.
+Appendix\nbsp{}[[id:a38b78be-7ee6-4340-946a-2a5d06385b66]] provides details about
+the internals. Here, we will use a wrapper script characteristicly named =run=.
 
 \appendix
 
@@ -352,6 +362,9 @@ The specifications match \mcmcdate{} version 1.0.0.0 and may change between
 different versions of \mcmcdate{}.
 
 ** Node age calibrations
+:PROPERTIES:
+:ID:       28e89719-7885-45c7-ad93-eecd85c4d849
+:END:
 Node age calibrations can be provided in two ways:
 - with comma separated value (CSV) files, or
 - with Newick tree files (MCMCTree specification; see the documentation of
@@ -405,6 +418,9 @@ Primates,Human,Chimpanzees,1e6,2.5e-2,,
 #+end_src
 
 ** Node order constraints
+:PROPERTIES:
+:ID:       724cf63d-f058-408a-b01c-e4b97ee6036a
+:END:
 Node order constraints are provided using a comma separated value (CSV) file
 with a header (see below) and one ore more rows of the following format:
 #+begin_src text :exports code

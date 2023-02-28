@@ -1,0 +1,9 @@
+Name,YoungerLeafA,YoungerLeafB,OlderLeafA,OlderLeafB,ProbabilityMass
+Rhodophytina(C)|Y|Cryptophyta(S),Ar_Erythro,Ar_Chondru,Cr_Geminig,Cr_Goniomo,0.025
+Rhodophytina(S)|O|Cryptophyta(C),Cr_Geminig,Cr_Cryptom,Ar_Erythro,Ar_Cyanidi,0.025
+Cryptophyta(C)|Y|Ochrophyta(S),Cr_Geminig,Cr_Cryptom,St_Fragila,St_Saprole,0.025
+Cryptophyta(S)|O|Ochrophyta(C),St_Fragila,St_Ectocar,Cr_Geminig,Cr_Goniomo,0.025
+Ochrophyta(C)|Y|Myzozoa(S),St_Fragila,St_Ectocar,Al_Neocera,Al_Platyop,0.025
+Ochrophyta(S)|O|Myzozoa(C),Al_Neocera,Al_Vitrell,St_Fragila,St_Saprole,0.025
+Ochrophyta(C)|Y|Haptophyta(S),St_Fragila,St_Ectocar,Ha_Calcidi,Ha_Acantho,0.025
+Ochrophyta(S)|O|Haptophyta(C),Ha_Calcidi,Ha_Pavlova,St_Fragila,St_Saprole,0.025
