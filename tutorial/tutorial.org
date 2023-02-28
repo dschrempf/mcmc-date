@@ -407,12 +407,15 @@ uses an uncorrelated log normal relaxed molcular clock model; =s= uses a sparse
 covariance matrix when approximating the phylogenetic likelihood; the =p=
 command stands for /prepare/; and the =r= command stands for /run/. I have
 separated the preparation of input data from the actual MCMC inference so that
-the we do not have to repeat the preparation for subsequent runs. For a full
-list of the options and arguments of the wrapper script, see
-Appendix\nbsp{}[[id:ea34b5bc-0dab-4308-b684-94af64713dbc]].
+the we do not have to repeat the preparation step for subsequent MCMC
+inferences. For a full list of the options and arguments of the wrapper script,
+see Appendix\nbsp{}[[id:ea34b5bc-0dab-4308-b684-94af64713dbc]].
 
 \mcmcdate{} is verbose in that it provides extensive logs to standard output as
-well as detailed output files. For an explanation of the results, see
+well as detailed output files in a directory named
+=results-calibrations-constraints-ulognormal-sparse=. The results directory
+varies according to the options used for the MCMC inference. A [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/results.pdf][separate document
+describes the results]] of analyses with \mcmcdate{}.
 
 This specific analysis takes around two hours on my personal laptop. Hence, one
 can date the tree using different auxiliary data files, rooted trees, or other

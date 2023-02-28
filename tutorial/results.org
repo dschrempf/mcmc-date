@@ -20,13 +20,19 @@
 #+latex_compiler: unused; see `org-latex-pdf-process'
 #+date: June 28, 2022
 
+#+latex: \newcommand*{\mcmcdate}{\mbox{McmcDate}}
+
 #+latex: \begin{abstract}
 The most important files are *=name.params.monitor=* (open with /[[https://beast.community/tracer][Tracer]]/) and
 *=name.timetree.tree.combined=* (open with /[[http://tree.bio.ed.ac.uk/software/figtree/][FigTree]]/), where *=name=* is the
 analysis name.
+
+\mcmcdate{} does not provide all output files. Some files and summary statistics
+are calculated using the [[https://github.com/dschrempf/mcmc-date/blob/master/scripts/analyze][analyze]] script. Please contact me, if you have problems
+analysing the results.
 #+latex: \end{abstract}
 
-\noindent Let *=name=* be the analysis name.
+\noindent In the following, let *=name=* be the analysis name.
 
 * Monitor files
 - =name.params.monitor= :: Monitor file of parameters; open with /Tracer/. The
