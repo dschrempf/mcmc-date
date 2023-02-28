@@ -346,13 +346,81 @@ constraint file in CSV format
 (Appendix\nbsp{}[[id:724cf63d-f058-408a-b01c-e4b97ee6036a]]) in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data directory]].
 
 ** Step 4: Dating with \mcmcdate{}
-\mcmcdate{} is a Haskell program.
-Appendix\nbsp{}[[id:a38b78be-7ee6-4340-946a-2a5d06385b66]] provides details about
-the internals. Here, we will use a wrapper script characteristicly named =run=.
+\mcmcdate{} is a Haskell program
+(Appendix\nbsp{}[[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]). Here, we will use a
+[[https://github.com/dschrempf/mcmc-date/blob/master/scripts/run][wrapper script]] with a simple user interface, which also takes care of compiling
+the executable. The wrapper script uses a configuration file which is a BASH
+script assigning some variables:
 
-\appendix
+#+name: step4-strassert-conf
+#+begin_src sh :exports both :results output :wrap "src sh"
+cat data/strassert.conf
+#+end_src
+
+#+results: step4-strassert-conf
+#+begin_src sh
+# Configuration of McmcDate nalysis for the Strassert dataset.
+
+################################################################################
+# Mandatory definitions.
+
+# Analysis name (base file name of results).
+analysis_name="strassert"
+# File name of rooted tree in Newick format.
+rooted_tree="strassert-136taxa.rooted.tre"
+# File name of trees estimated by a Bayesian method such as Phylobayes. Contains
+# a list of Newick trees.
+trees="strassert-136taxa-lg+g4.treelist"
+
+################################################################################
+# Optional definitions.
+
+# Calibrations. If the file ends with "csv", assume the calibrations are
+# provided in CSV format. Otherwise, assume the calibrations are provided on a
+# Newick tree (McmcTree specification; only L, U, and B are supported).
+calibrations="strassert-136taxa-calibrations.rooted.tre"
+
+# Constraints in CSV format.
+constraints="strassert-136taxa-constraints-direct-stiller.csv"
+
+# # Braces in JSON format.
+#
+# braces="braces.json"
+
+# # Finally, a suffix can be provided to distinguish between results
+# # directories.
+#
+# suffix="test"
+#+end_src
+
+\noindent Like so, we can execute \mcmcdate{}:
+#+name: step4-mcmcdate
+#+begin_src sh :exports code :eval never
+cd data
+./step4-mcmcdate -f strassert.conf -c -k ul s p
+./step4-mcmcdate -f strassert.conf -c -k ul s r
+#+end_src
+
+\noindent In brief: =-f= specifies the configuration file; =-c= and =-k=
+activate node age calibrations and node order constaints, respectively; =ul=
+uses an uncorrelated log normal relaxed molcular clock model; =s= uses a sparse
+covariance matrix when approximating the phylogenetic likelihood; the =p=
+command stands for /prepare/; and the =r= command stands for /run/. I have
+separated the preparation of input data from the actual MCMC inference so that
+the we do not have to repeat the preparation for subsequent runs. For a full
+list of the options and arguments of the wrapper script, see
+Appendix\nbsp{}[[id:ea34b5bc-0dab-4308-b684-94af64713dbc]].
+
+\mcmcdate{} is verbose in that it provides extensive logs to standard output as
+well as detailed output files. For an explanation of the results, see
+
+This specific analysis takes around two hours on my personal laptop. Hence, one
+can date the tree using different auxiliary data files, rooted trees, or other
+internal settings (Appendix\nbsp{}[[id:0d0620bf-1fc4-484c-b7b4-d6ffffe0b357]]).
 
 ** Optional: Marginal likelihood calculation
+
+\appendix
 
 * Auxiliary data specifications
 :PROPERTIES:
@@ -519,18 +587,21 @@ the =dist-newstyle= or =.stack-work= directories in you working directories for
 =cabal-install= and =Stack=, respectively.
 
 ** Wrapper script
-The wrapper script =run= tries to make a good compromise between usability and
+:PROPERTIES:
+:ID:       ea34b5bc-0dab-4308-b684-94af64713dbc
+:END:
+The wrapper script tries to make a good compromise between usability and
 customizability. It exposes some, but not all functionality of \mcmcdate{}:
 #+name: wrapper-script
 #+begin_src sh :exports both results :results output :wrap "src text"
-run -h
+./data/step4-mcmcdate -h
 #+end_src
 
 #+results: wrapper-script
 #+begin_src text
-Usage: run [OPTIONS] RELAXED_MOLECULAR_CLOCK_MODEL LIKELIHOOD_SPECIFICATION COMMANDS
+Usage: step4-mcmcdate [OPTIONS] RELAXED_MOLECULAR_CLOCK_MODEL LIKELIHOOD_SPECIFICATION COMMANDS
 
-Prior options:
+Auxiliary data options:
 -b Activate braces
 -c Activate calibrations
 -k Activate constraints
@@ -555,7 +626,7 @@ Likelihood specification:
 f  Full covariance matix
 s  Sparse covariance matrix
 u  Univariate approach
-n  No likelihood; use prior only
+n  No likelihood; use prior and auxiliary data only
 
 Available commands:
 p  Prepare analysis
@@ -572,6 +643,9 @@ parameters or functions in the code. In the following, I briefly explain both
 options.
 
 ** Direct invocation of \mcmcdate{}
+:PROPERTIES:
+:ID:       d753cace-4f9c-4212-a7c7-7e09cb8c9a80
+:END:
 Use the build tool of your choice (see above) to directly run \mcmcdate{}. For
 example, with =cabal-install=:
 #+name: direct-invocation

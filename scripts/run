@@ -5,7 +5,7 @@ set -e
 usage() {
     echo "Usage: $(basename "$0") [OPTIONS] RELAXED_MOLECULAR_CLOCK_MODEL LIKELIHOOD_SPECIFICATION COMMANDS"
     echo
-    echo "Prior options:"
+    echo "Auxiliary data options:"
     echo "-b Activate braces"
     echo "-c Activate calibrations"
     echo "-k Activate constraints"
@@ -30,7 +30,7 @@ usage() {
     echo "f  Full covariance matix"
     echo "s  Sparse covariance matrix"
     echo "u  Univariate approach"
-    echo "n  No likelihood; use prior only"
+    echo "n  No likelihood; use prior and auxiliary data only"
     echo
     echo "Available commands:"
     echo "p  Prepare analysis"
