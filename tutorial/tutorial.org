@@ -262,11 +262,12 @@ the data.
 :ID:       784b898f-11f6-433e-bb8a-9584f377c8ce
 :END:
 Here, we use a Bayesian method to estimate the posterior distribution. In
-particular, we will use Phylobayes [cite:@Lartillot2013]. In this step, we have
-to decide on an evolutionary model. The optimal evolutionary model is determined
-by the nature (for example, the time range between most recent common ancestor
-and the leaves of the tree) and the size of the data set (that is, number of
-rows and columns in the alignment) which is an indicator for the computational
+particular, we will use Phylobayes [cite:@Lartillot2013], which you need to
+install (either the [[https://github.com/bayesiancook/phylobayes][sequential]] and [[https://github.com/bayesiancook/pbmpi][parallel]] version). In this step, we have to
+decide on an evolutionary model. The optimal evolutionary model is determined by
+the nature (for example, the time range between most recent common ancestor and
+the leaves of the tree) and the size of the data set (that is, number of rows
+and columns in the alignment) which is an indicator for the computational
 requirements.
 
 We identify evolutionary models using their exchangeabilities and possibly their
@@ -284,9 +285,45 @@ across-site compositional heterogeneity, and the gamma rate model
 heterogeneity.
 
 In general, I recommend the following evolutionary models sorted from preferred
-but more complex to fast but simpler: GTR+CAT+G4, LG+CAT+G4 [cite:LG: @Le2008a],
-LG+EDM64+G4 [cite: EDM: @Schrempf2020a], LG+C60+G4 [cite: C60: @Quang2008], and
-LG+G4.
+but more complex to fast but simpler: =GTR+CAT+G4=, =LG+CAT+G4= [cite:LG:
+@Le2008a], =LG+EDM64+G4= [cite: EDM: @Schrempf2020a], =LG+C60+G4= [cite: C60:
+@Quang2008], and =LG+G4=. Phylobayes usually takes a long time to run, and I
+recommend using a dedicated environment such as a scientific cluster. Here, we
+will use the =LG+G4= model and the following [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data/1-phylobayes.sh][script]]:
+#+name: Step1-Phylobayes
+#+begin_src sh :exports both :wrap "src sh" :results output
+cat data/1-phylobayes.sh
+#+end_src
+
+#+results: Step1-Phylobayes
+#+begin_src sh
+#!/usr/bin/env sh
+export afn=strassert-136taxa.phy
+export tfn=strassert-136taxa.unrooted.tre
+export md=lg
+
+pb -d $afn -T $tfn -ncat 1 -$md -dgam 4 -x 10 10000 "${afn}_${tfn}_${md}+g4"
+#+end_src
+
+Phylobayes (or any other Bayesian phylogenetic software package) samples a
+posterior distribution of trees, which is the input to \mcmcdate{}. I provide
+the corresponding tree list file for this analysis in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data directory]]:
+#+name: Treelist
+#+begin_src sh :exports both :results output :wrap "src text"
+head -n 3 data/strassert-136taxa-lg+g4.treelist | sed -E "s/(.{80}).*$/\1.../"
+echo "..."
+#+end_src
+
+#+results: Treelist
+#+begin_src text
+(((((((((((((((((Al_Alexand:0.0416858,Al_Neocera:0.0751388):0.125206,(Al_Crypthe...
+(((((((((((((((((Al_Alexand:0.0660346,Al_Neocera:0.0987786):0.0313159,(Al_Crypth...
+(((((((((((((((((Al_Alexand:0.0654659,Al_Neocera:0.0983142):0.0284921,(Al_Crypth...
+...
+#+end_src
+
+
+
 
 ** Step 3: Rooted topology and auxiliary data
 :PROPERTIES:
@@ -559,52 +596,6 @@ example, to get help about how to run a new analysis:
 #+name: run-analysis
 #+begin_src sh :exports both :results output :wrap "src text"
 cabal run mcmc-date-run -- run -h
-#+end_src
-
-#+results: run-analysis
-#+begin_src text
-Up to date
-Usage: mcmc-date-run run --analysis-name NAME [--preparation-name NAME]
-                         [--calibrations "SPEC FILE" (mind the quotes)]
-                         [--ignore-problematic-calibrations]
-                         [--constraints FILE] [--ignore-problematic-constraints]
-                         [--braces FILE] [--init-from-save ANALYSIS_NAME]
-                         [--profile] [--hamiltonian] --likelihood-spec ARG
-                         --relaxed-molecular-clock ARG [--seed NUMBER] [--mc3]
-
-  Run MCMC sampler
-
-Available options:
-  --analysis-name NAME     Analysis name
-  --preparation-name NAME  Preparation name
-  --calibrations "SPEC FILE" (mind the quotes)
-                           Specify calibrations (SPEC is either csv or tree)
-  --ignore-problematic-calibrations
-                           Ignore and use problematic calibrations
-  --constraints FILE       File name specifying constraints
-  --ignore-problematic-constraints
-                           Ignore and drop problematic constraints
-  --braces FILE            File name specifying braces
-  --init-from-save ANALYSIS_NAME
-                           Reuse state and proposal tuning parameters from a
-                           previous run; if successful, also reduce burn in
-  --profile                Activate profiling
-  --hamiltonian            Activate Hamiltonian proposal
-  --likelihood-spec ARG    Likelihood specification (see below).
-  --relaxed-molecular-clock ARG
-                           Relaxed molecular clock model (see below).
-  --seed NUMBER            Set the seed (default: unset, random).
-  --mc3                    Use MC3 instead of MHG algorithm
-  -h,--help                Show this help text
-
-Relaxed molecular clock model:
-  - UncorrelatedGamma
-  - UncorrelatedLogNormal
-  - AutocorrelatedLogNormal
-Likelihood specification:
-  - FullMultivariateNormal
-  - SparseMultivariateNormal PENALTY (usually 0.1)
-  - UnivariateNormal
 #+end_src
 
 \noindent Hence, an example command line is:

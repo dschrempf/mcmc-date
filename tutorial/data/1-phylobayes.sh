@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-
 export afn=strassert-136taxa.phy
 export tfn=strassert-136taxa.unrooted.tre
 export md=lg
