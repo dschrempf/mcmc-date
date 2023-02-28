@@ -66,20 +66,20 @@ means in our case. Sometimes, all we can do is date a tree with relative time
 units (Section\nbsp{}[[id:b1d8692b-db95-42f9-a11d-e492e6debf26]]).
 
 Similarly, we use the term /unrooted tree/ to denote an undirected acyclic graph
-with node labels and branch lengths in which not more than one branch
-connects any two nodes. Finally, we use the term /unrooted topology/ to denote
-an unrooted tree without information about branch lengths. We need unrooted
-trees and topologies because we will use reversible substitution models [cite:
-for a review, see @Yang2006] to infer unrooted trees with branch lengths
-measured in expected number of substitutions. Reversible substitution models are
+with node labels and branch lengths in which not more than one branch connects
+any two nodes. Finally, we use the term /unrooted topology/ to denote an
+unrooted tree without information about branch lengths. We need unrooted trees
+and topologies because we will use reversible substitution models [cite: for a
+review, see @Yang2006] to infer unrooted trees with branch lengths measured in
+expected number of substitutions per site. Reversible substitution models are
 unable to discriminate between the two directions in time.
 
 * Dating a tree
 Dating a tree is difficult because we want to estimate branch lengths measured
 in absolute time units. However, an alignment only contains information about
-distances measured in expected number of substitutions. In particular, it does
-not contain information about the evolutionary rates nor about the actual
-elapsed absolute time units. For a given branch,
+distances measured in expected number of substitutions per site. In particular,
+it does not contain information about the evolutionary rates nor about the
+actual elapsed absolute time units. For a given branch,
 \begin{align}
 \begin{split}
   d \; & \text{[expected number of substitutions]} = \\
@@ -87,13 +87,13 @@ elapsed absolute time units. For a given branch,
     t \; \text{[years]},
 \end{split}
 \end{align}
-where \(d\) is the branch length measured in expected number of substitutions,
-\(r\) is the evolutionary rate on this branch, and \(t\) is the branch length
-measured in absolute time units. The situation is severe because \(r\) and \(t\)
-are confounded. If we multiply \(t\) with a positive number \(c\) and divide
-\(r\) by the same positive number \(c\), the distance \(d\) stays constant.
-Since the likelihood only depends on the distance \(d\) we can not discriminate
-between parameter tuples \((t, r)\) and \((t', r')\), where
+where \(d\) is the branch length measured in expected number of substitutions
+per site, \(r\) is the evolutionary rate on this branch, and \(t\) is the branch
+length measured in absolute time units. The situation is severe because \(r\)
+and \(t\) are confounded. If we multiply \(t\) with a positive number \(c\) and
+divide \(r\) by the same positive number \(c\), the distance \(d\) stays
+constant. Since the likelihood only depends on the distance \(d\) we can not
+discriminate between parameter tuples \((t, r)\) and \((t', r')\), where
 \begin{align}
   t' &= t \cdot c, \\
   r' &= r / c,
@@ -196,11 +196,12 @@ subsequent analysis to date the tree.
 
 Here, we use a similar technique, albeit with a Bayesian method to estimate the
 posterior distribution of branch lengths measured in expected number
-substitutions. In particular, the pipeline for dating a tree with \mcmcdate{}
-is:
+substitutions per site. In particular, the pipeline for dating a tree with
+\mcmcdate{} is:
 1. Prepare a multi sequence alignment and an unrooted topology.
 2. For this alignment and unrooted topology, infer a distribution of unrooted
-   trees with branch lengths measured in expected number of substitutions.
+   trees with branch lengths measured in expected number of substitutions per
+   site.
 3. Find a rooted topology to date. Prepare auxiliary data such as node age
    calibrations or node order constraints.
 4. Date the topology with \mcmcdate{}. In particular, infer a distribution of
@@ -218,7 +219,7 @@ published data set contains three alignments:
 1. The alignment with the highest number of taxa comprises 733 eukaryotes with
    62723 amino acids.
 2. The authors used the first alignment to infer a tree with IQ-TREE
-   [cite:@Minh2020a] so they can filter taxa in an informed way (for example,
+   [cite:@Minh2020a] so they can filter taxa in an informed way (for example, to
    keep slow evolving taxa). The reduced data set comprises 136 operational
    taxonomic units with 73460 amino acids.
 3. A small data set with 63 operational taxonomic units and 73460 amino acids
@@ -239,7 +240,7 @@ data/strassert-136taxa.phy
 #+end_src
 
 \noindent For the phylogenetic inference in the next step, we also need an
-unrooted topology. I have unrooted the tree in Figure 3 in
+unrooted topology. I have removed root of the tree in Figure 3 in
 [cite/t:@Strassert2021]. Similar to the alignment, I provide the unrooted
 topology in the [[https://github.com/dschrempf/mcmc-date/tree/master/tutorial/data][data subfolder]] of this tutorial:
 
@@ -253,33 +254,39 @@ ls data/*unrooted*
 data/strassert-136taxa.unrooted.tre
 #+end_src
 
-\noindent Please also see the [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data][README in the data subfolder]].
+\noindent Please also see the [[https://github.com/dschrempf/mcmc-date/blob/master/tutorial/data][README specifying the license and availability]] of
+the data.
 
 ** Step 2: Phylogenetic inference
 :PROPERTIES:
 :ID:       784b898f-11f6-433e-bb8a-9584f377c8ce
 :END:
+Here, we use a Bayesian method to estimate the posterior distribution. In
+particular, we will use Phylobayes [cite:@Lartillot2013]. In this step, we have
+to decide on an evolutionary model. The optimal evolutionary model is determined
+by the nature (for example, the time range between most recent common ancestor
+and the leaves of the tree) and the size of the data set (that is, number of
+rows and columns in the alignment) which is an indicator for the computational
+requirements.
 
+We identify evolutionary models using their exchangeabilities and possibly their
+across-site compositional heterogeneity [cite:e.g., @Koshi1995] and rate
+heterogeneity [cite:e.g., @Yang1993] models. One major advantage of \mcmcdate{}
+is the possibility to date trees with complex evolutionary models to infer the
+branch lengths measured in expected number of substitutions per site. In
+particular, we can use models accounting for across-site compositional
+heterogeneity which is important when dating trees over long evolutionary time
+scales [cite:see, e.g., @Szantho2022]. For example, the evolutionary model
+=GTR+CAT+G4= uses general time reversible exchangeabilities [cite:GTR,
+@Tavare1986], the Bayesian CAT model [cite:@Lartillot2004] to account for
+across-site compositional heterogeneity, and the gamma rate model
+[cite:@Yang1993] with four components to account for across-site rate
+heterogeneity.
 
-Here, we use a Bayesian method to estimate the posterior distribution. In particular,
-
-- Use Phylobayes [cite:@Lartillot2013].
-- Decide on evolutionary model depending on the size of the data set and the
-  computational requirements. Recommended models from preferred but slow and
-  complex to fast and simple: GTR+CAT+G4, LG+CAT+G4, LG+EDM64+G4, LG+C60+G4,
-  LG+G4.
-
-We specify an evolutionary model with exchangeabilities EX, and across-site
-compositional heterogeneity model ASCH as =EX+ASCH=. All discussed evolutionary
-models used for simulations as well as inferences implicitly use discrete gamma
-rate heterogeneity with four components.
-
-- GTR model [cite:@Tavare1986].
-- CAT model [cite:@Lartillot2004].
-- Gamma rate variation model [cite:@Yang1993].
-- LG model [cite:@Le2008a].
-- EDM model [cite:@Schrempf2020a].
-- C60 model [cite:@Quang2008]
+In general, I recommend the following evolutionary models sorted from preferred
+but more complex to fast but simpler: GTR+CAT+G4, LG+CAT+G4 [cite:LG: @Le2008a],
+LG+EDM64+G4 [cite: EDM: @Schrempf2020a], LG+C60+G4 [cite: C60: @Quang2008], and
+LG+G4.
 
 ** Step 3: Rooted topology and auxiliary data
 :PROPERTIES:
@@ -345,9 +352,10 @@ of \num{1e-4} roughly corresponds to a time interval of \(4.5\;\text{Gy} \cdot
 \num{1e-4} = 0.45\;\text{My}\). However, we attach halves of normal
 distributions to the uniform node age calibration intervals, and so the prior
 function at this specific boundary will decline to small values (a bit) faster
-than within \(0.45\;\text{My}\). Of note, if the root is younger, e.g., at
-\(2.5\;\text{Gya}\), then a value of \num{1e-4} is stricter in terms of absolute
-time units, and roughly corresponds to an interval of \(0.25\;\text{My}\).
+than within \(0.45\;\text{My}\). Of note, if the root is younger, for example,
+at \(2.5\;\text{Gya}\), then a value of \num{1e-4} is stricter in terms of
+absolute time units, and roughly corresponds to an interval of
+\(0.25\;\text{My}\).
 
 I usually use values between \num{1e-4} (hard) and \num{3e-2} (soft). If unsure,
 use probability masses of \num{2.5e-2}, which corresponds to \(2.5\) percent
