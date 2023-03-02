@@ -427,7 +427,7 @@ burnInInformed :: BurnInSettings
 burnInInformed = BurnInWithCustomAutoTuning fast slow
   where
     fast = []
-    slow = [100, 100, 100, 100, 100, 100, 100, 100, 200, 300, 400, 400]
+    slow = [100, 100, 100, 200, 300, 400, 400]
 
 -- | Number of burn in iterations when profiling is enabled.
 burnInProf :: BurnInSettings
@@ -456,7 +456,8 @@ nPoints = NPoints 128
 nPointsProf :: NPoints
 nPointsProf = NPoints 12
 
--- | Repetitive burn in at each point on the path.
+-- | Repetitive burn in at each point on the path when calculating the marginal
+-- likelihood.
 repetitiveBurnIn :: BurnInSettings
 repetitiveBurnIn = BurnInWithCustomAutoTuning fast slow
   where
