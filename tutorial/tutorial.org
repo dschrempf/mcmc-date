@@ -164,19 +164,20 @@ carrying the gene. The intermediate lineage has either gone extinct
 [cite:@Szollosi2013a], has not been sampled, or has lost the gene. Gene
 transfers are impossible if the recipient branch is older than the donor branch.
 
-For example, let the ages of the old and young nodes of the donor and recipient
-branches be \(DO\), \(DY\), \(RO\), and \(RY\), respectively. Then, a direct
-horizontal gene transfer provides us with two node order constraints,
+For example, let the ages of the old and young delimiting nodes of the donor and
+recipient branches be \(D_o\), \(D_y\), \(R_o\), and \(R_y\), respectively
+(Figure\nbsp{}[[fig-transfers]]). Then, a direct horizontal gene transfer provides
+us with two node order constraints,
 \begin{align}
-  DY < RO, \text{ and } DO > RY,
+  D_y < R_o, \text{ and } D_o > R_y,
 \end{align}
 where \(<\) means /younger than/ and \(>\) means /older than/. If we allow
 indirect gene transfers, we only get one node order constraint,
 \begin{align}
-  DO > RY.
+  D_o > R_y,
 \end{align}
-The last constraint is enough to prohibit impossible gene transfers as depicted
-in Figure\nbsp{}[[fig-transfers]].
+which is enough to prohibit impossible gene transfers
+(Figure\nbsp{}[[fig-transfers]]).
 
 Sometimes, we do not know the exact donor branch but only that the donor branch
 must be part of a known subtree. However, we usually do know the recipient
@@ -185,7 +186,7 @@ horizontally transferred gene. In this case, the ancestral node of the stem of
 the donor subtree has to be older than the descending node of the recipient
 branch.
 
-#+caption: Direct, indirect and impossible horizontal gene transfers. A direct horizontal gene transfer happens between branches coexisting in time. An indirect horizontal gene transfer involves multiple events and an intermediate lineage. If the recipient branch is older than the donor branch, a horizontal gene transfer is impossible.
+#+caption: Direct, indirect and impossible horizontal gene transfers. A direct horizontal gene transfer happens between branches coexisting in time. An indirect horizontal gene transfer involves multiple events and an intermediate lineage. If the recipient branch is older than the donor branch, a horizontal gene transfer is impossible. For the direct transfer, \(D_o\), \(D_y\), \(R_o\), and \(R_y\) denote the old and young ages of the delimiting nodes of the donor and recipient branches, respectively.
 #+attr_latex: :width 1.0\textwidth :placement [tb]
 #+name: fig-transfers
 [[file:figures/transfers.svg]]
