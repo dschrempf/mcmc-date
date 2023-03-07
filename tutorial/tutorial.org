@@ -44,15 +44,16 @@ plastid endosymbiosis events.
 \tableofcontents
 
 * Definitions
-We use the term /(rooted) tree/ to denote a directed acyclic graph with node
-labels and branch lengths in which not more than one branch connects any two
-nodes. Usually, nodes correspond to (ancestral) species, and branch lengths to
-sequence distance or time. We use the term /(rooted) topology/ to denote a
-(rooted) tree without information about branch lengths. We put the word /rooted/
-into parentheses, because it is sometimes omitted. The root of the tree or
-topology is the only node with all branches pointing away to other nodes. The
-root is the oldest node. Leaves are extant nodes with a single branch pointing
-towards them.
+We use the term /(rooted, bifurcating) tree/ to denote a directed acyclic graph
+with node labels and branch lengths in which (i) not more than one branch
+connects any two nodes, and (ii) all nodes have degree three or less. Usually,
+nodes correspond to (ancestral) species, and branch lengths to sequence distance
+or time. We use the term /(rooted, bifurcating) topology/ to denote a (rooted,
+bifurcating) tree without information about branch lengths. We put the words
+/rooted/ and /bifurcating/ into parentheses, because they are sometimes omitted.
+The root of the tree or topology is the only node with all branches pointing
+away to other nodes. The root is the oldest node. Leaves are extant nodes with a
+single branch pointing towards them.
 
 For a given topology, /dating the tree/[fn:1] corresponds to finding branch
 lengths for this topology which are measured in absolute time units (for
@@ -61,14 +62,16 @@ example, in Million years), and which describe the data in the /best/ way.
 means in our case. Sometimes, all we can do is date a tree with relative time
 units (Section\nbsp{}[[id:b1d8692b-db95-42f9-a11d-e492e6debf26]]).
 
-Similarly, we use the term /unrooted tree/ to denote an undirected acyclic graph
-with node labels and branch lengths in which not more than one branch connects
-any two nodes. Finally, we use the term /unrooted topology/ to denote an
-unrooted tree without information about branch lengths. We need unrooted trees
-and topologies because we will use reversible substitution models [cite: for a
-review, see @Yang2006] to infer unrooted trees with branch lengths measured in
-expected number of substitutions per site. Reversible substitution models are
-unable to discriminate between the two directions in time.
+Similarly, we use the term /unrooted (bifurcating) tree/ to denote an undirected
+acyclic graph with node labels and branch lengths in which (i) not more than one
+branch connects any two nodes, and (ii) all nodes have degree three or less.
+Finally, we use the term /unrooted (bifurcating) topology/ to denote an unrooted
+(bifurcating) tree without information about branch lengths. Again, we usually
+omit the word /bifurcating/. We need unrooted trees and topologies because we
+will use reversible substitution models [cite: for a review, see @Yang2006] to
+infer unrooted trees with branch lengths measured in expected number of
+substitutions per site. Reversible substitution models are unable to
+discriminate between the two directions in time.
 
 * Dating a tree
 Dating a tree is difficult because we want to estimate branch lengths measured
