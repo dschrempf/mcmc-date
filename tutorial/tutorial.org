@@ -29,9 +29,6 @@
 
 TODO:
 - Bifurcating tree.
-- Either remove the (0, infty) or be more clear about the fact that t and r are
-  assumed to be real positive numbers.
-- Add DY, DO ... to figure.
 - Pipeline step 2: "Sample from posterior distribution using any Bayesian
   approach".
   - Step 3: Find -> Specify.
@@ -110,11 +107,11 @@ discriminate between parameter tuples \((t, r)\) and \((t', r')\), where
   t' &= t \cdot c, \\
   r' &= r / c,
 \end{align}
-for /any/ \(c \in (0, \infty)\)! This means we need auxiliary data to constrain
-the ages of at least some nodes. There are three forms of constraints from
-auxiliary data which are explained in the next sections: (a) node age
-calibrations, (b) node order constraints, and (c) node braces.
-Appendix\nbsp{}[[id:202fc129-8d65-4966-a217-322231ff9c49]] details the
+for /any/ \(c \in (0, \infty)\) assuming \(t, r \in \mathbb{R}_{+}\). This means
+we need auxiliary data to constrain the ages of at least some nodes. There are
+three forms of constraints from auxiliary data which are explained in the next
+sections: (a) node age calibrations, (b) node order constraints, and (c) node
+braces. Appendix\nbsp{}[[id:202fc129-8d65-4966-a217-322231ff9c49]] details the
 specifications about how auxiliary data is used with \mcmcdate{}.
 
 ** Node age calibrations
