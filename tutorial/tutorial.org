@@ -27,8 +27,6 @@
 
 #+latex: \newcommand*{\mcmcdate}{\mbox{McmcDate}}
 
-TODO:
-- Appendix B: Discuss GHCup.
 - Discuss how to skip Burn In and how to continue analyses.
 
 #+latex: \begin{abstract}
@@ -358,10 +356,16 @@ node order constraint file
 :ID:       7653e2e7-e030-4b75-bf15-aaa018ffef60
 :END:
 \mcmcdate{} is a Haskell program
-(Appendix\nbsp{}[[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]). Here, we will use a
-[[https://github.com/dschrempf/mcmc-date/blob/master/scripts/run][wrapper script]] with a simple user interface, which also takes care of compiling
-the executable. The wrapper script uses a configuration file which is a BASH
-script assigning some variables:
+(Appendix\nbsp{}[[id:a38b78be-7ee6-4340-946a-2a5d06385b66]]) and you need to install
+the Haskell toolchain. Luckily, installation is easy with GHCup. Follow the
+[[https://www.haskell.org/get-started/][instructions on the Haskell website]]. I recommend using =cabal-install=, see also
+Appendix\nbsp{}[[id:a38b78be-7ee6-4340-946a-2a5d06385b66]].
+
+Here, we will use a [[https://github.com/dschrempf/mcmc-date/blob/master/scripts/run][wrapper script]] around \mcmcdate{}. The wrapper script has a
+simple command-line user interface and also takes care of compiling the
+executable provided the Haskell toolchain has been installed properly. The
+wrapper script uses a configuration file which is a BASH script assigning some
+variables:
 
 #+name: step4-strassert-conf
 #+begin_src sh :exports both :results output :wrap "src sh"
