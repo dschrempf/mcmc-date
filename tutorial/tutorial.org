@@ -27,6 +27,10 @@
 
 #+latex: \newcommand*{\mcmcdate}{\mbox{McmcDate}}
 
+TODO:
+- Appendix B: Discuss GHCup.
+- Discuss how to skip Burn In and how to continue analyses.
+
 #+latex: \begin{abstract}
 [[https://github.com/dschrempf/mcmc-date][\mcmcdate{}]] can date a phylogenetic tree with constraints. That is, it can
 estimate the ages of ancestral nodes of phylogenetic trees with node age
