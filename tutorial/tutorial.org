@@ -199,8 +199,8 @@ subsequent analysis to date the tree.
 
 Here, we use a similar technique, albeit with a Bayesian method to estimate the
 posterior distribution of branch lengths measured in expected number
-substitutions per site. In particular, the pipeline for dating a tree with
-\mcmcdate{} is:
+substitutions per site (Appendix\nbsp{}[[id:03ccc004-e143-46c9-aa2b-b06a91f59bfe]]).
+In particular, the pipeline for dating a tree with \mcmcdate{} is:
 1. Prepare a multi sequence alignment and an unrooted topology.
 2. For this alignment and unrooted topology, sample from the distribution of
    unrooted trees with branch lengths measured in expected number of
@@ -270,8 +270,8 @@ particular, we will use Phylobayes [cite:@Lartillot2013], which you need to
 install (either the [[https://github.com/bayesiancook/phylobayes][sequential]] and [[https://github.com/bayesiancook/pbmpi][parallel]] version). In this step, we have to
 decide on an evolutionary model. The optimal evolutionary model is determined by
 the nature (for example, the time range between most recent common ancestor and
-the leaves of the tree) and the size of the data set (that is, number of rows
-and columns in the alignment) which is an indicator for the computational
+the leaves of the tree) and the size of the data set (i.e., number of rows and
+columns in the alignment) which is an indicator for the computational
 requirements.
 
 We identify evolutionary models using their exchangeabilities and possibly their
@@ -411,11 +411,12 @@ cd data
 \noindent In brief: =-f= specifies the configuration file; =-c= and =-k=
 activate node age calibrations and node order constraints, respectively; =ul=
 uses an uncorrelated log normal relaxed molecular clock model; =s= uses a sparse
-covariance matrix when approximating the phylogenetic likelihood; the =p=
-command stands for /prepare/; and the =r= command stands for /run/. I have
-separated the preparation of input data from the actual MCMC inference so that
-we do not have to repeat the preparation step for subsequent MCMC inferences.
-For a full list of the options and arguments of the wrapper script, see
+covariance matrix when approximating the phylogenetic likelihood
+(Appendix\nbsp{}[[id:03ccc004-e143-46c9-aa2b-b06a91f59bfe]]); the =p= command stands
+for /prepare/; and the =r= command stands for /run/. I have separated the
+preparation of input data from the actual MCMC inference so that we do not have
+to repeat the preparation step for subsequent MCMC inferences. For a full list
+of the options and arguments of the wrapper script, see
 Appendix\nbsp{}[[id:ea34b5bc-0dab-4308-b684-94af64713dbc]].
 
 \mcmcdate{} is verbose in that it provides extensive logs to standard output as
@@ -443,6 +444,45 @@ calculate the marginal likelihood. \mcmcdate{} is fast, but even so, the above
 command takes around 4 days on the computers I have used.
 
 \appendix
+
+* Approximation of the phylogenetic likelihood
+:PROPERTIES:
+:ID:       03ccc004-e143-46c9-aa2b-b06a91f59bfe
+:END:
+For a specific unrooted topology, \mcmcdate{} uses (an estimation of) the
+posterior distribution of branch lengths measured in expected number
+substitutions per site. The estimation of this posterior distribution happens in
+an external program as described in the main text. Now, \mcmcdate{} provides
+three ways to approximate the phylogenetic likelihood for a given set of branch
+lengths measured in expected number of substitutions per site:
+- Univariate approach :: For each branch, use a normal distribution with mean
+  and variance extracted from the posterior function estimate. Approximate the
+  phylogenetic likelihood with the product of the probability densities of all
+  normal distributions evaluated at the given branch lengths, respectively. Let
+  \(n\) be the number of branches. The algorithmic complexity of the univariate
+  approach is linear: \(O(n)\).
+- Full covariance matrix approach :: Estimate a covariance matrix from the
+  posterior function estimate. Use a multivariate normal distribution with this
+  covariance matrix to approximate the phylogenetic likelihood. For this to
+  work, the covariance matrix has to be positive definite. The maximum
+  likelihood estimator of the covariance matrix is positive definite, but we
+  have to be careful when using sparse approaches (see below). The algorithmic
+  complexity of this approach is quadratic: \(O(n^2)\). That is, for large trees
+  with thousands of branches this approach is too slow, and we have to
+  approximate the approximation :).
+- Sparse covariance matrix approach :: Estimate a sparse inverted covariance
+  matrix (precision matrix) using a graphical lasso\nbsp{}[cite:@Friedman2007].
+  The graphical lasso penalizes non-zero elements of the precision matrix. A
+  parameter defines the penalization strength. After careful optimization using
+  different statistics (e.g., the number of non-zero covariances), I chose a
+  penalization parameter of \(0.1\). The penalization parameter can be specified
+  freely when directly running \mcmcdate{}
+  (Appendix\nbsp{}[[id:d753cace-4f9c-4212-a7c7-7e09cb8c9a80]]). I also tried other
+  sparse matrix approaches but all suffered from estimating matrices that are
+  not positive definite. I had implemented a subsequent step finding the
+  positive definite matrix closest to the estimated sparse covariance matrix.
+  However, I experienced worse results and have subsequently removed this
+  feature in favor of the graphical lasso.
 
 * Auxiliary data specifications
 :PROPERTIES:
