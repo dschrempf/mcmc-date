@@ -27,19 +27,6 @@
 
 #+latex: \newcommand*{\mcmcdate}{\mbox{McmcDate}}
 
-TODO:
-- Bifurcating tree.
-- Pipeline step 2: "Sample from posterior distribution using any Bayesian
-  approach".
-  - Step 3: Find -> Specify.
-  - Step 4: "sample from posterior".
-- Example analysis:
-  - Data files: Use step numbers in names.
-  - Step 3: State file names.
-  - Step 4: Discuss the sparse covariance matrix approach.
-- Appendix B: Discuss GHCup.
-- Discuss how to skip Burn In and how to continue analyses.
-
 #+latex: \begin{abstract}
 [[https://github.com/dschrempf/mcmc-date][\mcmcdate{}]] can date a phylogenetic tree with constraints. That is, it can
 estimate the ages of ancestral nodes of phylogenetic trees with node age
