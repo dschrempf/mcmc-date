@@ -1,10 +1,11 @@
-The following files have been taken or derived from Strassert, Jürgen F. H. and Irisarri, Iker and Williams, Tom A. and Burki, Fabien (2021):
+The following three files have been taken or derived from
+Strassert, Jürgen F. H. and Irisarri, Iker and Williams, Tom A. and Burki, Fabien (2021):
 
-    strassert-136taxa.phy
-    strassert-136taxa.unrooted.tre
-    strassert-136taxa-calibrations.rooted.tre
+    step1-strassert-136taxa.phy
+    step1-strassert-136taxa.unrooted.tre
+    step3-strassert-136taxa-calibrations.rooted.tre
 
-The alignment `strassert-136taxa.phy` in this folder
+The alignment `step1-strassert-136taxa.phy` in this folder
 
 -   can be downloaded from the website of [nature communications](https://www.nature.com/articles/s41467-021-22044-z#Sec15) (Supplementary
     Data 2); and
@@ -13,11 +14,11 @@ The alignment `strassert-136taxa.phy` in this folder
 I have changed the taxon names to be shorter and easier to handle, and I have
 converted the file from FASTA to Phylip format.
 
-The tree `strassert-136taxa.unrooted.tre` is the unrooted version of
-the tree in Figure 3.
+The tree `step1-strassert-136taxa.unrooted.tre` is the unrooted version of the
+tree in Figure 3.
 
-The tree `strassert-136taxa-calibrations.rooted.tre` contains all calibrations
-listed in Table 1.
+The tree `step3-strassert-136taxa-calibrations.rooted.tre` contains all
+calibrations listed in Table 1.
 
 
 # References
