@@ -27,8 +27,6 @@
 
 #+latex: \newcommand*{\mcmcdate}{\mbox{McmcDate}}
 
-- Discuss how to skip Burn In and how to continue analyses.
-
 #+latex: \begin{abstract}
 [[https://github.com/dschrempf/mcmc-date][\mcmcdate{}]] can date a phylogenetic tree with constraints. That is, it can
 estimate the ages of ancestral nodes of phylogenetic trees with node age
@@ -435,7 +433,17 @@ describes the results]] of analyses with \mcmcdate{}.
 
 This specific analysis takes around two hours on my personal laptop. Hence, one
 can date the tree using different auxiliary data files, rooted trees, or other
-internal settings (Appendix\nbsp{}[[id:0d0620bf-1fc4-484c-b7b4-d6ffffe0b357]]).
+internal settings (Appendix\nbsp{}[[id:0d0620bf-1fc4-484c-b7b4-d6ffffe0b357]]). If
+you want to sample more points from the posterior function, you can continue the
+analysis:
+#+name: step4-mcmcdate-continue
+#+begin_src sh :exports code :eval never
+./step4-mcmcdate -f step4-strassert.conf -c -k ul s c
+#+end_src
+
+\noindent If you repeat an analyses with similar parameters (but the same set of
+MCMC proposals), you can use the option =--init-from-save=
+(Appendix\nbsp{}[[id:d753cace-4f9c-4212-a7c7-7e09cb8c9a80]]).
 
 ** Optional: Marginal likelihood calculation
 After setting up an analysis like in
