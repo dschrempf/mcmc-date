@@ -202,14 +202,15 @@ posterior distribution of branch lengths measured in expected number
 substitutions per site. In particular, the pipeline for dating a tree with
 \mcmcdate{} is:
 1. Prepare a multi sequence alignment and an unrooted topology.
-2. For this alignment and unrooted topology, infer a distribution of unrooted
-   trees with branch lengths measured in expected number of substitutions per
-   site.
-3. Find a rooted topology to date. Prepare auxiliary data such as node age
+2. For this alignment and unrooted topology, sample from the distribution of
+   unrooted trees with branch lengths measured in expected number of
+   substitutions per site using any Bayesian approach.
+3. Specify a rooted topology to date. Prepare auxiliary data such as node age
    calibrations or node order constraints.
-4. Date the topology with \mcmcdate{}. In particular, infer a distribution of
-   rooted trees with branch lengths measured in absolute time units. If the node
-   age calibrations are insufficient, we can still use relative time units.
+4. Date the topology with \mcmcdate{}. In particular, sample from the
+   distribution of rooted trees with branch lengths measured in absolute time
+   units. If the node age calibrations are insufficient, we can still use
+   relative time units.
 Steps 3 and 4 are fast, especially when compared to Step 2. Hence, we can
 conveniently amend parameters used in the actual dating analysis, or compute
 dated trees for different roots. The following section shows an example analysis
