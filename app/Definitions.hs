@@ -96,8 +96,8 @@ import qualified Data.Vector as VB
 initWith :: Tree Length Name -> I
 initWith t =
   I
-    { _timeBirthRate = 1.0,
-      _timeDeathRate = 1.0,
+    { _timeBirthRate = 3.34,
+      _timeDeathRate = 0.24,
       _timeHeight = 1.0,
       _timeTree = initialTimeTree,
       _rateMean = 1.0,
@@ -233,9 +233,6 @@ timeHeightRateTreeL = tupleLens timeHeight rateTree
 heightTimeRateTreesLens :: Lens' I (Double, HeightTree Double, LengthTree Double)
 heightTimeRateTreesLens = tripleLens timeHeight timeTree rateTree
 
-ratesTimeTreeL :: Lens' I (Double, Double, HeightTree Double)
-ratesTimeTreeL = tripleLens timeBirthRate rateMean timeTree
-
 -- Proposals only activated when calibrations are available and absolute times
 -- are estimated.
 proposalsChangingTimeHeight :: Tree e a -> [Proposal I]
@@ -256,11 +253,8 @@ proposalsChangingTimeHeight t =
 proposals :: [Brace Double] -> Bool -> I -> Maybe (HTarget IG) -> Cycle I
 proposals bs calibrationsAvailable x mHTarget =
   cycleFromList $
-    [ timeBirthRate @~ scaleUnbiased 10 (PName "Time birth rate") w Tune,
-      timeDeathRate @~ scaleUnbiased 10 (PName "Time death rate") w Tune,
-      rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
-      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune,
-      liftProposalWith jacobianRootBranch ratesTimeTreeL proposalRatesTimeTreeContra
+    [ rateMean @~ scaleUnbiased 10 (PName "Rate mean") w Tune,
+      rateVariance @~ scaleUnbiased 10 (PName "Rate variance") w Tune
     ]
       ++ maybeHamiltonianProposal
       ++ proposalsTimeTree bs t
@@ -271,8 +265,6 @@ proposals bs calibrationsAvailable x mHTarget =
   where
     t = getLengthTree $ _rateTree x
     w = weightNBranches $ length t
-    nm = PName "Rates and time tree"
-    proposalRatesTimeTreeContra = scaleRatesAndTreeContrarily t 0.1 nm w Tune
     maybeHamiltonianProposal = case mHTarget of
       Nothing -> []
       Just htarget -> [liftProposalWith jacobianRootBranch id $ nutsWith calibrationsAvailable x htarget]
