@@ -81,6 +81,7 @@
 
               # Analysis.
               dschrempf.beast2
+              dschrempf.fasttree
               dschrempf.figtree
               dschrempf.iqtree2
               dschrempf.phylobayes
