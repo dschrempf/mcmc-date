@@ -1,4 +1,4 @@
-resolver: nightly-2022-08-30
+resolver: lts-20.19
 
 packages:
   - .
@@ -11,7 +11,7 @@ extra-deps:
   # - ../elynx/elynx-nexus
   # - ../elynx/elynx-tools
   # - ../elynx/elynx-tree
-  - ../mcmc/mcmc
+  # - ../mcmc/mcmc
 
 ghc-options:
   # Optimizations.
