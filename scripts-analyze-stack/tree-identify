@@ -1,0 +1,23 @@
+#!/usr/bin/env stack
+{- stack script
+   --resolver lts-20.18
+   --package base
+   --package bytestring
+   --package elynx-tree
+-}
+
+import ELynx.Tree
+import System.Environment
+import qualified Data.ByteString.Lazy.Char8 as BL
+
+main :: IO ()
+main = do
+  as <- getArgs
+  pn <- getProgName
+  let fn = case as of
+        [x] -> x
+        _ -> error $ "Usage: " <> pn <> " TREEFILE"
+  tr <- readOneNewick Standard fn
+  let trIndexed = identify tr
+      fn' = fn ++ ".index"
+  BL.writeFile fn' $ toNewick trIndexed

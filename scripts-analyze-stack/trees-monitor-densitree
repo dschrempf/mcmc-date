@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+fn="$1"
+
+trace-thin 5 "$fn" > "${fn}.thinned"
+trees-monitor-to-nexus "${fn}.thinned"
+densitree "${fn}.nex"

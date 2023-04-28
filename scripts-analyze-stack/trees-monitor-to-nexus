@@ -1,0 +1,33 @@
+#!/usr/bin/env stack
+{- stack script
+   --resolver lts-20.18
+   --package attoparsec
+   --package base
+   --package bytestring
+   --package elynx-tree
+   --package filepath
+-}
+
+import Data.Attoparsec.ByteString
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Lazy.Char8 as BL
+import ELynx.Tree
+import System.Environment
+import System.FilePath
+
+getTree :: BS.ByteString -> Tree Phylo Name
+getTree l = either error id $ parseOnly (oneNewick Standard) $ BS.split '\t' l !! 4
+
+main :: IO ()
+main = do
+  as <- getArgs
+  pn <- getProgName
+  let fn = case as of
+        [x] -> x
+        _ -> error $ "Usage: " <> pn <> " file.monitor"
+  c <- BS.readFile fn
+  let lns = BS.lines c
+      trs = map getTree $ tail lns
+      trsNexus = toNexusTrees [(BL.pack $ show n, t) | (n, t) <- zip [0 :: Int ..] trs]
+      fo = dropExtension fn ++ ".nex"
+  BL.writeFile fo trsNexus
