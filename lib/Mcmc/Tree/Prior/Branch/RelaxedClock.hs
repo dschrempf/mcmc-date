@@ -195,7 +195,7 @@ uncorrelatedLogNormal hs m v = branchesWith hs (logNormal' m v) . getLengthTree
 -- of relaxed molecular clock models, Molecular Biology and Evolution, 24(12),
 -- 2669–2680 (2007). http://dx.doi.org/10.1093/molbev/msm193
 --
--- Even better explined (although there is a mistake in the formula) in the
+-- Even better explained (although there is a mistake in the formula) in the
 -- Material and Methods section of Lartillot, Phillips, Ronquist (2016) A mixed
 -- relaxed clock model, Philosophical Transactions of the Royal Society B:
 -- Biological Sciences.
