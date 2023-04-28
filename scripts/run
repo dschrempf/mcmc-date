@@ -24,6 +24,7 @@ usage() {
     echo "Relaxed molecular clock model:"
     echo "ug  Uncorrelated gamma model"
     echo "ul  Uncorrelated log normal model"
+    echo "uw  Uncorrelated white noise model"
     echo "al  Autocorrelated log normal model"
     echo
     echo "Likelihood specification:"
@@ -112,6 +113,8 @@ case "$relaxed_molecular_clock_model" in
     ug) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "UncorrelatedGamma")
        ;;
     ul) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "UncorrelatedLogNormal")
+       ;;
+    uw) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "UncorrelatedWhiteNoise")
        ;;
     al) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "AutocorrelatedLogNormal")
        ;;
