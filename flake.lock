@@ -99,11 +99,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1679915003,
-        "narHash": "sha256-sDfC4OoQzPzkz77T7BUkVHmyr9f9VJ7sy+dpH7EbTUk=",
+        "lastModified": 1683120181,
+        "narHash": "sha256-vVIgE3PW/FscKRPG3oOzQiK4t/Sk+vOyoVqtpejCKfM=",
         "owner": "dschrempf",
         "repo": "elynx",
-        "rev": "c2fadbe864b571fb88ddb0db47c39a5721bef96a",
+        "rev": "6c3396e7fea9771ff5f557aaacb7bae054be66fe",
         "type": "github"
       },
       "original": {
@@ -218,11 +218,11 @@
         "pava": "pava"
       },
       "locked": {
-        "lastModified": 1683103883,
-        "narHash": "sha256-aDL8U2kO4CPGuxagVgBZCc6b5e0l8XRH6ZiEaC4ez+g=",
+        "lastModified": 1683104798,
+        "narHash": "sha256-FtBnrmQboiy4XCVleA+d13DQHFdyBB8hhbFeNpN39so=",
         "owner": "dschrempf",
         "repo": "mcmc",
-        "rev": "0c9c970d04449b029ee8a96b89410d59cf8ae5a9",
+        "rev": "fff1bf0f3acb00a2ce992cebccc16d114c426e82",
         "type": "github"
       },
       "original": {
