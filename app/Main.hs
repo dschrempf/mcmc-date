@@ -530,6 +530,7 @@ runMarginalLikelihood h spec = do
           repetitiveBurnIn'
           iterations'
           Overwrite
+          Parallel
           LogStdOutAndFile
           Debug
 

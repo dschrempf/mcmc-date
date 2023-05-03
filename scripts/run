@@ -238,6 +238,8 @@ case "$relaxed_molecular_clock_model" in
         ;;
     ul) outdir="${outdir}-ulognormal"
         ;;
+    uw) outdir="${outdir}-uwhitenoise"
+        ;;
     al) outdir="${outdir}-alognormal"
         ;;
     *) usage
@@ -331,7 +333,7 @@ then
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           "${relaxed_molecular_clock_model_flags[@]}" \
           "${likelihood_specification_flags[@]}" \
-          +RTS -N2 -M8G "${p_flags_rts[@]}"
+          +RTS -N -M8G "${p_flags_rts[@]}"
 else
     usage
     exit 1
