@@ -532,7 +532,7 @@ runMarginalLikelihood h spec = do
           Overwrite
           Parallel
           LogStdOutAndFile
-          Debug
+          Info
 
   -- Run the Markov chain.
   void $ marginalLikelihood mlS p l c m i g
