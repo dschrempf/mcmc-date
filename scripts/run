@@ -24,6 +24,7 @@ usage() {
     echo "Relaxed molecular clock model:"
     echo "ug  Uncorrelated gamma model"
     echo "ul  Uncorrelated log normal model"
+    echo "uw  Uncorrelated white noise model"
     echo "al  Autocorrelated log normal model"
     echo
     echo "Likelihood specification:"
@@ -112,6 +113,8 @@ case "$relaxed_molecular_clock_model" in
     ug) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "UncorrelatedGamma")
        ;;
     ul) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "UncorrelatedLogNormal")
+       ;;
+    uw) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "UncorrelatedWhiteNoise")
        ;;
     al) relaxed_molecular_clock_model_flags+=(--relaxed-molecular-clock "AutocorrelatedLogNormal")
        ;;
@@ -235,6 +238,8 @@ case "$relaxed_molecular_clock_model" in
         ;;
     ul) outdir="${outdir}-ulognormal"
         ;;
+    uw) outdir="${outdir}-uwhitenoise"
+        ;;
     al) outdir="${outdir}-alognormal"
         ;;
     *) usage
@@ -328,7 +333,7 @@ then
           --analysis-name "$analysis_name" "${c_flags[@]}" "${p_flags_prog[@]}" \
           "${relaxed_molecular_clock_model_flags[@]}" \
           "${likelihood_specification_flags[@]}" \
-          +RTS -N2 -M8G "${p_flags_rts[@]}"
+          +RTS -N -M8G "${p_flags_rts[@]}"
 else
     usage
     exit 1

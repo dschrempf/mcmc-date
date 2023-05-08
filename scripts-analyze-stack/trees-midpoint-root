@@ -1,0 +1,41 @@
+#!/usr/bin/env stack
+{- stack script
+   --resolver lts-20.19
+   --package base
+   --package bytestring
+   --package containers
+   --package elynx-tree
+   --package hmatrix
+   --package mcmc-date
+   --package vector
+-}
+
+import Data.Bifunctor
+import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.Maybe
+import qualified Data.Set as S
+import qualified Data.Vector.Storable as VS
+import ELynx.Tree
+import Mcmc.Tree
+import qualified Numeric.LinearAlgebra as L
+import System.Environment
+
+-- Get the posterior matrix of branch lengths.
+getPosteriorMatrix :: [Tree Length a] -> L.Matrix Double
+getPosteriorMatrix = L.fromRows . map (VS.fromList . map fromLength . branches)
+
+main :: IO ()
+main = do
+  [fn] <- getArgs
+  trees <- someTrees Standard fn
+  let pmR = getPosteriorMatrix trees
+      (mu, _) = second L.unSym $ L.meanCov pmR
+      tree = head trees
+      toLength' = either (error . (<>) "main: ") id . toLength
+      meanTree =
+        fromMaybe (error "Could not label tree with mean branch lengths") $
+          setBranches (map toLength' $ VS.toList mu) tree
+      -- This only works if the root node has three sub trees.
+      meanTreeRooted = either error id $ outgroup (S.singleton $ head $ leaves meanTree) meanTree
+      meanTreeMidpointRooted = either error id $ midpoint meanTreeRooted
+  BL.putStrLn $ toNewick $ lengthToPhyloTree meanTreeMidpointRooted

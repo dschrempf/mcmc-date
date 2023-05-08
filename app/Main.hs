@@ -530,8 +530,9 @@ runMarginalLikelihood h spec = do
           repetitiveBurnIn'
           iterations'
           Overwrite
+          Parallel
           LogStdOutAndFile
-          Debug
+          Info
 
   -- Run the Markov chain.
   void $ marginalLikelihood mlS p l c m i g

@@ -85,7 +85,11 @@ priorFunctionBirthDeath t' x =
     m = x ^. timeDeathRate
 
 -- | Relaxed molecular clock model.
-data RelaxedMolecularClockModel = UncorrelatedGamma | UncorrelatedLogNormal | AutocorrelatedLogNormal
+data RelaxedMolecularClockModel
+  = UncorrelatedGamma
+  | UncorrelatedLogNormal
+  | UncorrelatedWhiteNoise
+  | AutocorrelatedLogNormal
   deriving (Show, Read, Eq)
 
 -- Prior function of rate tree (relaxed molecular clock model).
@@ -111,6 +115,7 @@ priorFunctionRelaxedMolecularClock ht md t' x =
       case md of
         UncorrelatedGamma -> uncorrelatedGamma WithoutStem 1.0 va r
         UncorrelatedLogNormal -> uncorrelatedLogNormal WithoutStem 1.0 va r
+        UncorrelatedWhiteNoise -> uncorrelatedWhiteNoise WithoutStem 1.0 va t' r
         AutocorrelatedLogNormal -> autocorrelatedLogNormal WithoutStem 1.0 va t' r
     ]
   where

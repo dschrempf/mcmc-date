@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo "Usage: $(basename "$0") N [FILE]"
+    echo ""
+    echo "Thin an MCMC trace by the given positive integer N."
+}
+
+# Options.
+OPTIND=1
+while getopts "h?" opt; do
+    case "$opt" in
+        h|\?)
+            usage
+            exit 0
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+if [ -z "$1" ]
+then
+    usage
+    exit 1
+else
+    N="$1"
+    re='^[0-9]+$'
+    if ! [[ $N =~ $re ]] ; then
+        echo "error: N is not a number" >&2
+        exit 1
+    fi
+fi
+
+if [ $# -gt 2 ]
+then usage
+     exit 1
+fi
+F="${2:-/dev/stdin}"
+
+awk "(NR-1) % ${N} == 0" < "${F}"
