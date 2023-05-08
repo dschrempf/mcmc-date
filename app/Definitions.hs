@@ -96,8 +96,8 @@ import qualified Data.Vector as VB
 initWith :: Tree Length Name -> I
 initWith t =
   I
-    { _timeBirthRate = 3.34,
-      _timeDeathRate = 0.24,
+    { _timeBirthRate = 2.377,
+      _timeDeathRate = 0.109,
       _timeHeight = 1.0,
       _timeTree = initialTimeTree,
       _rateMean = 1.0,
