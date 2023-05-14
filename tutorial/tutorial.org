@@ -2,8 +2,8 @@
 #+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
 #+options: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
 #+options: tasks:t tex:t timestamp:t title:t toc:nil todo:t |:t
-#+title: Dating with constraints
-#+subtitle: A detailed tutorial on McmcDate
+#+title: Dating phylogenetic trees with McmcDate
+#+subtitle: A detailed tutorial
 #+date: February 28, 2023
 #+author: Dominik Schrempf
 #+email: dominik.schrempf@gmail.com
@@ -39,6 +39,11 @@ example dating analysis of a tree of eukaryotes. I use data from
 [cite/t:@Strassert2021] who provide the alignment and node age calibrations from
 fossils. Moreover, I use node order constraints from two possible successions of
 plastid endosymbiosis events.
+
+Section [[id:e3995389-bebf-4e0f-be48-6ca1a9e87c6c]] describes the example analysis.
+If you want to follow the tutorial on your computer, install the Haskell
+toolchain and clone the McmcDate repository as described in Appendix
+[[id:a38b78be-7ee6-4340-946a-2a5d06385b66]].
 #+latex: \end{abstract}
 
 \tableofcontents
@@ -217,6 +222,9 @@ dated trees for different roots. The following section shows an example analysis
 and describes the steps of the pipeline in detail.
 
 * Example analysis
+:PROPERTIES:
+:ID:       e3995389-bebf-4e0f-be48-6ca1a9e87c6c
+:END:
 ** Step 1: Alignment and unrooted topology
 We are going to date a topology of eukaryotes [cite:@Strassert2021]. The full
 published data set contains three alignments:
@@ -642,27 +650,40 @@ the most recent common ancestors of =NodeXLeafA= and =NodeXLeafB=, as well as
 =NodeYLeafA= and =NodeYLeafB=. The steepness of the brace prior function is
 defined using the standard deviation. This file defines hard node braces.
 
-* Internals
+* Installation and internals
 :PROPERTIES:
 :ID:       a38b78be-7ee6-4340-946a-2a5d06385b66
 :END:
 I have written \mcmcdate{} in Haskell. The Haskell programming language is
 versatile, interesting, and leads to more maintainable code with fewer bugs when
 compared to other programming languages. Nevertheless, the tooling support is
-sometimes sub-optimal. Before running \mcmcdate{} you need to compile the
-Haskell code. In most cases, the [[https://github.com/dschrempf/mcmc-date/blob/master/scripts/run][wrapper script called =run=]], which is used in
-this tutorial, does this for you in a reproducible way, and so there is no need
-for manual action. Sometimes, however, manual action may be required.
+sometimes sub-optimal. Before running \mcmcdate{} you need to (1) install the
+Haskell toolchain and (2) compile the Haskell code.
 
-In this case, you need a rough understanding of the tools involved. There are
-two build tools commonly used with Haskell: =cabal-install=, and =Stack= with
-binaries =cabal=, and =stack=, respectively. I recommend using =cabal-install=,
-and the wrapper script uses =cabal-install= by default. If you want to use
-=Stack=, use the option =-s= like so: =run -s ...=. See also the output of =run
--h=. In rare occasions you may want to clean your local build cache. You can do
-this by running =cabal clean= or =stack clean=; or more strictly, by deleting
-the =dist-newstyle= or =.stack-work= directories in you working directories for
-=cabal-install= and =Stack=, respectively.
+1. Installing the Haskell toolchain: I recommend using [[https://www.haskell.org/ghcup/][GHCup]], a cross platform
+   script handling the installation process. Check the website for instructions.
+   Note, there are two build tools commonly used with Haskell: =cabal-install=,
+   and Haskell =Stack= with binaries =cabal=, and =stack=, respectively. I
+   recommend using =cabal-install= (see below).
+
+2. Compiling the source code: Clone the source code of McmcDate:
+   #+name: CloneMcmcDate
+   #+begin_src sh :exports code
+   git clone git@github.com:dschrempf/mcmc-date.git
+   #+end_src
+   Perform your analysis within the folder of the McmcDate repository. For
+   example, run test analyses or the tutorial analysis from within the
+   =mcmc-date/tests= or =mcmc-date/tutorial/data= directory, respectively. In
+   this case, the [[https://github.com/dschrempf/mcmc-date/blob/master/scripts/run][wrapper script]], which is used in this tutorial, compiles and
+   runs the source code for you in a reproducible way, and so there is no need
+   for manual action. Sometimes, however, manual action may be required. In this
+   case, you need a rough understanding of the tools involved. For example, the
+   wrapper script uses =cabal-install= by default. If you want to use =Stack=,
+   use the option =-s= like so: =run -s ...=. See also the output of =run -h=.
+   In rare occasions you may want to clean your local build cache. You can do
+   this by running =cabal clean= or =stack clean=; or more strictly, by deleting
+   the =dist-newstyle= or =.stack-work= directories in you working directories
+   for =cabal-install= and =Stack=, respectively.
 
 ** Wrapper script
 :PROPERTIES:
