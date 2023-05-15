@@ -86,7 +86,7 @@ preparationNameP :: Parser String
 preparationNameP =
   strOption
     ( long "preparation-name"
-        <> help "Preparation name"
+        <> help "Preparation name (default: value of 'analysis-name')"
         <> metavar "NAME"
     )
 
