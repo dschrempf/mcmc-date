@@ -1,6 +1,6 @@
 #!/usr/bin/env stack
 {- stack script
-   --resolver lts-20.19
+   --resolver nightly-2023-05-08
    --package base
    --package bytestring
    --package containers

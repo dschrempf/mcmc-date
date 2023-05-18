@@ -56,7 +56,7 @@ do
       echo "Current directory: ${PWD}."
       for m in *{timetree,ratetree}.@(00.|)monitor
       do
-        if [[ "$skip" = "FALSE" ]] && [[ -e "${m}.thinned" ]]; then
+        if [[ "$skip" = "TRUE" ]] && [[ -e "${m}.thinned" ]]; then
           echo "Skip analysis of ${m}."
         else
           echo "Analyze monitor file ${m}."
