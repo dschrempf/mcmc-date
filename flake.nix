@@ -89,6 +89,7 @@
               hpkgs.elynx
               hpkgs.slynx
               hpkgs.tlynx
+              gnuplot
 
               # Profiling.
               hpkgs.eventlog2html
