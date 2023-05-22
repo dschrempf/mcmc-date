@@ -17,10 +17,14 @@ module Tools
     toNewickTopology,
     tupleLens,
     tripleLens,
+    assignIndices,
   )
 where
 
+import Control.Applicative ((<|>))
 import Control.Lens
+import qualified Data.Attoparsec.ByteString.Char8 as A
+import qualified Data.ByteString.Builder as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Vector.Storable as VS
 import qualified ELynx.Topology as T
@@ -64,3 +68,14 @@ tripleLens l1 l2 l3 =
   lens
     (\x -> (x ^. l1, x ^. l2, x ^. l3))
     (\x (y1', y2', y3') -> x & l1 .~ y1' & l2 .~ y2' & l3 .~ y3')
+
+-- | If an alphabetic name is given, leave it alone. Otherwise, assign a running
+-- index.
+assignIndices :: Int -> Name -> Name
+assignIndices n x = case A.parseOnly (pI <|> pN) lb of
+  Left _ -> x
+  Right _ -> Name $ B.toLazyByteString $ B.intDec n
+  where
+    pI = (A.decimal :: A.Parser Int) *> A.endOfInput
+    pN = A.endOfInput
+    lb = BL.toStrict $ fromName x

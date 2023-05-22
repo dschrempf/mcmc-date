@@ -293,9 +293,14 @@ prepare h (PrepSpec an rt ts lhsp) = do
       -- Mean Vector including both branches to the root.
       (means, _) = L.meanCov pm
   let toLength' = either (error . (<>) "prepare: ") id . toLength
-      meanTreeRooted =
-        fromMaybe (error "prepare: Could not label tree with mean branch lengths") $
+      meanTreeRootedUnlabeled =
+        fromMaybe (error "prepare: Could not label tree branches with mean branch lengths") $
           setBranches (map toLength' $ VS.toList means) treeR
+      lbs = labels meanTreeRootedUnlabeled
+      lbsWithIndices = zipWith assignIndices [0 ..] lbs
+      meanTreeRooted =
+        fromMaybe (error "prepare: Could not label tree nodes with indices") $
+          setLabels lbsWithIndices meanTreeRootedUnlabeled
   hPutStrLn h "The rooted tree with mean branch lengths is:"
   BL.hPutStrLn h $ toNewick $ lengthToPhyloTree meanTreeRooted
   hPutStrLn h $ "Save the rooted tree with mean branch lengths to " <> getMeanTreeFn an <> "."
