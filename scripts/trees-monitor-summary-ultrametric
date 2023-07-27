@@ -171,6 +171,54 @@ summarizeHeights ((i, nm, hs) : xs) = (i, nm, mu, va, minA, maxA, ciL, ciU) : su
     ciL = VU.head hsCi
     ciU = VU.last hsCi
 
+headerSummary :: BL.ByteString
+headerSummary = "Index\tName\tMean\tVariance\tMin\tMax\t95CILower\t95CIUpper"
+
+renderRowSummary ::
+  (Int, Name, Mean, Variance, MinimumAge, MaximumAge, CiLower, CiUpper) ->
+  BL.ByteString
+renderRowSummary (i, Name n, m, v, minA, maxA, ciL, ciU) =
+  BB.toLazyByteString $
+    BB.intDec i
+      <> t
+      <> BB.lazyByteString n
+      <> t
+      <> BB.doubleDec m
+      <> t
+      <> BB.doubleDec v
+      <> t
+      <> BB.doubleDec minA
+      <> t
+      <> BB.doubleDec maxA
+      <> t
+      <> BB.doubleDec ciL
+      <> t
+      <> BB.doubleDec ciU
+  where
+    t = BB.char8 '\t'
+
+renderTableSummary ::
+  [(Int, Name, Mean, Variance, MinimumAge, MaximumAge, CiLower, CiUpper)] ->
+  BL.ByteString
+renderTableSummary xs = BL.unlines $ headerSummary : map renderRowSummary xs
+
+header :: BL.ByteString
+header = "Index\tName\tAges"
+
+renderRow :: (Int, Name, VU.Vector Double) -> BL.ByteString
+renderRow (i, Name n, hs) =
+  BB.toLazyByteString $
+    BB.intDec i
+      <> t
+      <> BB.lazyByteString n
+      <> hsb
+  where
+    t = BB.char8 '\t'
+    hsb = VU.foldl' (\acc x -> acc <> t <> BB.doubleDec x) mempty hs
+
+renderTable :: [(Int, Name, VU.Vector Double)] -> BL.ByteString
+renderTable xs = BL.unlines $ header : map renderRow xs
+
 main :: IO ()
 main = do
   as <- getArgs
@@ -201,3 +249,7 @@ main = do
   BL.writeFile fnMeanTree $ toNewick $ lengthToPhyloTree meanTree
   BL.writeFile fnVarianceTree $ toNewick $ lengthToPhyloTree varianceTree
   BL.writeFile fnCombinedTree $ toNexusTrees [("Tree1", lengthToPhyloTree combinedTree)]
+  let fnSummary = dropExtension fn ++ ".ages.summary"
+      fnFull = dropExtension fn ++ ".ages.full"
+  BL.writeFile fnSummary $ renderTableSummary hssS
+  BL.writeFile fnFull $ renderTable hss

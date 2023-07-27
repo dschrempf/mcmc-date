@@ -35,7 +35,7 @@ function analyze_tree_monitor() {
 
     echo "Compute other summary statistics."
     if [[ "$1" == *"timetree"* ]]; then
-      trees-monitor-summary --ages "${1}" 0.25
+      trees-monitor-summary-ultrametric "${1}" 0.25
     else
       trees-monitor-summary "${1}" 0.25
     fi
