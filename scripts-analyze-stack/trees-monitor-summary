@@ -13,21 +13,15 @@
 -}
 {-# LANGUAGE OverloadedStrings #-}
 
-import Control.Comonad
-import Control.Monad
 import Data.Attoparsec.ByteString
 import Data.Bifunctor
-import qualified Data.ByteString.Builder as BB
+import Data.Maybe
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BL
-import Data.Foldable
 import Data.List hiding (sort)
-import qualified Data.Matrix.Unboxed as MU
-import Data.Maybe
 import qualified Data.Vector.Unboxed as VU
 import qualified ELynx.Topology as T
 import ELynx.Tree
-import Statistics.Function
 import Statistics.Sample
 import System.Environment
 import System.FilePath
@@ -58,180 +52,26 @@ checkTopologies ts = do
       BL.putStrLn $ BL.unlines $ map toNewickTopology differentTopologies
       error "A single topology is required."
 
-type Mean = Double
-
-type Variance = Double
-
-type MinimumAge = Double
-
-type MaximumAge = Double
-
--- 95 percent confidence interval, lower bound.
-type CiLower = Double
-
--- 95 percent confidence interval, upper bound.
-type CiUpper = Double
-
--- Ugly!
---
--- Here, we calculate the mean and variance of each branch separately. It is a
--- fact but also a miracle, that the tree with mean branch lengths is again
--- ultrametric. This is, because the mean of a sum of variables (here, branch
--- lengths) is equal to the sum of the means.
---
--- Easier: Work with the heights only (hss).
-getMeanVarianceTrees ::
-  [(Int, Name, Mean, Variance, MinimumAge, MaximumAge, CiLower, CiUpper)] ->
-  [Tree Length Name] ->
-  (Tree Length Name, Tree Length Name, Tree Length Name)
-getMeanVarianceTrees hss ts = (meanTree, varianceTree, combinedTree)
+getMeanVarianceTrees :: [Tree Length Name] -> (Tree Length Name, Tree Length Name)
+getMeanVarianceTrees xs = (fromJust $ setBranches (map toLengthUnsafe ms) x,
+                           fromJust $ setBranches (map toLengthUnsafe vs) x)
   where
-    -- The data types are similar to the ones in 'getHeights'.
-    lss :: [VU.Vector Double]
-    lss = map (VU.fromList . branches . first fromLength) ts
-    lss' = MU.toRows $ MU.fromColumns lss
-    msvs :: [(Mean, Variance)]
-    msvs = map meanVariance lss'
-    ms = map fst msvs
-    vs = map snd msvs
-    t = head ts
-    toLength' = either (error . (<>) "getMeanVarianceTrees: ") id . toLength
-    meanTree =
-      fromMaybe (error "getMeanVarianceTrees: Could not label tree with means lengths.") $
-        setBranches (map toLength' ms) t
-    varianceTree =
-      fromMaybe (error "getMeanVarianceTrees: Could not label tree with variance lengths.") $
-        setBranches (map toLength' vs) t
-    ls = map (\(_, _, _, _, _, _, x, _) -> x) hss
-    rs = map (\(_, _, _, _, _, _, _, x) -> x) hss
-    is = labels $ identify t
-    ns = labels t
-    combinedLabels = [setNodeLabel i m v n | (i, m, v, n) <- zip4 is ls rs ns]
-    combinedTree =
-      fromMaybe (error "getMeanVarianceTrees: Could not label tree with combined information.") $
-        setLabels combinedLabels meanTree
-
-setNodeLabel :: Int -> CiLower -> CiUpper -> Name -> Name
-setNodeLabel i l r n =
-  n
-    <> "[&index="
-    <> toNmI i
-    <> ",posterior=1.0,age_95%_HPD={"
-    <> toNm l
-    <> ","
-    <> toNm r
-    <> "}]"
-  where
-    toNm = Name . BB.toLazyByteString . BB.doubleDec
-    toNmI = Name . BB.toLazyByteString . BB.intDec
-
--- Returns [(NodeIndex, NodeName, Heights)].
-getHeights :: [Tree Length Name] -> [(Int, Name, VU.Vector Double)]
-getHeights ts = [(i, n, hs) | (i, n, hs) <- zip3 is ns hss']
-  where
-    -- The list contains vectors. A vector contains the heights of each node for
-    -- one tree.
-    hss :: [VU.Vector Double]
-    hss = map (VU.fromList . toList . extend (fromLength . rootHeight)) ts
-    -- Convert to a matrix and transpose. Again we get a list of vectors.
-    -- However, now a vector contains the heights of the same node for each
-    -- tree.
-    hss' :: [VU.Vector Double]
-    hss' = MU.toRows $ MU.fromColumns hss
-    -- -- Means and variances.
-    -- msvs :: [(Mean, Variance)]
-    -- msvs = map meanVariance hss'
-    -- Node indices.
-    is = toList $ identify $ head ts
-    -- Node names.
-    ns = toList $ head ts
-
-summarizeHeights ::
-  [(Int, Name, VU.Vector Double)] ->
-  [(Int, Name, Mean, Variance, MinimumAge, MaximumAge, CiLower, CiUpper)]
-summarizeHeights [] = []
-summarizeHeights ((i, nm, hs) : xs) = (i, nm, mu, va, minA, maxA, ciL, ciU) : summarizeHeights xs
-  where
-    (mu, va) = meanVariance hs
-    minA = VU.minimum hs
-    maxA = VU.maximum hs
-    -- -- Use normal distribution to approximate confidence intervals. Tom didn't like this.
-    -- s = sqrt va
-    -- ciL = max 0 $ mu - 2 * s
-    -- ciU = mu + 2 * s
-    --
-    -- 2.5% of the length. To calculate the 95% confidence intervals.
-    l = VU.length hs
-    iCi :: Int
-    iCi = floor (fromIntegral l * 0.025 :: Double)
-    nCi :: Int
-    nCi = floor (fromIntegral l * 0.95 :: Double)
-    hsSorted = sort hs
-    hsCi = VU.slice iCi nCi hsSorted
-    ciL = VU.head hsCi
-    ciU = VU.last hsCi
-
-headerSummary :: BL.ByteString
-headerSummary = "Index\tName\tMean\tVariance\tMin\tMax\t95CILower\t95CIUpper"
-
-renderRowSummary ::
-  (Int, Name, Mean, Variance, MinimumAge, MaximumAge, CiLower, CiUpper) ->
-  BL.ByteString
-renderRowSummary (i, Name n, m, v, minA, maxA, ciL, ciU) =
-  BB.toLazyByteString $
-    BB.intDec i
-      <> t
-      <> BB.lazyByteString n
-      <> t
-      <> BB.doubleDec m
-      <> t
-      <> BB.doubleDec v
-      <> t
-      <> BB.doubleDec minA
-      <> t
-      <> BB.doubleDec maxA
-      <> t
-      <> BB.doubleDec ciL
-      <> t
-      <> BB.doubleDec ciU
-  where
-    t = BB.char8 '\t'
-
-renderTableSummary ::
-  [(Int, Name, Mean, Variance, MinimumAge, MaximumAge, CiLower, CiUpper)] ->
-  BL.ByteString
-renderTableSummary xs = BL.unlines $ headerSummary : map renderRowSummary xs
-
-header :: BL.ByteString
-header = "Index\tName\tAges"
-
-renderRow :: (Int, Name, VU.Vector Double) -> BL.ByteString
-renderRow (i, Name n, hs) =
-  BB.toLazyByteString $
-    BB.intDec i
-      <> t
-      <> BB.lazyByteString n
-      <> hsb
-  where
-    t = BB.char8 '\t'
-    hsb = VU.foldl' (\acc x -> acc <> t <> BB.doubleDec x) mempty hs
-
-renderTable :: [(Int, Name, VU.Vector Double)] -> BL.ByteString
-renderTable xs = BL.unlines $ header : map renderRow xs
+    x = head xs
+    bss :: [[Double]]
+    bss = transpose $ map (branches . first fromLength) xs
+    (ms, vs) = (unzip $ map (meanVariance . VU.fromList) bss) :: ([Double], [Double])
 
 main :: IO ()
 main = do
   as <- getArgs
   pn <- getProgName
-  let (fn, bi, ages) = case as of
-        [x, b] -> (x, read b, False) :: (String, Double, Bool)
-        ["--ages", x, b] -> (x, read b, True)
+  let (fn, bi) = case as of
+        [x, b] -> (x, read b) :: (String, Double)
         _ ->
           let msg =
                 unlines
-                  [ "Usage: " <> pn <> " [--ages] MONITORFILE BURNIN",
-                    "For example: " <> pn <> " trees.monitor 0.2",
-                    "--ages:  Also compute node age summary statistics."
+                  [ "Usage: " <> pn <> " MONITORFILE BURNIN",
+                    "For example: " <> pn <> " trees.monitor 0.2"
                   ]
            in error msg
   c <- BS.readFile fn
@@ -242,17 +82,8 @@ main = do
       toDrop = round (fromIntegral l * bi) :: Int
       trs = drop toDrop trs'
   checkTopologies trs
-  let hss = getHeights trs
-      hssS = summarizeHeights hss
-      (meanTree, varianceTree, combinedTree) = getMeanVarianceTrees hssS trs
+  let (meanTree, varianceTree) = getMeanVarianceTrees trs
       fnMeanTree = dropExtension fn ++ ".tree.mean"
       fnVarianceTree = dropExtension fn ++ ".tree.variance"
-      fnCombinedTree = dropExtension fn ++ ".tree.combined"
   BL.writeFile fnMeanTree $ toNewick $ lengthToPhyloTree meanTree
   BL.writeFile fnVarianceTree $ toNewick $ lengthToPhyloTree varianceTree
-  BL.writeFile fnCombinedTree $ toNexusTrees [("Tree1", lengthToPhyloTree combinedTree)]
-  when ages $ do
-    let fnSummary = dropExtension fn ++ ".ages.summary"
-        fnFull = dropExtension fn ++ ".ages.full"
-    BL.writeFile fnSummary $ renderTableSummary hssS
-    BL.writeFile fnFull $ renderTable hss
