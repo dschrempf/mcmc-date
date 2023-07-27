@@ -36,8 +36,11 @@ function analyze_tree_monitor() {
     echo "Compute other summary statistics."
     if [[ "$1" == *"timetree"* ]]; then
       trees-monitor-summary-ultrametric "${1}" 0.25
-    else
+    elif [[ "$1" == *"ratetree"* ]]; then
       trees-monitor-summary "${1}" 0.25
+    else
+      echo "ERROR: WRONG TREE MONITOR FILE."
+      exit 1
     fi
 }
 
