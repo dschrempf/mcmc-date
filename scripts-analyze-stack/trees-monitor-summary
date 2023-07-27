@@ -52,26 +52,30 @@ checkTopologies ts = do
       BL.putStrLn $ BL.unlines $ map toNewickTopology differentTopologies
       error "A single topology is required."
 
-getMeanVarianceTrees :: [Tree Length Name] -> (Tree Length Name, Tree Length Name)
-getMeanVarianceTrees xs = (fromJust $ setBranches (map toLengthUnsafe ms) x,
-                           fromJust $ setBranches (map toLengthUnsafe vs) x)
+scale :: Double -> (Double, Double) -> (Double, Double)
+scale c (m, v) = (m * c, v * c * c)
+
+getMeanVarianceTrees :: Double -> [Tree Length Name] -> (Tree Length Name, Tree Length Name)
+getMeanVarianceTrees meanRate xs =
+  (fromJust $ setBranches (map toLengthUnsafe ms) x,
+   fromJust $ setBranches (map toLengthUnsafe vs) x)
   where
     x = head xs
     bss :: [[Double]]
     bss = transpose $ map (branches . first fromLength) xs
-    (ms, vs) = (unzip $ map (meanVariance . VU.fromList) bss) :: ([Double], [Double])
+    (ms, vs) = (unzip $ map (scale meanRate . meanVariance . VU.fromList) bss) :: ([Double], [Double])
 
 main :: IO ()
 main = do
   as <- getArgs
   pn <- getProgName
-  let (fn, bi) = case as of
-        [x, b] -> (x, read b) :: (String, Double)
+  let (fn, bi, meanRate) = case as of
+        [x, b, m] -> (x, read b, read m) :: (String, Double, Double)
         _ ->
           let msg =
                 unlines
-                  [ "Usage: " <> pn <> " MONITORFILE BURNIN",
-                    "For example: " <> pn <> " trees.monitor 0.2"
+                  [ "Usage: " <> pn <> " MONITORFILE BURNIN MEAN_RATE",
+                    "For example: " <> pn <> " analysis.ratetree.monitor 0.2 1e-9"
                   ]
            in error msg
   c <- BS.readFile fn
@@ -82,7 +86,7 @@ main = do
       toDrop = round (fromIntegral l * bi) :: Int
       trs = drop toDrop trs'
   checkTopologies trs
-  let (meanTree, varianceTree) = getMeanVarianceTrees trs
+  let (meanTree, varianceTree) = getMeanVarianceTrees meanRate trs
       fnMeanTree = dropExtension fn ++ ".tree.mean"
       fnVarianceTree = dropExtension fn ++ ".tree.variance"
   BL.writeFile fnMeanTree $ toNewick $ lengthToPhyloTree meanTree
