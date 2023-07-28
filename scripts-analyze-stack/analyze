@@ -37,7 +37,10 @@ function analyze_tree_monitor() {
     if [[ "$1" == *"timetree"* ]]; then
       trees-monitor-summary-ultrametric "${1}" 0.25
     elif [[ "$1" == *"ratetree"* ]]; then
-      trees-monitor-summary "${1}" 0.25
+      ana_name=${1%.ratetree.monitor}
+      params_monitor_file="${ana_name}.params.monitor"
+      mean=$(awk '{count+=$8} END{print count/NR}' "${params_monitor_file}")
+      trees-monitor-summary "${1}" 0.25 "${mean}"
     else
       echo "ERROR: WRONG TREE MONITOR FILE."
       exit 1

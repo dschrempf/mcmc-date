@@ -63,7 +63,7 @@ getMeanVarianceTrees meanRate xs =
     x = head xs
     bss :: [[Double]]
     bss = transpose $ map (branches . first fromLength) xs
-    (ms, vs) = (unzip $ map (scale meanRate . meanVariance . VU.fromList) bss) :: ([Double], [Double])
+    (ms, vs) = (unzip $ map (scale meanRate . meanVariance . VU.fromList) bss) :: ([Double], [Double]) 
 
 main :: IO ()
 main = do
@@ -75,7 +75,7 @@ main = do
           let msg =
                 unlines
                   [ "Usage: " <> pn <> " MONITORFILE BURNIN MEAN_RATE",
-                    "For example: " <> pn <> " analysis.ratetree.monitor 0.2 1e-9"
+                    "For example: " <> pn <> " analysis.ratetree.monitor 0.2 1e-9"               
                   ]
            in error msg
   c <- BS.readFile fn
