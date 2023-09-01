@@ -399,7 +399,7 @@ getMcmcProps h (Spec an mPrepName cls clsFlag cns cnsFlag brs ifs prof ham lhsp 
   hPutStrLn h $ "Get braces using specifications: " <> show brs <> "."
   bs <- getBraces h meanTree brs
   -- Likelihood function.
-  hPutStrLn h $ "Initialize likelihood function."
+  hPutStrLn h "Initialize likelihood function."
   lh' <- getLikelihoodFunction h prepName lhsp
   -- Generalized posterior function for Hamiltonian proposal.
   mHTarget <-

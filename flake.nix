@@ -29,7 +29,7 @@
       theseHpkgNames = [
         "mcmc-date"
       ];
-      thisGhcVersion = "ghc92";
+      thisGhcVersion = "ghc94";
       hOverlay = selfn: supern: {
         haskell = supern.haskell // {
           packageOverrides = selfh: superh:
@@ -54,10 +54,7 @@
           hlib = pkgs.haskell.lib;
           theseHpkgs = nixpkgs.lib.genAttrs theseHpkgNames (n: hpkgs.${n});
           theseHpkgsDev = builtins.mapAttrs (_: x: hlib.doBenchmark x) theseHpkgs;
-          dschrempf = import dschrempf-nur {
-            inherit pkgs;
-            inherit system;
-          };
+          dschrempf = dschrempf-nur.packages.${system};
         in
         {
           packages = theseHpkgs // { default = theseHpkgs.mcmc-date; };
