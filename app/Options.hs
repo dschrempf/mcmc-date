@@ -276,7 +276,8 @@ modeP =
                 "Likelihood specification:",
                 "  - FullMultivariateNormal",
                 "  - SparseMultivariateNormal PENALTY (usually 0.1)",
-                "  - UnivariateNormal"
+                "  - UnivariateNormal",
+                "  - NoLikelihood"
               ]
     progDesc' x = progDesc x <> f
 
