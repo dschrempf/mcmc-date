@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- |
 -- Module      :  Options
 -- Description :  Options for mcmc-date
@@ -265,20 +267,18 @@ modeP =
     f =
       footerDoc $
         Just $
-          vsep $
-            map
-              string
-              [ "Relaxed molecular clock model:",
-                "  - UncorrelatedGamma",
-                "  - UncorrelatedLogNormal",
-                "  - UncorrelatedWhiteNoise",
-                "  - AutocorrelatedLogNormal",
-                "Likelihood specification:",
-                "  - FullMultivariateNormal",
-                "  - SparseMultivariateNormal PENALTY (usually 0.1)",
-                "  - UnivariateNormal",
-                "  - NoLikelihood"
-              ]
+          vsep
+            [ "Relaxed molecular clock model:",
+              "  - UncorrelatedGamma",
+              "  - UncorrelatedLogNormal",
+              "  - UncorrelatedWhiteNoise",
+              "  - AutocorrelatedLogNormal",
+              "Likelihood specification:",
+              "  - FullMultivariateNormal",
+              "  - SparseMultivariateNormal PENALTY (usually 0.1)",
+              "  - UnivariateNormal",
+              "  - NoLikelihood"
+            ]
     progDesc' x = progDesc x <> f
 
 parseArgs :: IO Mode
