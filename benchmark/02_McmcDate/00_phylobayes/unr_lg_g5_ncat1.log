@@ -1,0 +1,28 @@
+
+phylobayes version 4.1
+
+init seed : 844761
+
+data file : ../../00_inp_data/mtCDNApri_aa.phy
+number of taxa : 7
+number of sites: 3331
+
+fast computation / high memory use 
+
+fixed tree topology: ../../00_inp_data/ur_mtCDNApri.trees
+
+branch lengths ~ iid gamma of mean mu and variance epsilon*mu^2
+mu ~ exponential of mean 0.1
+epsilon ~ exponential of mean 1
+
+site homogeneous model: free equilibrium frequencies (pi inferred from data)
+pi ~ uniform
+
+relative exchange rates:
+empirical (lg, Le and Gascuel 2008)
+
+rates ~ gamma of mean 1 and variance 1/alpha
+5 discrete categories (Yang 1994)
+alpha ~ exponential of mean 1
+
+

@@ -1,0 +1,28 @@
+	MeanLength                    	0	58.336	
+	MeanLength                    	0	95.351	
+	VarLength                     	0	75.612	
+	VarLength                     	0	97.469	
+	EnterPartial                  	2334	100	
+	OneBranchLengthPartial        	4118	41.8914	
+	OneBranchLengthPartial        	3220	92.2586	
+	LeavePartial                  	1206	100	
+	UpdateSumRateMode             	893	100	
+	ResampleRateModeAff           	4	100	
+	ResampleSub                   	1598	100	
+	ResampleLength                	0	100	
+	ResampleSub                   	1528	100	
+	SwitchModeIntegral            	17	0	
+	ResampleStat                  	8	34.472	
+	UpdateLogProbs                	190	100	
+	ResampleSub                   	1507	100	
+	GammaIntegral                 	51	30.501	
+	GammaIntegral                 	61	89.534	
+	GammaIntegral                 	52	98.913	
+	UpdateSumRateMode             	942	100	
+
+
+	stat inf count : 0
+	inf prob count : 0
+	sub overflow count : 0
+	sub max count : 0
+

@@ -1,0 +1,156 @@
+
+AAML in paml version 4.10.7, June 2023
+ns = 7  	ls = 516
+Reading sequences, sequential format..
+Reading seq # 1: human       Reading seq # 2: chimpanzee       Reading seq # 3: bonobo       Reading seq # 4: gorilla       Reading seq # 5: orangutan       Reading seq # 6: sumatran       Reading seq # 7: gibbon       
+Sequences read..
+
+516 site patterns read, 9993 sites
+Counting frequencies..
+
+		Are these a.a. sequences?
+
+      168 bytes for distance
+   165120 bytes for conP
+    20640 bytes for fhK
+  5000000 bytes for space
+
+TREE #  1
+(((1, (2, 3)), 4), (5, 6), 7);   MP score: 4574
+  2064000 bytes for conP, adjusted
+
+    0.019204    0.008103    0.048959    0.026243    0.022266    0.019964    0.057685    0.044875    0.035105    0.035745    0.091370    0.496284
+
+ntime & nrate & np:    11     0    12
+
+Bounds (np=12):
+   0.000004   0.000004   0.000004   0.000004   0.000004   0.000004   0.000004   0.000004   0.000004   0.000004   0.000004   0.020000
+  50.000000  50.000000  50.000000  50.000000  50.000000  50.000000  50.000000  50.000000  50.000000  50.000000  50.000000  49.000000
+
+np =    12
+lnL0 = -36372.586812
+
+
+Round 1a: Paras (1) (e=5)
+Iterating by ming2
+Initial: fx= 36372.586812
+x=  0.49628
+
+  1 h-m-p  0.0000 0.0060  79.7339 +++C  36370.248948  0 0.0006     9 | 0/1
+  2 h-m-p  1.6000 8.0000   0.0044 Y     36370.237757  0 0.7868    13
+
+    0.441773         0:00
+
+Round 1b: Blengths (11, e=5)
+	lnL0 =     -36370.237757
+	Cycle  1:  -36156.581656
+	Cycle  2:  -36149.948024
+	Cycle  3:  -36149.665632
+
+ 0:00
+
+
+Round 2a: Paras (1) (e=2.5)
+Iterating by ming2
+Initial: fx= 36149.665632
+x=  0.44177
+
+  1 h-m-p  0.0000 0.0085  49.7544 ++Y   36149.166843  0 0.0004    22 | 0/1
+  2 h-m-p  1.6000 8.0000   0.0003 Y     36149.166749  0 0.9130    26
+
+    0.422311         0:00
+
+Round 2b: Blengths (11, e=2.5)
+	lnL0 =     -36149.166749
+	Cycle  1:  -36149.119873
+
+ 0:00
+
+
+Round 3a: Paras (1) (e=0.625)
+Iterating by ming2
+Initial: fx= 36149.119873
+x=  0.42231
+
+  1 h-m-p  0.0001 0.1044   3.8530 +Y    36149.117229  0 0.0004    34 | 0/1
+  2 h-m-p  1.6000 8.0000   0.0000 Y     36149.117229  0 0.9644    38
+
+    0.420941         0:00
+
+Round 3b: Blengths (11, e=0.625)
+	lnL0 =     -36149.117229
+	Cycle  1:  -36149.114335
+
+ 0:00
+
+
+Round 4a: Paras (1) (e=0.001)
+Iterating by ming2
+Initial: fx= 36149.114335
+x=  0.42094
+
+  1 h-m-p  0.0004 0.7851   0.5107 C     36149.114289  0 0.0004    45
+
+    0.420762         0:00
+
+Round 4b: Blengths (11, e=0.001)
+	lnL0 =     -36149.114289
+	Cycle  1:  -36149.114160
+
+ 0:00
+
+
+Round 5a: Paras (1) (e=0.00025)
+Iterating by ming2
+Initial: fx= 36149.114160
+x=  0.42076
+
+  1 h-m-p  0.0019 3.8875   0.1031 Y     36149.114158  0 0.0004    52
+
+    0.420725         0:00
+
+Round 5b: Blengths (11, e=0.00025)
+	lnL0 =     -36149.114158
+	Cycle  1:  -36149.114154
+
+ 0:00
+
+
+Round 6a: Paras (1) (e=6.25e-05)
+Iterating by ming2
+Initial: fx= 36149.114154
+x=  0.42073
+
+  1 h-m-p  0.0040 8.0000   0.0170 -C    36149.114154  0 0.0004    60
+
+    0.420719         0:00
+
+Round 6b: Blengths (11, e=6.25e-05)
+	lnL0 =     -36149.114154
+	Cycle  1:  -36149.114154
+
+ 0:00
+
+
+Round 7a: Paras (1) (e=1.5625e-05)
+Iterating by ming2
+Initial: fx= 36149.114154
+x=  0.42072
+
+  1 h-m-p  0.0040 8.0000   0.0028 -C    36149.114154  0 0.0003    68
+
+    0.420718         0:00
+
+Round 7b: Blengths (11, e=1.5625e-05)
+	lnL0 =     -36149.114154
+	Cycle  1:  -36149.114154
+
+ 0:00
+
+lnL  = -36149.114154
+Out..
+lnL  = -36149.114154
+71 lfun, 0 eigenQcodon, 5255 P(t)
+Calculating SE's
+
+Time used:  0:00
