@@ -19,12 +19,14 @@ cabal build
 
 Verify the functionality of `mcmc-date`:
 ```sh
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/
+
 cabal run mcmc-date-run
 ```
 
 ## (Optional) Inferring posterior distribution of species tree branch lengths
 
->**Optional**: Should one choose to bypass this step, the file `65genes_combined.treelist.tar.gz` is available for download from [FigShare](https://doi.org/10.6084/m9.figshare.23899299.). Once downloaded, extract the file into the directory containing this tutorial. Subsequent commands will reference the path to the file `65genes_combined.treelist`; updates to the path might be necessary.
+>**Optional**: Should one choose to bypass this step, the file `65genes_combined.treelist.tar.gz` is available for download from [FigShare](https://doi.org/10.6084/m9.figshare.23899299.). Once downloaded, extract the file into the `data` directory. Subsequent commands will reference the path to the file `65genes_combined.treelist`; updates to the path might be necessary.
 
 In the `data` folder, one finds the alignment [`65genes_bac_and_organelles.phylip`](data/65genes_bac_and_organelles.phylip) and the corresponding inferred ML species tree [`1007_mito_plastid.tree`](data/1007_mito_plastid.tree). In order to date the tree, first we need to infer the posterior distribution of branch lengths of the supplied species tree topology. For this purpose, we will use [Phylobayes-MPI](https://github.com/bayesiancook/pbmpi) which we instruct to keep the topology fixed while sampling branch lengths under the defined model.
 
@@ -32,6 +34,11 @@ First, if the tree is rooted, we have to unroot it using [ete3](http://etetoolki
 
 Now we can start 2 chains of Phylobayes-MPI with the following parameters (using LG exchangeability with only one category and G4):
 ```sh
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/
+
+mkdir pb
+cd pb
+
 mpirun -np 96 pb_mpi -lg -ncat 1 -dgam 4 \\
 		     -d 65genes_bac_and_organelles.phylip \\
 		     -T 1007_mito_plastid.tree.unrooted \\
@@ -46,13 +53,17 @@ After observing sufficient convergence, as described in Phylobayes MPI's tutoria
 
 We can easily concatenate the treelists (containing the species tree branch length posterior distribution) that we need for the mcmc-date analysis:
 ```sh
-paste -d "\n" 65genes_chain1.treelist 65genes_chain2.treelist > 65genes_combined.treelist
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/pb
+
+paste -d "\n" 65genes_chain1.treelist 65genes_chain2.treelist > ../data/65genes_combined.treelist
 ```
 
 ## Starting mcmc-date analysis
 
 Create a directory containing the forthcoming `mcmc-date` analyses:
 ```sh
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/
+
 mkdir analyses
 cd analyses
 ```
@@ -62,18 +73,22 @@ cd analyses
 Each analysis will use the same input rooted tree and posterior branch length distribution, hence it suffices to prepare them once and use them in the subsequent runs.
 
 ```sh
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/analyses
+
 cabal run -- mcmc-date-run prepare --analysis-name "cyan28" \\
 				   --rooted-tree "../data/1007_mito_plastid.tree" \\
-				   --trees "../65genes_combined.treelist" \\
+				   --trees "../data/65genes_combined.treelist" \\
 				   --likelihood-spec "SparseMultivariateNormal 0.1"
 cabal run -- mcmc-date-run prepare --analysis-name "cyan28_prioronly" \\
 				   --rooted-tree "../data/1007_mito_plastid.tree" \\
-				   --trees "../65genes_combined.treelist" \\
+				   --trees "../data/65genes_combined.treelist" \\
 				   --likelihood-spec "NoLikelihood"
 ```
 
 For `mcmc-date`'s `analyze` script to work properly, the analysis results must be in directories with names beginning with `results_`. Let us create these directories and symlink the corresponding files from the preparation step:
 ```sh
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/analyses
+
 mkdir results_Fossils_cyan28
 mkdir results_Fossils_cyan28_prioronly
 mkdir results_XGBoost_cyan28
@@ -95,25 +110,27 @@ done
 The file [`data/Fossils.csv`](data/Fossils.csv) contains solely fossil calibrations, without aerobicity data.
 
 ```sh
-cd results_Fossils_cyan28
-cabal run -- mcmc-date-run run  --analysis-name "Fossils_cyan28" \\
-				--calibrations "csv ../data/Fossils.csv" \\
-				--ignore-problematic-calibrations \\
-				--braces ../data/braces.json \\
-				--relaxed-molecular-clock "UncorrelatedGamma" \\
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/analyses/results_Fossils_cyan28
+
+cabal run -- mcmc-date-run run  --analysis-name "Fossils_cyan28" \
+				--preparation-name "cyan28" \ 
+				--calibrations "csv ../../data/Fossils.csv" \
+				--ignore-problematic-calibrations \
+				--braces ../../data/braces.json \
+				--relaxed-molecular-clock "UncorrelatedGamma" \
 				--likelihood-spec "SparseMultivariateNormal 0.1"
-cd ..
 ```
 
 ```sh
-cd results_Fossils_cyan28_prioronly
-cabal run -- mcmc-date-run run  --analysis-name "Fossils_cyan28_prioronly" \\
-				--calibrations "csv ../data/Fossils.csv" \\
-				--ignore-problematic-calibrations \\
-				--braces ../data/braces.json \\
-				--relaxed-molecular-clock "UncorrelatedGamma" \\
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/analyses/results_Fossils_cyan28_prioronly
+
+cabal run -- mcmc-date-run run  --analysis-name "Fossils_cyan28_prioronly" \
+				--preparation-name "cyan28_prioronly" \ 
+				--calibrations "csv ../../data/Fossils.csv" \
+				--ignore-problematic-calibrations \
+				--braces ../../data/braces.json \
+				--relaxed-molecular-clock "UncorrelatedGamma" \
 				--likelihood-spec "NoLikelihood"
-cd ..
 ```
 
 ### XGBoost
@@ -121,32 +138,36 @@ cd ..
 The file [`data/XGBoost.csv`](data/XGBoost.csv) contains both fossil and inferred aerobicity information.
 
 ```sh
-cd results_XGBoost_cyan28
-cabal run -- mcmc-date-run run  --analysis-name "XGBoost_cyan28" \\
-				--calibrations "csv ../data/XGBoost.csv" \\
-				--ignore-problematic-calibrations \\
-				--braces ../data/braces.json \\
-				--relaxed-molecular-clock "UncorrelatedGamma" \\
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/analyses/results_XGBoost_cyan28
+
+cabal run -- mcmc-date-run run  --analysis-name "XGBoost_cyan28" \
+				--preparation-name "cyan28" \ 
+				--calibrations "csv ../../data/XGBoost.csv" \
+				--ignore-problematic-calibrations \
+				--braces ../../data/braces.json \
+				--relaxed-molecular-clock "UncorrelatedGamma" \
 				--likelihood-spec "SparseMultivariateNormal 0.1"
-cd ..
 ```
 
 ```sh
-cd results_XGBoost_cyan28_prioronly
-cabal run -- mcmc-date-run run  --analysis-name "XGBoost_cyan28_prioronly" \\
-				--calibrations "csv ../data/XGBoost.csv" \\
-				--ignore-problematic-calibrations \\
-				--braces ../data/braces.json \\
-				--relaxed-molecular-clock "UncorrelatedGamma" \\
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/analyses/results_XGBoost_cyan28_prioronly
+
+cabal run -- mcmc-date-run run  --analysis-name "XGBoost_cyan28_prioronly" \
+				--preparation-name "cyan28_prioronly" \ 
+				--calibrations "csv ../../data/XGBoost.csv" \
+				--ignore-problematic-calibrations \
+				--braces ../../data/braces.json \
+				--relaxed-molecular-clock "UncorrelatedGamma" \
 				--likelihood-spec "NoLikelihood"
-cd ..
 ```
 
-## Analyse results
+## Analyze results
 
 The `analyze` script under the `scripts` directory will go through all `results_*` directory's content and create summary statistics as described in [mcmc-date's results tutorial](https://github.com/dschrempf/mcmc-date/blob/master/tutorial/results.pdf)
 ```sh
-ln -s ../scripts/analyze
+# pwd: mcmc-date/tutorial_bacterial_rooting_goe/analyses
+
+ln -s ../../scripts/analyze
 ./analyze
 ```
 
