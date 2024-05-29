@@ -12,7 +12,9 @@ header-includes:
 ---
 EOF
 
-sed 's/A geological timescale for bacterial evolution and oxygen adaptation -- an mcmc-date tutorial/Introduction/' tutorial.md | sed 's/^##/#/' >> tutorialtopdf.md
+sed 's/A geological timescale for bacterial evolution and oxygen adaptation -- an mcmc-date tutorial/Introduction/' tutorial_goe.md | sed 's/^##/#/' >> tutorialtopdf.md
 
-pandoc -i tutorialtopdf.md -o tutorial.pdf --listings -V colorlinks=true -V linkcolor=blue -V urlcolor=red -V toccolor=gray
+pandoc -i tutorialtopdf.md -o tutorial_goe.pdf --listings -V colorlinks=true -V linkcolor=blue -V urlcolor=red -V toccolor=gray
+
+rm tutorialtopdf.md
 
