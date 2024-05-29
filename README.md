@@ -10,7 +10,7 @@ For documentation, please see the [McmcDate tutorial](tutorial/tutorial.pdf).
 
 ## Contributors
 
-Maintainer of this repository is Dominik Schrempf ([@dschrempf](https://github.com/dscrempf))
+Maintainer of this repository is Dominik Schrempf ([@dschrempf](https://github.com/dschrempf))
 
 Contributions were made by:
 - [`bench/04_small_simul_compare`](bench/04_small_simul_compare) was authored by Sandra Álvarez-Carretero ([@sabifo4](https://github.com/sabifo4))
