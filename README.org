@@ -10,8 +10,8 @@ For documentation, please see the [[file:tutorial/tutorial.pdf][McmcDate tutoria
 
 ** Contributors
 
-Maintainer of this repository is Dominik Schrempf ( @dschrempf )
+Maintainer of this repository is Dominik Schrempf ([[https://github.com/dschrempf][@dschrempf]])
 
 Contributions were made by:
-- [[bench/04_small_simul_compare][bench/04_small_simul_compare]] was authored by Sandra Álvarez-Carretero ( @sabifo4 ) 
-- [[tutorial/goe][tutorial/goe]] was authored by Lénárd L. Szánthó ( @drenal )
+- [[bench/04_small_simul_compare][bench/04_small_simul_compare]] was authored by Sandra Álvarez-Carretero ([[https://github.com/sabifo4][@sabifo4]]) 
+- [[tutorial/goe][tutorial/goe]] was authored by Lénárd L. Szánthó ([[https://github.com/drenal][@drenal]])
