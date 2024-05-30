@@ -1,3 +1,5 @@
+* McmcDate
+
 [[https://github.com/dschrempf/mcmc-date][McmcDate]] can date a phylogenetic tree with constraints. That is, it can estimate
 the ages of the ancestral nodes of a phylogenetic tree with node age
 calibrations, node order constraints, and node braces. McmcDate is fast because
@@ -6,3 +8,12 @@ distribution.
 
 For documentation, please see the [[file:tutorial/main/tutorial.pdf][McmcDate tutorial]].
 For comparison with MCMCtree, please see the [[file:bench/comparison_with_mcmctree/README.md][MCMCtree vs McmcDate benchmark]].
+
+** Contributors
+
+Maintainer of this repository is Dominik Schrempf ([[https://github.com/dschrempf][@dschrempf]])
+
+Contributions were made by:
+- [[file:bench/comparison_with_mcmctree][bench/comparison_with_mcmctree]] was authored by Sandra Álvarez-Carretero ([[https://github.com/sabifo4][@sabifo4]]) 
+- [[file:tutorial/goe][tutorial/goe]] was authored by Lénárd L. Szánthó ([[https://github.com/drenal][@drenal]])
+
