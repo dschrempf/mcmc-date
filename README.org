@@ -13,5 +13,5 @@ For documentation, please see the [[file:tutorial/tutorial.pdf][McmcDate tutoria
 Maintainer of this repository is Dominik Schrempf ([[https://github.com/dschrempf][@dschrempf]])
 
 Contributions were made by:
-- [[bench/04_small_simul_compare][bench/04_small_simul_compare]] was authored by Sandra Álvarez-Carretero ([[https://github.com/sabifo4][@sabifo4]]) 
-- [[tutorial/goe][tutorial/goe]] was authored by Lénárd L. Szánthó ([[https://github.com/drenal][@drenal]])
+- [[file:bench/comparison_with_mcmctree][bench/comparison_with_mcmctree]] was authored by Sandra Álvarez-Carretero ([[https://github.com/sabifo4][@sabifo4]]) 
+- [[file:tutorial/goe][tutorial/goe]] was authored by Lénárd L. Szánthó ([[https://github.com/drenal][@drenal]])
