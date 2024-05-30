@@ -1,0 +1,23 @@
+[
+  {
+    "braceDataName": "Mrca(RedAlgae,Arabidopsis)",
+    "braceDataNodes": [["mitoRedAlgae", "mitoArabidopsis"], ["chloroRedAlgae", "chloroArabidopsis"]
+    ],
+    "braceDataStandardDeviation": 0.0001
+  },
+  {
+    "braceDataName": "Mrca(Chlorophyta,Arabidopsis)",
+    "braceDataNodes": [["mitoChlorophyta", "mitoArabidopsis"], ["chloroChlorophyta", "chloroArabidopsis"]],
+    "braceDataStandardDeviation": 0.0001
+  },
+  {
+    "braceDataName": "Mrca(Bryophyte,Arabidopsis)",
+    "braceDataNodes": [["mitoBryophyte", "mitoArabidopsis"], ["chloroBryophyte", "chloroArabidopsis"]],
+    "braceDataStandardDeviation": 0.0001
+  },
+  {
+    "braceDataName": "Mrca(Lycophyte,Arabidopsis)",
+    "braceDataNodes": [["mitoLycophyte", "mitoArabidopsis"], ["chloroLycophyte", "chloroArabidopsis"]],
+    "braceDataStandardDeviation": 0.0001
+  }
+]
