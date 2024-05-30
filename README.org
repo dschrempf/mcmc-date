@@ -6,14 +6,12 @@ calibrations, node order constraints, and node braces. McmcDate is fast because
 it approximates the phylogenetic likelihood with a multivariate normal
 distribution.
 
-For documentation, please see the [[file:tutorial/main/tutorial.pdf][McmcDate tutorial]].
-For comparison with MCMCtree, please see the [[file:bench/comparison_with_mcmctree/README.md][MCMCtree vs McmcDate benchmark]].
+- For documentation, please see the [[file:tutorial/main/tutorial.pdf][McmcDate tutorial]].
+- For comparison with MCMCtree, please see the [[file:bench/comparison_with_mcmctree/README.md][MCMCtree vs McmcDate benchmark]].
 
 ** Contributors
-
-Maintainer of this repository is Dominik Schrempf ([[https://github.com/dschrempf][@dschrempf]])
+McmcDate is maintained by Dominik Schrempf ([[https://github.com/dschrempf][@dschrempf]]).
 
 Contributions were made by:
-- [[file:bench/comparison_with_mcmctree][bench/comparison_with_mcmctree]] was authored by Sandra Álvarez-Carretero ([[https://github.com/sabifo4][@sabifo4]]) 
-- [[file:tutorial/goe][tutorial/goe]] was authored by Lénárd L. Szánthó ([[https://github.com/drenal][@drenal]])
-
+- [[file:bench/comparison_with_mcmctree][bench/comparison_with_mcmctree]] was authored by Sandra Álvarez-Carretero ([[https://github.com/sabifo4][@sabifo4]]).
+- [[file:tutorial/goe][tutorial/goe]] was authored by Lénárd L. Szánthó ([[https://github.com/drenal][@drenal]]).

@@ -1,4 +1,4 @@
-# A geological timescale for bacterial evolution and oxygen adaptation -- an mcmc-date tutorial
+# A geological timescale for bacterial evolution and oxygen adaptation -- an McmcDate tutorial
 
 Read the tutorial [here](tutorial_goe.md) or download the [pdf version](tutorial_goe.pdf)
 
