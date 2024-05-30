@@ -4,6 +4,6 @@ calibrations, node order constraints, and node braces. McmcDate is fast because
 it approximates the phylogenetic likelihood with a multivariate normal
 distribution.
 
-For documentation, please see the [McmcDate tutorial](tutorial/tutorial.pdf).
+For documentation, please see the [McmcDate tutorial](tutorial/main/tutorial.pdf).
 
 For comparison with MCMCtree, please see the [MCMCtree vs McmcDate benchmark](bench/comparison_with_mcmctree/README.md).
