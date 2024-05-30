@@ -125,7 +125,7 @@ codeml *ctl > log.txt
 cd ../
 ```
 
-The branch lengths, the gradient, and the Hessian are stored in output file `rst2`, which will rename as `in.BV`:
+The branch lengths, the gradient, and the Hessian are stored in output file `rst2`, which we will rename as `in.BV`:
 
 ```sh
 ## Run from `00_CODEML`
@@ -142,7 +142,7 @@ rm out* r* tmp* SeedUsed lnf
 <summary><b>TIPS FOR ANALYSES WITH PARTITIONED DATASETS</b></summary>
 <br>
 
-<i>If you were analysing a partitioned dataset, you would have obtained one `rst2` for each alignment block (i.e., `CODEML` would have been run independently for each alignment block). In such case, you would have needed to concatenate the content of the `rst2` files in a unique file, the so-called `in.BV` file. Note that these `rst2` files must be appended in the same order as they appear in the partitioned sequence file (i.e., `rst2` file output when reading the first alignment block will be first, then the `rst2` output file generated for the second alignment block will be second, etc.).</i>
+<i>If you were analysing a partitioned dataset, you would have obtained one `rst2` for each alignment block (i.e., `CODEML` would have been run independently for each alignment block). In such case, you would have needed to concatenate the content of the `rst2` files in a unique file, the so-called `in.BV` file. Note that these `rst2` files should be appended in the same order as they appear in the partitioned sequence file to generate the `in.BV` file (i.e., `rst2` file output when reading the first alignment block will be first, then the `rst2` output file generated for the second alignment block will be second, etc.).</i>
 
 </details>
 <br>
@@ -208,7 +208,7 @@ sed -i 's/lg\.dat/\.\.\/lg\.dat/' 01_MCMCtree/01_posterior/ILN/$i/mcmctree_$i.ct
 done
 ```
 
-Now, we can run `MCMCtree`! You can either run it on your PC or decide whether you want to prepare a job array to run these analyses on a cluster:
+Now, we can run `MCMCtree`! You can either run it on your PC or decide whether you want to prepare a job array to run these analyses on an HPC cluster:
 
 ```sh
 ## Run from `01_PAML`
@@ -531,7 +531,6 @@ cd ../../02_McmcDate
 # Create directory `00_phylobayes` from `01_McmcDate`
 mkdir 00_phylobayes
 cd 00_phylobayes
-#pb -d ../../00_inp_data/mtCDNApri.phy -T ../../00_inp_data/ur_mtCDNApri.trees -x 1000 10 -ncat 1 -gtr -dgam 5 "unr_gtr_g5_ncat1"
 pb -d ../../00_inp_data/mtCDNApri_aa.phy -T ../../00_inp_data/ur_mtCDNApri.trees -x 1000 10 -ncat 1 -lg -dgam 5 "unr_lg_g5_ncat1"
 ```
 
@@ -607,7 +606,7 @@ mkdir -p analyses/mitcdnapri
 
 ##### How to run `McmcDate`
 
-We will run the next commands **within the `mcmc-date` GitHub repository** that we have previously cloned and copy the [`data` directory](02_McmcDate/01_McmcDate/data) and the [`analysis.conf`](02_McmcDate/01_McmcDate/analysis.conf) file that we have already prepared. Once you have these files in the `analyses/mitcdnapri` directory within `mcmc-date`, please run the following commands:
+We will run the next commands **within the `mcmc-date` GitHub repository** that we have previously cloned and copy there the [`data` directory](02_McmcDate/01_McmcDate/data) and the [`analysis.conf`](02_McmcDate/01_McmcDate/analysis.conf) file that we have just prepared. Once you have these files in the `analyses/mitcdnapri` directory within `mcmc-date`, please run the following commands:
 
 ```sh
 ## Run rom `mcmc-date/analyses`
@@ -640,7 +639,7 @@ done
 analyze
 ```
 
-We have transferred the results inside directory [`01_McmcDate`](02_McmcDate/01_McmcDate/) (i.e., [`results-calibrations-ulognormal-prior`](02_McmcDate/01_McmcDate/results-calibrations-ulognormal-prior/) and [`results-calibrations-ulognormal-sparse`](02_McmcDate/01_McmcDate/results-calibrations-ulognormal-sparse/)).
+We have transferred the results files inside directory [`01_McmcDate`](02_McmcDate/01_McmcDate/) (i.e., [`results-calibrations-ulognormal-prior`](02_McmcDate/01_McmcDate/results-calibrations-ulognormal-prior/) and [`results-calibrations-ulognormal-sparse`](02_McmcDate/01_McmcDate/results-calibrations-ulognormal-sparse/)).
 
 Now that we have our results with both `McmcDate` and `MCMCtree`, we can start our benchmarking!
 
@@ -651,20 +650,20 @@ Now that we have our results with both `McmcDate` and `MCMCtree`, we can start o
 
 In order to compare the time densities inferred by these two programs, we have used the in-house R script [`Compare_McmcDate_MCMCtree.R`](03_compare_estimates/scripts/Compare_McmcDate_MCMCtree.R), which heavily relies on the in-house functions written in scripts [`Functions.R`](03_compare_estimates/scripts/Functions.R).
 
-This script, will carry out the following tasks:
+This script will carry out the following tasks:
 
-* Format the `McmcDate` output files so that it is easier to parse as well as to visualise it in `Tracer`. E.g., [`post_samples.tsv`](03_compare_estimates/post_samples.tsv) (equivalent to the `mcmc.txt` files output by `MCMCtree` with the samples collected when sampling from the posterior) and [`prior_samples.tsv`](03_compare_estimates/prior_samples.tsv) (equivalent to the `mcmc.txt` files output by `MCMCtree` with the samples collected when sampling from the prior) .
+* Format the `McmcDate` output files so that it is easier to parse them and visualise them in `Tracer`. E.g., [`post_samples.tsv`](03_compare_estimates/post_samples.tsv) (equivalent to the `mcmc.txt` files output by `MCMCtree` with the samples collected when sampling from the posterior) and [`prior_samples.tsv`](03_compare_estimates/prior_samples.tsv) (equivalent to the `mcmc.txt` files output by `MCMCtree` with the samples collected when sampling from the prior).
 * Match the node labels given by `McmcDate` to those given by `MCMCtree` to the same nodes.
-* Output a comparison table with the equivalent node labels, the two taxa that lead to the calibrated MRCA, and metrics such as standard errors (S.E.s), estimated mean divergence times, and quantiles. E.g., [`compare_divtimes.tsv`](03_compare_estimates/out/compare_divtimes.tsv)
-* Output plots in which the densities specified by the user can be compared in the same graph for both programs. E.g., check all PDF files inside [`out`](03_compare_estimates/out)
+* Output a comparison table with the equivalent node labels, the two taxa that lead to the calibrated MRCA, and metrics such as standard errors (S.E.s), estimated mean divergence times, and quantiles. E.g., [`compare_divtimes.tsv`](03_compare_estimates/out/compare_divtimes.tsv).
+* Output plots in which the densities specified by the user can be compared in the same graph for both programs. E.g., check all PDF files inside [`out`](03_compare_estimates/out).
 
 ### Tables and Figures
 
-Below, you can find a snapshot with relevant metrics for each comparison as well as the corresponding plot.
+Below, you can find a summary with relevant metrics for each comparison as well as the corresponding plots.
 
 #### Prior - `McmcDate` vs `MCMCtree`
 
-> **Table 1**: Comparison of mean divergence times estimated by `McmcDate` and `MCMCtree` for the calibrated nodes when sampling from the **prior**. The S.E. is included as well as the matching node labels given by each program.
+> **Table 1**: Comparison of mean divergence times estimated by `McmcDate` and `MCMCtree` for the calibrated nodes when sampling from the **prior**. The S.E.s and the matching node labels given by each program are included.
 
 | Calibration | McmcDate (node labels) | MCMCtree (node labels) | S.E. (McmcDate vs MCMCtree ) | McmcDate time estimates | MCMCtree time estimates | Calibration density used |
 |---|---|---|---|---|---|---|
@@ -686,7 +685,7 @@ Below, you can find a snapshot with relevant metrics for each comparison as well
 
 #### Posterior (ILN) - `McmcDate` vs `MCMCtree`
 
-> **Table 2**: Comparison of mean divergence times estimated by `McmcDate` and `MCMCtree` for the calibrated nodes when sampling from the **posterior** under the independent-rates log-normal distribution. The S.E. is included as well as the matching node labels given by each program.
+> **Table 2**: Comparison of mean divergence times estimated by `McmcDate` and `MCMCtree` for the calibrated nodes when sampling from the **posterior** under the independent-rates log-normal distribution. The S.E.s and the matching node labels given by each program are included.
 
 | Calibration | McmcDate (node labels) | MCMCtree (node labels) | S.E. (McmcDate vs MCMCtree ) | McmcDate time estimates | MCMCtree time estimates | prior |
 |---|---|---|---|---|---|---|
@@ -706,13 +705,13 @@ Below, you can find a snapshot with relevant metrics for each comparison as well
 
 #### Running time
 
-> **Table 3**: Benchmarking the running time used by timetree inference with `PAML` programs and `McmcDate`.
+> **Table 3**: Benchmarking the running time when using `PAML` and `McmcDate` for timetree inference.
 
-| Program | Step 1 | Step 2 (prior) | Step 3 (posterior) | Total time (prior) |
+| Program | Step 1 | Step 2 (prior) | Step 3 (posterior) | Total time |
 |---|---|---|---|---|
-| PAML | 0s<br>(CODEML, ML) | run1: 0:25<br>run2:0:31<br>run3: 0:34<br>run4: 0:31<br>run5: 0:28<br>run6: 0:26<br>Average: ~29s (or 0.008h) per chain<br>(MCMCtree, Bayesian)  | run1: 1:59<br>run2: 2:09<br>run3: 2:14<br>run4: 2:02<br>run5: 1:55<br>run6: 1:56<br>Average: ~123s (or 0.034h) per chain<br>(MCMCtree, Bayesian) | ~0.042h |
+| PAML | 0s<br>(CODEML, Maximum Likelihood) | run1: 0:25<br>run2:0:31<br>run3: 0:34<br>run4: 0:31<br>run5: 0:28<br>run6: 0:26<br>Average: ~29s (or 0.008h) per chain<br>(MCMCtree, Bayesian)  | run1: 1:59<br>run2: 2:09<br>run3: 2:14<br>run4: 2:02<br>run5: 1:55<br>run6: 1:56<br>Average: ~123s (or 0.034h) per chain<br>(MCMCtree, Bayesian) | ~0.042h |
 | McmcDate | ~5h<br>(PhyloBayes, Bayesian) | run1: 02:33<br>run2: 02:29<br>run3: 02:39<br>run4: 01:47<br>run5: 01:47<br>run6: 01:49<br>Average: ~131s (or 0.036h) per chain<br>(McmcDate, Bayesian) | run1: 03:07<br>run2: 03:04<br>run3: 02:29<br>run4: 02:02<br>run5: 02:17<br>run6: 02:23<br>Average: ~154s (or 0.043h) per chain<br>(McmcDate, Bayesian) | ~5.08h |
 
-While `MCMCtree` is faster with datasets with few site patterns, analysing large datasets with many taxa and many site patterns becomes challenging, which is harder when computing time is limited. E.g., some HPC clusters may have limitations regarding the wall time such as a few days or a week, which may not be enough for a chain to reach convergence. Common practice is to run multiple independent chains in parallel (e.g., submit a job array to an HPC cluster) with the aim to increase the amount of samples collected within a limited amount of time (e.g., the largest subtree analysed by [Álvarez-Carretero et al. (2022)](https://www.nature.com/articles/s41586-021-04341-1) had 691 taxa, and only 11,096 samples were collected when running 32 independent chains during a wall time limited to 10 days). Checkpointing is also highly encouraged under this scenario.
+While `MCMCtree` is faster when analysing datasets with few site patterns, analysing large datasets with many taxa and many site patterns can become challenging even when using the approximate likelihood calculation [(dos Reis and Yang, 2011)](https://academic.oup.com/mbe/article/28/7/2161/1051613), which is harder when computational resources are also limited. E.g., some HPC clusters may have restrictions regarding the wall time (e.g., jobs can only run for few days, a week, 10 days, etc.), which may not be enough for Bayesian inference (i.e., chains may not convergence within such short periods of time). Common practice is to run multiple independent chains in parallel (e.g., submit a job array to an HPC cluster) with the aim to increase the amount of samples collected when there are time limitations for running such analyses. For instance, the largest subtree analysed by [Álvarez-Carretero et al. (2022)](https://www.nature.com/articles/s41586-021-04341-1) had 691 taxa and 316,595 bp across 5 partitions (see their Supp. Mat., Tables S6 and S13), and only 11,096 samples were collected when running 32 independent chains during a wall time limited to 10 days. Checkpointing is also highly encouraged under this scenario.
 
-As you can see in Table 3 above, phylogeny inference with `PhyloBayes` seems to be the most-time consuming step for `McmcDate`. Nevertheless, once the posterior tree density has been estimated, timetree inference with `McmcDate` is much faster than with `MCMCtree` with phylogenies with hundreds and thousands of taxa. We tried to infer a timetree with an assembled 1,0007-taxa mitoplastid amino acid dataset for which a timetree had already been estimated by `McmcDate`. Nevertheless, after running `MCMCtree` for a month, only a total of 1,260 samples were collected by 16 independent chains (~78 samples per chain), which was not enough for to reach convergence. It is in such scenarios when `McmcDate` is best to use!
+As you can see above (Table 3), phylogeny inference with `PhyloBayes` seems to be the most-time consuming step for `McmcDate`. Nevertheless, once the posterior tree density has been estimated, timetree inference with `McmcDate` is much faster than with `MCMCtree` when analysing phylogenies with hundreds to thousands of taxa. We tried to infer a timetree with a 1,007-taxa mitoplastid amino acid dataset for which a timetree had already been estimated by `McmcDate`. Nevertheless, after running 16 independent chains with `MCMCtree` for a month, only a total of 1,260 samples were collected (~78 samples per chain), which was not enough to reach convergence. It is in such scenarios when `McmcDate` is indeed best to use!
