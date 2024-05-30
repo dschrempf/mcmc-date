@@ -6,3 +6,4 @@ distribution.
 
 For documentation, please see the [McmcDate tutorial](tutorial/main/tutorial.pdf).
 
+For comparison with MCMCtree, please see the [MCMCtree vs McmcDate benchmark](bench/comparison_with_mcmctree/README.md).

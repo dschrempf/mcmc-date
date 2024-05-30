@@ -1,0 +1,4 @@
+name_calib	McmcDate	MCMCtree	leaf1	leaf2	SE_MDvsMT_CLK	SE_MDvsMT_ILN	MD_CLK-mean_t	MD_CLK-q2.5%	MD_CLK-q97.5%	MT_CLK-mean_t	MT_CLK-q2.5%	MT_CLK-q97.5%	MD_ILN-mean_t	MD_ILN-q2.5%	MD_ILN-q97.5%	MT_ILN-mean_t	MT_ILN-q2.5%	MT_ILN-q97.5%	prior
+root	0	8	gibbon	sumatran	27.779	0.132	19.04	12.805	29.204	58.326	16.21	100.34	17.213	13.52	22.49	17.4	14.78	20.48	U(1.0)
+cb-h	3	11	chimpanzee	human	0.081	0.806	6.886	5.41	8.488	7	6	8	6.2	5.298	7.792	7.34	6.3	8	B(.06,.08)
+hcbg-os	1	9	sumatran	gorilla	0.018	0.17	14.012	11.657	16.502	13.986	12	16	14.961	12.25	16.623	15.201	13.29	16.14	B(.12,.16)
