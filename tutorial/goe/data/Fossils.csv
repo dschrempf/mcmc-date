@@ -1,0 +1,17 @@
+Name,LeafA,LeafB,YoungAge,YoungProbabilityMass,OldAge,OldProbabilityMass
+LBCA,Dorm3,ProtG29,3225,1e-5,4520,1e-5
+Oxyphotobacteria (total group),Cyan20,Cyan7,3225,1e-5,4520,1e-5
+Oxyphotobacteria (crown),Cyan20,Cyan40,2013.6,5e-3,4520,5e-3
+HeterocystousAkineteFormingCyanobacteria,Cyan45,Cyan10,996,5e-3,3261,5e-3
+Chromatiaceae (total group),ProtG75,ProtG45,1631,5e-3,4520,1e-5
+Mito (total group),mitoInsect,ProtA60,1030,5e-3,4520,1e-5
+Mito (crown),mitoInsect,mitoBryophyte,1030,5e-3,1879.6,1e-5
+Plastids (total group),Cyan28,chloroRedAlgae,1030,1e-5,4520,1e-5
+Plastids (crown),chloroArabidopsis,chloroRedAlgae,1030,5e-3,1879.6,1e-5
+Chlamydia/Chlamydiae/Anoxychlamydiales (crown),Verr6,Aure2,1030,5e-3,4520,1e-5
+Viridiplantae/Chloroplastida: Chlorophyta - Streptptophyta,mitoChlorophyta,mitoArabidopsis,940.4,1e-5,1879.6,1e-5
+Opisthokonta (crown),mitoFungi,mitoInsect,879,1e-5,1879.6,1e-5
+Protostomia (crown),mitoAnnelida,mitoInsect,532,1e-5,590.8,5e-3
+Mollusca - Annelida,mitoMollusc,mitoAnnelida,532,1e-5,590.8,5e-3
+Mandibula: Insect - Chelicerate,mitoInsect,mitoChelicerate,514,1e-5,543,5e-3
+Embryophyta: Bryophyta - Tracheophyta,mitoBryophyte,mitoArabidopsis,430.54,1e-5,515.5,1e-5
