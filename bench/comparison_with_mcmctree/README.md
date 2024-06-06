@@ -657,6 +657,13 @@ This script will carry out the following tasks:
 * Output a comparison table with the equivalent node labels, the two taxa that lead to the calibrated MRCA, and metrics such as standard errors (S.E.s), estimated mean divergence times, and quantiles. E.g., [`compare_divtimes.tsv`](03_compare_estimates/out/compare_divtimes.tsv).
 * Output plots in which the densities specified by the user can be compared in the same graph for both programs. E.g., check all PDF files inside [`out`](03_compare_estimates/out).
 
+Note that all analyses were performed on a Lenovo ThinkPad X1 Carbon Gen 9 with the following specs:
+
+* Processor: 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz | 4 cores, 8 logical processors
+* RAM: 32Gb
+* OS: Microsoft Windows 11 Pro, but all analyses were ran under a Windows Subsystem for Linux (WSL).
+  * Details about the WS usedL: Ubuntu 22.04.4 LTS
+
 ### Tables and Figures
 
 Below, you can find a summary with relevant metrics for each comparison as well as the corresponding plots.
@@ -715,3 +722,15 @@ Below, you can find a summary with relevant metrics for each comparison as well 
 While `MCMCtree` is faster when analysing datasets with few site patterns, analysing large datasets with many taxa and many site patterns can become challenging even when using the approximate likelihood calculation [(dos Reis and Yang, 2011)](https://academic.oup.com/mbe/article/28/7/2161/1051613), which is harder when computational resources are also limited. E.g., some HPC clusters may have restrictions regarding the wall time (e.g., jobs can only run for few days, a week, 10 days, etc.), which may not be enough for Bayesian inference (i.e., chains may not convergence within such short periods of time). Common practice is to run multiple independent chains in parallel (e.g., submit a job array to an HPC cluster) with the aim to increase the amount of samples collected when there are time limitations for running such analyses. For instance, the largest subtree analysed by [Álvarez-Carretero et al. (2022)](https://www.nature.com/articles/s41586-021-04341-1) had 691 taxa and 316,595 bp across 5 partitions (see their Supp. Mat., Tables S6 and S13), and only 11,096 samples were collected when running 32 independent chains during a wall time limited to 10 days. Checkpointing is also highly encouraged under this scenario.
 
 As you can see above (Table 3), phylogeny inference with `PhyloBayes` seems to be the most-time consuming step for `McmcDate`. Nevertheless, once the posterior tree density has been estimated, timetree inference with `McmcDate` is much faster than with `MCMCtree` when analysing phylogenies with hundreds to thousands of taxa. We tried to infer a timetree with a 1,007-taxa mitoplastid amino acid dataset for which a timetree had already been estimated by `McmcDate`. Nevertheless, after running 16 independent chains with `MCMCtree` for a month, only a total of 1,260 samples were collected (~78 samples per chain), which was not enough to reach convergence. It is in such scenarios when `McmcDate` is indeed best to use!
+
+## Additional benchmarking analyses with empirical data
+
+Previous studies have also compared the divergence times estimated by both `MCMCtree` and `McmcDate` when using empirical data, and find highly congruent results. For instance, Figure 3 below compares the estimated divergence times reported in [Harris et al. 2022](https://www.nature.com/articles/s41559-022-01885-x#MOESM1) when using the 177-taxa plant genome dataset they assembled:
+
+<p align="center">
+<img src="figs/MCMCdateVSMCMCtree_Jarrisetal22.jpg" alt="MCMCdateVSMCMCtree_Harrisetal22" class="center" width="500">
+</p>
+
+> **Figure 3**: Comparison between the divergence times inferred by `MCMCtree` and `McmcDate` with the 177-taxa plant genome dataset assembled by [Harris et al. 2022](https://www.nature.com/articles/s41559-022-01885-x#MOESM1). (a) Timetrees showing the posterior mean divergence times and 95% CIs estimated with `McmcDate` (left) and `MCMCtree` (right) under the "unconstrained" analysis carried out by [Harris et al. 2022](https://www.nature.com/articles/s41559-022-01885-x#MOESM1). These plots were generated with the R package `MCMCtreeR` ([Puttick 2019](https://pubmed.ncbi.nlm.nih.gov/31292621/)). (b) Scatterplot of the estimated posterior mean divergence times (and 95% CIs) under the "unconstrained" analysis carried out by [Harris et al. 2022](https://www.nature.com/articles/s41559-022-01885-x#MOESM1).
+
+The plots above show how the divergence times estimated with both dating programs are essentially indistinguishable when using an empirical dataset.
