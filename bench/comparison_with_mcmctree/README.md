@@ -728,7 +728,7 @@ As you can see above (Table 3), phylogeny inference with `PhyloBayes` seems to b
 Previous studies have also compared the divergence times estimated by both `MCMCtree` and `McmcDate` when using empirical data, and find highly congruent results. For instance, Figure 3 below compares the estimated divergence times reported in [Harris et al. 2022](https://www.nature.com/articles/s41559-022-01885-x#MOESM1) when using the 177-taxa plant genome dataset they assembled:
 
 <p align="center">
-<img src="figs/MCMCdateVSMCMCtree_Jarrisetal22.jpg" alt="MCMCdateVSMCMCtree_Harrisetal22" class="center" width="500">
+<img src="figs/MCMCdateVSMCMCtree_Harrisetal22.jpg" alt="MCMCdateVSMCMCtree_Harrisetal22" class="center" width="500">
 </p>
 
 > **Figure 3**: Comparison between the divergence times inferred by `MCMCtree` and `McmcDate` with the 177-taxa plant genome dataset assembled by [Harris et al. 2022](https://www.nature.com/articles/s41559-022-01885-x#MOESM1). (a) Timetrees showing the posterior mean divergence times and 95% CIs estimated with `McmcDate` (left) and `MCMCtree` (right) under the "unconstrained" analysis carried out by [Harris et al. 2022](https://www.nature.com/articles/s41559-022-01885-x#MOESM1). These plots were generated with the R package `MCMCtreeR` ([Puttick 2019](https://pubmed.ncbi.nlm.nih.gov/31292621/)). (b) Scatterplot of the estimated posterior mean divergence times (and 95% CIs) under the "unconstrained" analysis carried out by [Harris et al. 2022](https://www.nature.com/articles/s41559-022-01885-x#MOESM1).
