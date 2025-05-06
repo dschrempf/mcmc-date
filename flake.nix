@@ -18,25 +18,27 @@
   # inputs.nixpkgs.url = "path:/home/dominik/Nix/Nixpkgs";
 
   outputs =
-    { self
-    , dschrempf-nur
-    , elynx
-    , flake-utils
-    , mcmc
-    , nixpkgs
+    {
+      self,
+      dschrempf-nur,
+      elynx,
+      flake-utils,
+      mcmc,
+      nixpkgs,
     }:
     let
       theseHpkgNames = [
         "mcmc-date"
       ];
-      thisGhcVersion = "ghc96";
+      thisGhcVersion = "ghc98";
       hOverlay = selfn: supern: {
         haskell = supern.haskell // {
-          packageOverrides = selfh: superh:
-            supern.haskell.packageOverrides selfh superh //
-              {
-                mcmc-date = selfh.callCabal2nix "mcmc-date" ./. { };
-              };
+          packageOverrides =
+            selfh: superh:
+            supern.haskell.packageOverrides selfh superh
+            // {
+              mcmc-date = selfh.callCabal2nix "mcmc-date" ./. { };
+            };
         };
       };
       overlays = [
@@ -44,7 +46,8 @@
         mcmc.overlays.default
         elynx.overlays.default
       ];
-      perSystem = system:
+      perSystem =
+        system:
         let
           pkgs = import nixpkgs {
             inherit system;
@@ -57,7 +60,9 @@
           dschrempf = dschrempf-nur.packages.${system};
         in
         {
-          packages = theseHpkgs // { default = theseHpkgs.mcmc-date; };
+          packages = theseHpkgs // {
+            default = theseHpkgs.mcmc-date;
+          };
 
           devShells.default = hpkgs.shellFor {
             shellHook =
@@ -74,13 +79,13 @@
               hpkgs.cabal-install
               hpkgs.haskell-language-server
 
-              # Analysis.
-              dschrempf.beast2
-              dschrempf.fasttree
-              dschrempf.figtree
-              dschrempf.iqtree2
-              dschrempf.phylobayes
-              dschrempf.tracer
+              # # Analysis.
+              # dschrempf.beast2
+              # dschrempf.fasttree
+              # dschrempf.figtree
+              # dschrempf.iqtree2
+              # dschrempf.phylobayes
+              # dschrempf.tracer
 
               # ELynx.
               hpkgs.elynx
@@ -98,6 +103,8 @@
           };
         };
     in
-    { overlays.default = nixpkgs.lib.composeManyExtensions overlays; }
+    {
+      overlays.default = nixpkgs.lib.composeManyExtensions overlays;
+    }
     // flake-utils.lib.eachDefaultSystem perSystem;
 }
